@@ -1,0 +1,106 @@
+type VisibilityResult = 
+ variant {
+   err: text;
+   ok;
+ };
+type Value = 
+ variant {
+   Array: vec record {
+                text;
+                Value;
+              };
+   Blob: blob;
+   Bool: bool;
+   Int: int;
+   Map: vec record {
+              text;
+              Value;
+            };
+   Nat: nat;
+   Text: text;
+ };
+type TransferResult = 
+ variant {
+   err: text;
+   ok;
+ };
+type TransactionEvent = 
+ record {
+   eventType: variant {
+                Mint;
+                Transfer;
+              };
+   from: opt principal;
+   timestamp: int;
+   to: principal;
+ };
+type TokenId = nat;
+type Time = int;
+type Standard = 
+ record {
+   name: text;
+   url: text;
+ };
+type NFTPage = 
+ record {
+   items: vec NFTMetadata;
+   total: nat;
+ };
+type NFTMetadata = 
+ record {
+   createdAt: Time;
+   description: text;
+   history: vec TransactionEvent;
+   image: blob;
+   isPublic: bool;
+   name: text;
+   owner: principal;
+   tokenId: TokenId;
+ };
+type MintResult = 
+ variant {
+   err: text;
+   ok: TokenId;
+   paymentRequired;
+ };
+type CollectionPhase = 
+ variant {
+   bonus;
+   free;
+   premium;
+ };
+type Account = 
+ record {
+   owner: principal;
+   subaccount: opt blob;
+ };
+service : {
+  createMyCollection: () -> (text);
+  getAllPublicNFTs: () -> (vec NFTMetadata) query;
+  getAllPublicNFTsPaginated: (offset: nat, limit: nat) -> (NFTPage) query;
+  getCollectionPhase: (user: principal) -> (CollectionPhase) query;
+  getMyCollection: (user: principal) -> (opt principal) query;
+  getMyMintCount: (user: principal) -> (nat) query;
+  getMyNFTs: () -> (vec NFTMetadata) query;
+  getMyNFTsPaginated: (offset: nat, limit: nat) -> (NFTPage) query;
+  getNFT: (tokenId: TokenId) -> (opt NFTMetadata) query;
+  getNFTHistory: (tokenId: TokenId) -> (opt vec TransactionEvent) query;
+  icrc10_supported_standards: () -> (vec Standard) query;
+  icrc7_description: () -> (opt text) query;
+  icrc7_name: () -> (text) query;
+  icrc7_owner_of: (tokenId: nat) -> (opt Account) query;
+  icrc7_symbol: () -> (text) query;
+  icrc7_token_metadata: (tokenIds: vec nat) ->
+   (vec opt vec record {
+                  text;
+                  Value;
+                }) query;
+  icrc7_tokens: (prev: opt nat, take: opt nat) -> (vec nat) query;
+  icrc7_tokens_of: (account: Account, prev: opt nat, take: opt nat) ->
+   (vec nat) query;
+  icrc7_total_supply: () -> (nat) query;
+  mintNFT: (name: text, description: text, image: blob, recipientOpt:
+   opt principal, isPublic: bool) -> (MintResult);
+  setNFTVisibility: (tokenId: TokenId, isPublic: bool) -> (VisibilityResult);
+  transferNFT: (tokenId: TokenId, to: principal) -> (TransferResult);
+}

@@ -1,0 +1,22 @@
+{
+  "overview": "Neferty Space is a modern NFT minting and management app on the Internet Computer blockchain. Users can mint NFTs with custom images, manage their gallery, and transfer NFTs to other users — with full transparent transaction history for every NFT.",
+  "features": [
+    "Mint NFTs with custom images stored on-chain",
+    "Gallery view of all owned NFTs",
+    "Transfer NFTs to other users by principal ID",
+    "Full transaction history per NFT (mint + all transfers)",
+    "Liquid glass UI with fully customizable color themes",
+    "Internet Identity authentication"
+  ],
+  "category": "blockchain",
+  "tags": [
+    "nft",
+    "icp",
+    "blockchain",
+    "gallery",
+    "mint",
+    "transfer",
+    "history"
+  ],
+  "last_updated": "2026-05-09T20:56:37.718Z"
+}

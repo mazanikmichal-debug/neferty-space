@@ -1,0 +1,62 @@
+// Version: 1.0.0
+type Data__791452850<K, V> =
+  {var count : Nat__490723111; kvs : [var ?(K, V)]};
+type Int__270357528 = Int__616954475;
+type Int__616954475 = Int;
+type Internal__8484328<K, V> =
+  {children : [var ?Node__46230540<K, V>]; data : Data__791452850<K, V>};
+type Leaf__809889148<K, V> = {data : Data__791452850<K, V>};
+type Map__158565046<K, V> = Map__297112838<K, V>;
+type Map__297112838<K, V> =
+  {var root : Node__46230540<K, V>; var size : Nat__490723111};
+type Map__605269027<K, V> = Map__158565046<K, V>;
+type NFTMetadata__266438664 =
+  {
+    createdAt : Time__900049286;
+    description : Text;
+    history : [TransactionEvent__62591470];
+    image : Blob;
+    isPublic : Bool;
+    name : Text;
+    owner : Principal;
+    tokenId : TokenId__283674492
+  };
+type Nat__490723111 = Nat__920180692;
+type Nat__920180692 = Nat;
+type Node__46230540<K, V> =
+  {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
+type Time__796480547 = Int__270357528;
+type Time__900049286 = Time__796480547;
+type TokenId__283674492 = Nat;
+type TransactionEvent__62591470 =
+  {
+    eventType : {#Mint; #Transfer};
+    from : ?Principal;
+    timestamp : Int;
+    to : Principal
+  };
+actor {
+  stable collectionRegistry :
+    {
+      var root : Node__46230540<Principal, Principal>;
+      var size : Nat__490723111
+    };
+  stable counter : {var nextId : Nat};
+  stable factoryState :
+    {
+      collectionRegistry : Map__605269027<Principal, Principal>;
+      mintCounts : Map__605269027<Principal, Nat>
+    };
+  stable mintCounts :
+    {var root : Node__46230540<Principal, Nat>; var size : Nat__490723111};
+  stable nftState :
+    {
+      counter : {var nextId : Nat};
+      nfts : Map__605269027<TokenId__283674492, NFTMetadata__266438664>
+    };
+  stable nfts :
+    {
+      var root : Node__46230540<TokenId__283674492, NFTMetadata__266438664>;
+      var size : Nat__490723111
+    }
+};
