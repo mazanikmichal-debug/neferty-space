@@ -11,6 +11,7 @@ import { nftImageUrl } from "@/utils/nftImage";
 import type React from "react";
 import { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
@@ -43,6 +44,7 @@ function useShuffledNFTs(
 const EMOTIONS = [
   {
     id: -3,
+    labelKey: "emotions.disgusting" as const,
     label: "Odporné",
     size: 56,
     colorBg: "rgba(220,38,38,0.18)",
@@ -52,6 +54,7 @@ const EMOTIONS = [
   },
   {
     id: -2,
+    labelKey: "emotions.boring" as const,
     label: "Nudné",
     size: 46,
     colorBg: "rgba(234,88,12,0.18)",
@@ -61,6 +64,7 @@ const EMOTIONS = [
   },
   {
     id: -1,
+    labelKey: "emotions.weak" as const,
     label: "Slabé",
     size: 34,
     colorBg: "rgba(202,138,4,0.18)",
@@ -70,6 +74,7 @@ const EMOTIONS = [
   },
   {
     id: 0,
+    labelKey: "emotions.neutral" as const,
     label: "Jedno mi to",
     size: 64,
     colorBg: "rgba(156,163,175,0.18)",
@@ -79,6 +84,7 @@ const EMOTIONS = [
   },
   {
     id: 1,
+    labelKey: "emotions.interesting" as const,
     label: "Zaujímavé",
     size: 34,
     colorBg: "rgba(34,197,94,0.18)",
@@ -88,6 +94,7 @@ const EMOTIONS = [
   },
   {
     id: 2,
+    labelKey: "emotions.likeIt" as const,
     label: "Páči sa mi",
     size: 46,
     colorBg: "rgba(6,182,212,0.18)",
@@ -97,6 +104,7 @@ const EMOTIONS = [
   },
   {
     id: 3,
+    labelKey: "emotions.beautiful" as const,
     label: "Nádherné",
     size: 56,
     colorBg: "rgba(59,130,246,0.18)",
@@ -271,6 +279,7 @@ function EmotionCircle({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const { t } = useTranslation();
   const [hovered, setHovered] = useState(false);
   const d = emotion.size;
   return (
@@ -280,7 +289,7 @@ function EmotionCircle({
     >
       <button
         type="button"
-        aria-label={emotion.label}
+        aria-label={t(emotion.labelKey)}
         aria-pressed={selected}
         onClick={onSelect}
         onMouseEnter={() => setHovered(true)}
@@ -321,7 +330,7 @@ function EmotionCircle({
           letterSpacing: "0.03em",
         }}
       >
-        {emotion.label}
+        {t(emotion.labelKey)}
       </span>
     </div>
   );
@@ -718,21 +727,21 @@ const SHAPE_ICONS: Record<
 
 const SHAPE_LABELS: Record<RatingDisplaySettings["arrangementShape"], string> =
   {
-    line: "Priamka",
-    "arc-up": "Oblúk hore",
-    "arc-down": "Oblúk dole",
-    "arc-left": "Oblúk ľavo",
-    "arc-right": "Oblúk pravo",
-    spiral: "Špirála",
-    fan: "Vejár",
-    wave: "Vlna",
-    grid: "Mriežka",
-    steps: "Stupne",
-    circle: "Kruh",
-    teardrop: "Kvapka",
-    concentric: "Sústrečné",
-    diamond: "Diamant",
-    cascade: "Kaskáda",
+    line: "rating.shapes.line",
+    "arc-up": "rating.shapes.arc-up",
+    "arc-down": "rating.shapes.arc-down",
+    "arc-left": "rating.shapes.arc-left",
+    "arc-right": "rating.shapes.arc-right",
+    spiral: "rating.shapes.spiral",
+    fan: "rating.shapes.fan",
+    wave: "rating.shapes.wave",
+    grid: "rating.shapes.grid",
+    steps: "rating.shapes.steps",
+    circle: "rating.shapes.circle",
+    teardrop: "rating.shapes.teardrop",
+    concentric: "rating.shapes.concentric",
+    diamond: "rating.shapes.diamond",
+    cascade: "rating.shapes.cascade",
   };
 
 const ALL_SHAPES: RatingDisplaySettings["arrangementShape"][] = [
@@ -1214,6 +1223,7 @@ function RatingArrangementPanel({
   loadProfile: (name: string) => void;
   deleteProfile: (name: string) => void;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [profileNameInput, setProfileNameInput] = useState("");
   const [isDragging, setIsDragging] = useState(false);
@@ -1300,7 +1310,7 @@ function RatingArrangementPanel({
       {/* Drag handle */}
       <div
         onMouseDown={onDragHandleMouseDown}
-        title="Potiahnite pre presun"
+        title={t("rating.labels.dragToMove")}
         style={{
           width: "100%",
           height: 20,
@@ -1347,7 +1357,7 @@ function RatingArrangementPanel({
           type="button"
           data-ocid="rating.reset_settings_button"
           onClick={resetToDefault}
-          aria-label="Resetovať nastavenia"
+          aria-label={t("rating.labels.resetSettings")}
           style={{
             flex: 1,
             height: 30,
@@ -1374,13 +1384,13 @@ function RatingArrangementPanel({
           }}
         >
           <span style={{ fontSize: 13, lineHeight: 1 }}>↺</span>
-          Resetovať
+          {t("buttons.reset")}
         </button>
         <button
           type="button"
           data-ocid="rating.randomize_settings_button"
           onClick={() => updateSettings(buildRandomSettings())}
-          aria-label="Náhodné nastavenia"
+          aria-label={t("rating.labels.randomSettings")}
           style={{
             flex: 1,
             height: 30,
@@ -1407,7 +1417,7 @@ function RatingArrangementPanel({
           }}
         >
           <span style={{ fontSize: 12, lineHeight: 1 }}>🎲</span>
-          Náhodné
+          {t("buttons.random")}
         </button>
       </div>
 
@@ -1431,7 +1441,7 @@ function RatingArrangementPanel({
           type="button"
           data-ocid="rating.arrangement_settings_button"
           onClick={() => setOpen((v) => !v)}
-          aria-label="Nastavenia zoradenia"
+          aria-label={t("rating.labels.settings")}
           style={{
             width: 32,
             height: 32,
@@ -1472,7 +1482,7 @@ function RatingArrangementPanel({
             pointerEvents: "none",
           }}
         >
-          Nastavenia
+          {t("rating.labels.settings")}
         </span>
       </div>
 
@@ -1505,7 +1515,10 @@ function RatingArrangementPanel({
           }}
         >
           {/* === TVAR A ZORADENIE === */}
-          <PanelSection title="Tvar a zoradenie" defaultOpen={true}>
+          <PanelSection
+            title={t("rating.sections.shapeArrangement")}
+            defaultOpen={true}
+          >
             <div
               style={{
                 display: "grid",
@@ -1522,7 +1535,7 @@ function RatingArrangementPanel({
                     key={shape}
                     data-ocid={`rating.shape_${shape.replace(/-/g, "_")}_button`}
                     onClick={() => u({ arrangementShape: shape })}
-                    aria-label={SHAPE_LABELS[shape]}
+                    aria-label={t(SHAPE_LABELS[shape])}
                     style={{
                       display: "flex",
                       flexDirection: "column" as const,
@@ -1554,7 +1567,7 @@ function RatingArrangementPanel({
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {SHAPE_LABELS[shape]}
+                      {t(SHAPE_LABELS[shape])}
                     </span>
                   </button>
                 );
@@ -1570,7 +1583,7 @@ function RatingArrangementPanel({
                   marginBottom: 6,
                 }}
               >
-                Smer
+                {t("rating.labels.direction")}
               </p>
               <div style={{ display: "flex", gap: 5 }}>
                 {DIRECTION_OPTIONS.map(({ value, label }) => {
@@ -1606,7 +1619,7 @@ function RatingArrangementPanel({
               </div>
             </div>
             <SliderRow
-              label="Intenzita krivky"
+              label={t("rating.labels.curveIntensity")}
               value={s.curveIntensity}
               min={0}
               max={100}
@@ -1616,7 +1629,7 @@ function RatingArrangementPanel({
             />
             {s.arrangementShape === "wave" && (
               <SliderRow
-                label="Amplituda vlny"
+                label={t("rating.labels.waveAmplitude")}
                 value={s.waveAmplitude}
                 min={0}
                 max={120}
@@ -1628,7 +1641,7 @@ function RatingArrangementPanel({
           </PanelSection>
 
           {/* === ROZOSTUPY === */}
-          <PanelSection title="Rozostupy a hustota" defaultOpen={true}>
+          <PanelSection title={t("rating.sections.spacing")} defaultOpen={true}>
             <div style={{ marginBottom: 11 }}>
               <div
                 style={{
@@ -1645,7 +1658,7 @@ function RatingArrangementPanel({
                     fontWeight: 600,
                   }}
                 >
-                  Hustota X
+                  {t("rating.labels.spacingX")}
                 </span>
                 <span
                   style={{
@@ -1658,7 +1671,9 @@ function RatingArrangementPanel({
                     fontWeight: s.spacingX < 0 ? 700 : 400,
                   }}
                 >
-                  {s.spacingX < 0 ? `Overlap ${s.spacingX}` : `${s.spacingX}px`}
+                  {s.spacingX < 0
+                    ? `${t("rating.labels.overlapLabel")} ${s.spacingX}`
+                    : `${s.spacingX}px`}
                 </span>
               </div>
               <input
@@ -1685,10 +1700,10 @@ function RatingArrangementPanel({
                 }}
               >
                 <span style={{ fontSize: 8, color: "rgba(255,160,80,0.5)" }}>
-                  ←Prehustenie
+                  ←{t("rating.labels.overlapLabel")}
                 </span>
                 <span style={{ fontSize: 8, color: "rgba(255,255,255,0.22)" }}>
-                  Roztiahnuté→
+                  {t("rating.labels.spreadLabel")}→
                 </span>
               </div>
             </div>
@@ -1708,7 +1723,7 @@ function RatingArrangementPanel({
                     fontWeight: 600,
                   }}
                 >
-                  Hustota Y
+                  {t("rating.labels.spacingY")}
                 </span>
                 <span
                   style={{
@@ -1721,7 +1736,9 @@ function RatingArrangementPanel({
                     fontWeight: s.spacingY < 0 ? 700 : 400,
                   }}
                 >
-                  {s.spacingY < 0 ? `Overlap ${s.spacingY}` : `${s.spacingY}px`}
+                  {s.spacingY < 0
+                    ? `${t("rating.labels.overlapLabel")} ${s.spacingY}`
+                    : `${s.spacingY}px`}
                 </span>
               </div>
               <input
@@ -1742,7 +1759,7 @@ function RatingArrangementPanel({
               />
             </div>
             <SliderRow
-              label="Posun hore/dole"
+              label={t("rating.labels.verticalOffset")}
               value={s.verticalOffset}
               min={-200}
               max={200}
@@ -1752,7 +1769,7 @@ function RatingArrangementPanel({
               format={(v) => `${v > 0 ? "+" : ""}${v}px`}
             />
             <SliderRow
-              label="Posun vľavo/vpravo"
+              label={t("rating.labels.horizontalOffset")}
               value={s.horizontalOffset}
               min={-300}
               max={300}
@@ -1764,9 +1781,9 @@ function RatingArrangementPanel({
           </PanelSection>
 
           {/* === KARTY === */}
-          <PanelSection title="Karty" defaultOpen={true}>
+          <PanelSection title={t("rating.sections.cards")} defaultOpen={true}>
             <SliderRow
-              label="Počet kariet"
+              label={t("rating.labels.visibleCards")}
               value={s.visibleCards}
               min={1}
               max={50}
@@ -1775,7 +1792,7 @@ function RatingArrangementPanel({
               onChange={(v) => u({ visibleCards: v })}
             />
             <SliderRow
-              label="Veľkosť aktívnej"
+              label={t("rating.labels.activeCardScale")}
               value={s.activeCardScale}
               min={1.0}
               max={2.5}
@@ -1785,7 +1802,7 @@ function RatingArrangementPanel({
               format={(v) => `${v.toFixed(2)}x`}
             />
             <SliderRow
-              label="Rotácia kariet"
+              label={t("rating.labels.cardRotation")}
               value={s.cardRotation}
               min={-45}
               max={45}
@@ -1804,7 +1821,7 @@ function RatingArrangementPanel({
                   marginBottom: 6,
                 }}
               >
-                Pomer strán
+                {t("rating.labels.aspectRatio")}
               </p>
               <div style={{ display: "flex", gap: 5 }}>
                 {aspectOptions.map(({ value, label }) => {
@@ -1840,7 +1857,7 @@ function RatingArrangementPanel({
               </div>
             </div>
             <ToggleRow
-              label="Rám kariet"
+              label={t("rating.labels.cardBorder")}
               value={s.showCardBorder}
               ocid="rating.showCardBorder_toggle"
               onChange={(v) => u({ showCardBorder: v })}
@@ -1855,7 +1872,7 @@ function RatingArrangementPanel({
                     marginBottom: 6,
                   }}
                 >
-                  Farba rámu
+                  {t("rating.labels.borderColor")}
                 </p>
                 <div
                   style={{ display: "flex", gap: 5, flexWrap: "wrap" as const }}
@@ -1901,7 +1918,7 @@ function RatingArrangementPanel({
                       padding: 0,
                       background: "none",
                     }}
-                    title="Vlastná farba"
+                    title={t("rating.labels.borderColor")}
                   />
                 </div>
               </div>
@@ -1909,9 +1926,12 @@ function RatingArrangementPanel({
           </PanelSection>
 
           {/* === 3D A HĽBKA === */}
-          <PanelSection title="3D a hľbka" defaultOpen={false}>
+          <PanelSection
+            title={t("rating.sections.depth3d")}
+            defaultOpen={false}
+          >
             <SliderRow
-              label="Perspektíva"
+              label={t("rating.labels.perspective")}
               value={s.perspectiveDepth}
               min={200}
               max={2000}
@@ -1921,7 +1941,7 @@ function RatingArrangementPanel({
               format={(v) => `${v}px`}
             />
             <SliderRow
-              label="Hľbkový krok"
+              label={t("rating.labels.depthStep")}
               value={s.depthStep}
               min={0}
               max={300}
@@ -1931,7 +1951,7 @@ function RatingArrangementPanel({
               format={(v) => `${v}px`}
             />
             <SliderRow
-              label="Náklon (tilt)"
+              label={t("rating.labels.tilt")}
               value={s.cardTilt}
               min={-30}
               max={30}
@@ -1941,7 +1961,7 @@ function RatingArrangementPanel({
               format={(v) => `${v}°`}
             />
             <SliderRow
-              label="Rozostrenie"
+              label={t("rating.labels.blur")}
               value={s.blurInactive}
               min={0}
               max={10}
@@ -1951,7 +1971,7 @@ function RatingArrangementPanel({
               format={(v) => `${v}px`}
             />
             <SliderRow
-              label="Tieň"
+              label={t("rating.labels.shadow")}
               value={s.shadowIntensity}
               min={0}
               max={1}
@@ -1961,7 +1981,7 @@ function RatingArrangementPanel({
               format={(v) => v.toFixed(2)}
             />
             <SliderRow
-              label="Zmenšenie"
+              label={t("rating.labels.shrink")}
               value={s.cardScale}
               min={0.3}
               max={1.0}
@@ -1973,9 +1993,12 @@ function RatingArrangementPanel({
           </PanelSection>
 
           {/* === ANIMÁCIA === */}
-          <PanelSection title="Animácia" defaultOpen={false}>
+          <PanelSection
+            title={t("rating.sections.animation")}
+            defaultOpen={false}
+          >
             <SliderRow
-              label="Trvanie"
+              label={t("rating.labels.duration")}
               value={s.animationDuration}
               min={0.1}
               max={1.2}
@@ -1985,7 +2008,7 @@ function RatingArrangementPanel({
               format={(v) => `${v.toFixed(2)}s`}
             />
             <SliderRow
-              label="Rýchlosť kolečka"
+              label={t("rating.labels.scrollSpeed")}
               value={1600 - s.scrollCooldown}
               min={100}
               max={1500}
@@ -2009,7 +2032,7 @@ function RatingArrangementPanel({
                   marginBottom: 6,
                 }}
               >
-                Easing
+                {t("rating.labels.easing")}
               </p>
               <div
                 style={{ display: "flex", gap: 4, flexWrap: "wrap" as const }}
@@ -2046,7 +2069,7 @@ function RatingArrangementPanel({
               </div>
             </div>
             <ToggleRow
-              label="Hover efekt"
+              label={t("rating.labels.hoverEffect")}
               value={s.interactiveHover}
               ocid="rating.interactiveHover_toggle"
               onChange={(v) => u({ interactiveHover: v })}
@@ -2054,7 +2077,10 @@ function RatingArrangementPanel({
           </PanelSection>
 
           {/* === ZOBRAZENIE === */}
-          <PanelSection title="Zobrazenie" defaultOpen={false}>
+          <PanelSection
+            title={t("rating.sections.display")}
+            defaultOpen={false}
+          >
             <div style={{ marginBottom: 11 }}>
               <div
                 style={{
@@ -2071,7 +2097,7 @@ function RatingArrangementPanel({
                     fontWeight: 600,
                   }}
                 >
-                  Priehľadnosť
+                  {t("rating.labels.opacity")}
                 </span>
                 <span
                   style={{
@@ -2106,14 +2132,14 @@ function RatingArrangementPanel({
               />
             </div>
             <ToggleRow
-              label="Nápisy"
+              label={t("rating.labels.labels")}
               value={s.showLabels}
               ocid="rating.showLabels_toggle"
               onChange={(v) => u({ showLabels: v })}
             />
             {s.showLabels && (
               <SliderRow
-                label="Veľkosť nápisov"
+                label={t("rating.labels.labelSize")}
                 value={s.labelFontSize}
                 min={8}
                 max={24}
@@ -2126,12 +2152,15 @@ function RatingArrangementPanel({
           </PanelSection>
 
           {/* === PROFILY === */}
-          <PanelSection title="Profily" defaultOpen={false}>
+          <PanelSection
+            title={t("rating.sections.profiles")}
+            defaultOpen={false}
+          >
             <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
               <input
                 type="text"
                 data-ocid="rating.profile_name_input"
-                placeholder="Názov profilu"
+                placeholder={t("rating.labels.profileName")}
                 value={profileNameInput}
                 onChange={(e) => setProfileNameInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -2180,7 +2209,7 @@ function RatingArrangementPanel({
                   whiteSpace: "nowrap" as const,
                 }}
               >
-                Uložiť
+                {t("buttons.save")}
               </button>
             </div>
             {savedProfiles.length === 0 ? (
@@ -2193,7 +2222,7 @@ function RatingArrangementPanel({
                   fontStyle: "italic",
                 }}
               >
-                Žiadne uložené profily
+                {t("rating.labels.noProfiles")}
               </p>
             ) : (
               <div
@@ -2246,7 +2275,7 @@ function RatingArrangementPanel({
                         type="button"
                         data-ocid="rating.profile_delete_button"
                         onClick={() => deleteProfile(profile.name)}
-                        aria-label={`Zmazať profil ${profile.name}`}
+                        aria-label={`${t("buttons.remove")} ${profile.name}`}
                         style={{
                           width: 22,
                           height: 22,
@@ -2282,7 +2311,7 @@ function RatingArrangementPanel({
                 marginBottom: 6,
               }}
             >
-              Rýchle prednastavené
+              {t("rating.labels.quickPresets")}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 4 }}>
               {RATING_DISPLAY_PRESETS.map((preset) => (
@@ -2338,6 +2367,7 @@ function getEasingValue(
 // Main page
 // ---------------------------------------------------------------------------
 export default function RatingPage() {
+  const { t } = useTranslation();
   const { data: rawNfts, isLoading, isError } = useGetAllPublicNFTs();
   const nfts = useShuffledNFTs(rawNfts);
   const {
@@ -2405,9 +2435,9 @@ export default function RatingPage() {
     setRatings((prev) => ({ ...prev, [key]: emotionId }));
     const emotion = EMOTIONS.find((e) => e.id === emotionId);
     if (emotion)
-      toast.success(emotion.label, {
+      toast.success(t(emotion.labelKey), {
         duration: 2000,
-        description: "Hodnotenie uložené",
+        description: t("messages.ratingDesc"),
       });
     const dir: "left" | "right" = emotionId < 0 ? "left" : "right";
     const currentNft = nfts[activeIndex];
@@ -2478,10 +2508,10 @@ export default function RatingPage() {
       <div className="mb-8 flex items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight gradient-text">
-            Hodnotenie
+            {t("messages.ratingTitle")}
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Vyjadrite pocit z každého umeleckého diela
+            {t("messages.ratingSubtitle")}
           </p>
         </div>
         {nfts && nfts.length > 0 && (
@@ -2510,7 +2540,7 @@ export default function RatingPage() {
         <div data-ocid="rating.error_state">
           <div className="glass-card border border-destructive/50 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center gap-3">
             <p className="text-sm text-destructive font-semibold flex-1">
-              Chyba pri načítaní NFT. Skúste obnoviť stránku.
+              {t("errors.loadError")}
             </p>
             <button
               type="button"
@@ -2518,7 +2548,7 @@ export default function RatingPage() {
               onClick={() => window.location.reload()}
               className="shrink-0 px-4 py-2 rounded-xl border-2 border-destructive/40 bg-destructive/10 text-destructive text-xs font-semibold hover:bg-destructive/20 transition-colors duration-200"
             >
-              Obnoviť stránku
+              {t("buttons.reload")}
             </button>
           </div>
         </div>
@@ -2530,10 +2560,10 @@ export default function RatingPage() {
           className="glass-card rounded-2xl p-12 flex flex-col items-center text-center gap-4"
         >
           <p className="font-display font-bold text-foreground text-lg">
-            Žiadne verejné NFT na hodnotenie
+            {t("messages.ratingEmpty")}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            Zatiaľ neboli vyrazené žiadne verejné NFT
+            {t("messages.ratingEmptyDesc")}
           </p>
         </div>
       )}
@@ -2552,7 +2582,7 @@ export default function RatingPage() {
             }}
           />
           <p className="font-display font-bold text-foreground text-lg">
-            Všetky NFT ohodnotené
+            {t("messages.ratingAllDone")}
           </p>
           <p className="text-xs text-muted-foreground">
             {nfts.length} {nfts.length === 1 ? "hodnotenie" : "hodnotení"}{" "}
@@ -2687,7 +2717,7 @@ export default function RatingPage() {
                 letterSpacing: "0.05em",
               }}
             >
-              kolečko na prechádzanie
+              {t("messages.scrollHint")}
             </span>
           </div>
 
@@ -2697,7 +2727,7 @@ export default function RatingPage() {
               className="flex items-end justify-center"
               style={{ gap: 10, marginTop: 28 }}
               role="radiogroup"
-              aria-label="Emočné hodnotenie"
+              aria-label={t("messages.ratingTitle")}
               data-ocid="rating.circles"
             >
               {EMOTIONS.map((emotion) => {

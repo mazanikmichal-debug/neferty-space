@@ -19,7 +19,7 @@ const GalleryPage = lazy(() => import("@/pages/GalleryPage"));
 const MintPage = lazy(() => import("@/pages/MintPage"));
 const MarketplacePage = lazy(() => import("@/pages/MarketplacePage"));
 const RatingPage = lazy(() => import("@/pages/RatingPage"));
-const MyCollectionPage = lazy(() => import("@/pages/MyCollectionPage"));
+const SettingsPage = lazy(() => import("@/pages/SettingsPage"));
 
 const LoadingScreen = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
@@ -108,13 +108,12 @@ const ratingRoute = createRoute({
     </Suspense>
   ),
 });
-
-const myCollectionRoute = createRoute({
+const settingsRoute = createRoute({
   getParentRoute: () => protectedRoute,
-  path: "/my-collection",
+  path: "/settings",
   component: () => (
     <Suspense fallback={<LoadingScreen />}>
-      <MyCollectionPage />
+      <SettingsPage />
     </Suspense>
   ),
 });
@@ -127,7 +126,7 @@ const routeTree = rootRoute.addChildren([
     galleryRoute,
     marketplaceRoute,
     ratingRoute,
-    myCollectionRoute,
+    settingsRoute,
   ]),
 ]);
 

@@ -2,10 +2,12 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function LoginPage() {
   const { isAuthenticated, isInitializing, isLoggingIn, handleLogin } =
     useAuth();
+  const { t } = useTranslation();
 
   const navigate = useNavigate();
 
@@ -48,10 +50,10 @@ export default function LoginPage() {
             <span className="gradient-btn-inner" aria-hidden="true" />
             <span className="relative z-[1]">
               {isInitializing
-                ? "Načítávam..."
+                ? t("messages.loading")
                 : isLoggingIn
-                  ? "Prihlasovanie..."
-                  : "Prihlásiť sa"}
+                  ? t("messages.signingIn")
+                  : t("buttons.login")}
             </span>
           </button>
           <p className="text-xs text-muted-foreground text-center">

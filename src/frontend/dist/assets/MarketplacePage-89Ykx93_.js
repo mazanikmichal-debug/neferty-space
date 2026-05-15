@@ -1,4 +1,4 @@
-import { r as reactExports, j as jsxRuntimeExports } from "./index-CQ236Vkp.js";
+import { r as reactExports, j as jsxRuntimeExports, u as useTranslation } from "./index-B8lwuDBy.js";
 const LayoutGroupContext = reactExports.createContext({});
 function useConstant(init) {
   const ref = reactExports.useRef(null);
@@ -7839,6 +7839,7 @@ const featureBundle = {
 };
 const motion = /* @__PURE__ */ createMotionProxy(featureBundle, createDomVisualElement);
 function MarketplacePage() {
+  const { t } = useTranslation();
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "section-content flex-1 flex flex-col items-center justify-center min-h-[70vh] select-none", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       "div",
@@ -7918,7 +7919,7 @@ function MarketplacePage() {
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text"
                 },
-                children: "Trhovisko"
+                children: t("nav.marketplace")
               }
             ),
             /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -7928,7 +7929,7 @@ function MarketplacePage() {
                 initial: { opacity: 0 },
                 animate: { opacity: 1 },
                 transition: { delay: 0.25, duration: 0.5 },
-                children: "Čoskoro"
+                children: t("messages.comingSoon")
               }
             )
           ] }),
@@ -7939,7 +7940,7 @@ function MarketplacePage() {
               initial: { opacity: 0 },
               animate: { opacity: 1 },
               transition: { delay: 0.4, duration: 0.5 },
-              children: "Nakupuj a predávaj NFT na decentralizovanom trhovisku."
+              children: t("messages.marketplaceDesc")
             }
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsx(

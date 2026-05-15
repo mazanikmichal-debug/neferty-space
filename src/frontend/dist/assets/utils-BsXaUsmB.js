@@ -1,3 +1,24 @@
+const cache = /* @__PURE__ */ new Map();
+function nftImageUrl(bytes) {
+  const cached = cache.get(bytes);
+  if (cached) return cached;
+  const mime = detectMime(bytes);
+  const blob = new Blob([bytes], { type: mime });
+  const url = URL.createObjectURL(blob);
+  cache.set(bytes, url);
+  return url;
+}
+function detectMime(bytes) {
+  if (bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71)
+    return "image/png";
+  if (bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255)
+    return "image/jpeg";
+  if (bytes[0] === 71 && bytes[1] === 73 && bytes[2] === 70)
+    return "image/gif";
+  if (bytes[0] === 82 && bytes[1] === 73 && bytes[2] === 70 && bytes[3] === 70 && bytes[8] === 87 && bytes[9] === 69 && bytes[10] === 66 && bytes[11] === 80)
+    return "image/webp";
+  return "application/octet-stream";
+}
 function r(e) {
   var t, f, n = "";
   if ("string" == typeof e || "number" == typeof e) n += e;
@@ -144,20 +165,20 @@ const createLruCache = (maxCacheSize) => {
     };
   }
   let cacheSize = 0;
-  let cache = /* @__PURE__ */ new Map();
+  let cache2 = /* @__PURE__ */ new Map();
   let previousCache = /* @__PURE__ */ new Map();
   const update = (key, value) => {
-    cache.set(key, value);
+    cache2.set(key, value);
     cacheSize++;
     if (cacheSize > maxCacheSize) {
       cacheSize = 0;
-      previousCache = cache;
-      cache = /* @__PURE__ */ new Map();
+      previousCache = cache2;
+      cache2 = /* @__PURE__ */ new Map();
     }
   };
   return {
     get(key) {
-      let value = cache.get(key);
+      let value = cache2.get(key);
       if (value !== void 0) {
         return value;
       }
@@ -167,8 +188,8 @@ const createLruCache = (maxCacheSize) => {
       }
     },
     set(key, value) {
-      if (cache.has(key)) {
-        cache.set(key, value);
+      if (cache2.has(key)) {
+        cache2.set(key, value);
       } else {
         update(key, value);
       }
@@ -2474,5 +2495,6 @@ function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 export {
-  cn as c
+  cn as c,
+  nftImageUrl as n
 };

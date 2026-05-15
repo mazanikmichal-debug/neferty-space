@@ -23,8 +23,23 @@ export interface NFTMetadata {
   image: Uint8Array;
   history: TransactionEvent[];
   isPublic: boolean;
+  collectionName?: string;
 }
 
 export { Variant_Mint_Transfer };
 export type { TokenId, Time };
 export type { _TransactionEvent };
+// Cycles health types
+export type CycleHealth = "green" | "yellow" | "red";
+
+export interface HealthStatus {
+  status: string;
+  daysRemaining: bigint;
+  imagesRemaining: bigint;
+  healthColor: CycleHealth;
+}
+
+export type CollectionPhase =
+  | { Free: null }
+  | { Bonus: null }
+  | { Premium: null };

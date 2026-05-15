@@ -7,7 +7,7 @@ var __privateAdd = (obj, member, value) => member.has(obj) ? __typeError("Cannot
 var __privateSet = (obj, member, value, setter) => (__accessCheck(obj, member, "write to private field"), setter ? setter.call(obj, value) : member.set(obj, value), value);
 var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "access private method"), method);
 var _client, _currentQuery, _currentQueryInitialState, _currentResult, _currentResultState, _currentResultOptions, _currentThenable, _selectError, _selectFn, _selectResult, _lastQueryWithDefinedData, _staleTimeoutId, _refetchIntervalId, _currentRefetchInterval, _trackedProps, _QueryObserver_instances, executeFetch_fn, updateStaleTimeout_fn, computeRefetchInterval_fn, updateRefetchInterval_fn, updateTimers_fn, clearStaleTimeout_fn, clearRefetchInterval_fn, updateQuery_fn, notify_fn, _a, _client2, _currentResult2, _currentMutation, _mutateOptions, _MutationObserver_instances, updateResult_fn, notify_fn2, _b;
-import { k as Subscribable, p as pendingThenable, l as resolveEnabled, s as shallowEqualObjects, m as resolveStaleTime, n as noop, q as environmentManager, t as isValidTimeout, w as timeUntilStale, x as timeoutManager, y as focusManager, z as fetchState, A as replaceData, B as notifyManager, D as hashKey, E as getDefaultState, r as reactExports, F as shouldThrowError, G as useQueryClient, H as useBackend, P as Principal } from "./index-CQ236Vkp.js";
+import { m as Subscribable, p as pendingThenable, n as resolveEnabled, s as shallowEqualObjects, q as resolveStaleTime, t as noop, w as environmentManager, x as isValidTimeout, y as timeUntilStale, z as timeoutManager, A as focusManager, B as fetchState, D as replaceData, E as notifyManager, F as hashKey, G as getDefaultState, r as reactExports, H as shouldThrowError, J as useQueryClient, l as useBackend, P as Principal } from "./index-B8lwuDBy.js";
 var QueryObserver = (_a = class extends Subscribable {
   constructor(client, options) {
     super();
@@ -777,19 +777,22 @@ function useMintNFT() {
       description,
       imageFile,
       recipientId,
-      isPublic
+      isPublic,
+      collectionName
     }) => {
       if (!actor || actorLoading) {
         throw new Error("Konfigurácia chýba");
       }
       const imageBytes = new Uint8Array(await imageFile.arrayBuffer());
       const recipientOpt = (recipientId == null ? void 0 : recipientId.trim()) ? Principal.fromText(recipientId.trim()) : null;
+      const collectionNameOpt = (collectionName == null ? void 0 : collectionName.trim()) || null;
       const result = await actor.mintNFT(
         name,
         description,
         imageBytes,
         recipientOpt,
-        isPublic ?? true
+        isPublic ?? true,
+        collectionNameOpt
       );
       if (result.__kind__ === "err") throw new Error(result.err);
       if (result.__kind__ === "paymentRequired")
@@ -864,33 +867,25 @@ function useGetNFTHistory(tokenId) {
     staleTime: 3e4
   });
 }
-const cache = /* @__PURE__ */ new Map();
-function nftImageUrl(bytes) {
-  const cached = cache.get(bytes);
-  if (cached) return cached;
-  const mime = detectMime(bytes);
-  const blob = new Blob([bytes], { type: mime });
-  const url = URL.createObjectURL(blob);
-  cache.set(bytes, url);
-  return url;
-}
-function detectMime(bytes) {
-  if (bytes[0] === 137 && bytes[1] === 80 && bytes[2] === 78 && bytes[3] === 71)
-    return "image/png";
-  if (bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255)
-    return "image/jpeg";
-  if (bytes[0] === 71 && bytes[1] === 73 && bytes[2] === 70)
-    return "image/gif";
-  if (bytes[0] === 82 && bytes[1] === 73 && bytes[2] === 70 && bytes[3] === 70 && bytes[8] === 87 && bytes[9] === 69 && bytes[10] === 66 && bytes[11] === 80)
-    return "image/webp";
-  return "application/octet-stream";
+function useGetMyHealthStatus() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+  return useQuery({
+    queryKey: ["myHealthStatus"],
+    queryFn: async () => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      return actor.getMyHealthStatus();
+    },
+    enabled: actorReady,
+    staleTime: 3e4
+  });
 }
 export {
   useSetNFTVisibility as a,
   useGetNFTHistory as b,
   useGetMyNFTs as c,
-  useMintNFT as d,
-  useGetAllPublicNFTs as e,
-  nftImageUrl as n,
+  useGetAllPublicNFTs as d,
+  useMintNFT as e,
+  useGetMyHealthStatus as f,
   useTransferNFT as u
 };

@@ -26,15 +26,27 @@ export const NFTMetadata = IDL.Record({
   'history' : IDL.Vec(TransactionEvent),
   'image' : IDL.Vec(IDL.Nat8),
   'isPublic' : IDL.Bool,
+  'collectionName' : IDL.Opt(IDL.Text),
 });
 export const NFTPage = IDL.Record({
   'total' : IDL.Nat,
   'items' : IDL.Vec(NFTMetadata),
 });
 export const CollectionPhase = IDL.Variant({
-  'premium' : IDL.Null,
-  'free' : IDL.Null,
-  'bonus' : IDL.Null,
+  'Premium' : IDL.Null,
+  'Free' : IDL.Null,
+  'Bonus' : IDL.Null,
+});
+export const CycleHealth = IDL.Variant({
+  'red' : IDL.Null,
+  'green' : IDL.Null,
+  'yellow' : IDL.Null,
+});
+export const HealthStatus = IDL.Record({
+  'status' : IDL.Text,
+  'imagesRemaining' : IDL.Nat,
+  'healthColor' : CycleHealth,
+  'daysRemaining' : IDL.Nat,
 });
 export const Standard = IDL.Record({ 'url' : IDL.Text, 'name' : IDL.Text });
 export const Account = IDL.Record({
@@ -67,26 +79,41 @@ export const TransferResult = IDL.Variant({
 });
 
 export const idlService = IDL.Service({
-  'createMyCollection' : IDL.Func([], [IDL.Text], []),
+  'createMyCollection' : IDL.Func([], [IDL.Principal], []),
+  'estimateCycles' : IDL.Func([IDL.Nat], [IDL.Nat], ['query']),
+  'estimateICPForImages' : IDL.Func(
+      [IDL.Nat, IDL.Float64],
+      [IDL.Float64],
+      ['query'],
+    ),
+  'estimateImagesForICP' : IDL.Func(
+      [IDL.Float64, IDL.Float64],
+      [IDL.Nat],
+      ['query'],
+    ),
   'getAllPublicNFTs' : IDL.Func([], [IDL.Vec(NFTMetadata)], ['query']),
+  'getAllPublicNFTsByOwner' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Vec(NFTMetadata)],
+      ['query'],
+    ),
   'getAllPublicNFTsPaginated' : IDL.Func(
       [IDL.Nat, IDL.Nat],
       [NFTPage],
       ['query'],
     ),
-  'getCollectionPhase' : IDL.Func(
-      [IDL.Principal],
-      [CollectionPhase],
-      ['query'],
-    ),
+  'getCollectionPhase' : IDL.Func([IDL.Principal], [CollectionPhase], []),
+  'getICPPrice' : IDL.Func([], [IDL.Float64], []),
   'getMyCollection' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(IDL.Principal)],
       ['query'],
     ),
-  'getMyMintCount' : IDL.Func([IDL.Principal], [IDL.Nat], ['query']),
-  'getMyNFTs' : IDL.Func([], [IDL.Vec(NFTMetadata)], ['query']),
-  'getMyNFTsPaginated' : IDL.Func([IDL.Nat, IDL.Nat], [NFTPage], ['query']),
+  'getMyCollectionCycles' : IDL.Func([], [IDL.Nat], []),
+  'getMyHealthStatus' : IDL.Func([], [HealthStatus], []),
+  'getMyMintCount' : IDL.Func([IDL.Principal], [IDL.Nat], []),
+  'getMyNFTs' : IDL.Func([], [IDL.Vec(NFTMetadata)], []),
+  'getMyNFTsPaginated' : IDL.Func([IDL.Nat, IDL.Nat], [NFTPage], []),
   'getNFT' : IDL.Func([TokenId], [IDL.Opt(NFTMetadata)], ['query']),
   'getNFTHistory' : IDL.Func(
       [TokenId],
@@ -115,7 +142,14 @@ export const idlService = IDL.Service({
     ),
   'icrc7_total_supply' : IDL.Func([], [IDL.Nat], ['query']),
   'mintNFT' : IDL.Func(
-      [IDL.Text, IDL.Text, IDL.Vec(IDL.Nat8), IDL.Opt(IDL.Principal), IDL.Bool],
+      [
+        IDL.Text,
+        IDL.Text,
+        IDL.Vec(IDL.Nat8),
+        IDL.Opt(IDL.Principal),
+        IDL.Bool,
+        IDL.Opt(IDL.Text),
+      ],
       [MintResult],
       [],
     ),
@@ -144,15 +178,27 @@ export const idlFactory = ({ IDL }) => {
     'history' : IDL.Vec(TransactionEvent),
     'image' : IDL.Vec(IDL.Nat8),
     'isPublic' : IDL.Bool,
+    'collectionName' : IDL.Opt(IDL.Text),
   });
   const NFTPage = IDL.Record({
     'total' : IDL.Nat,
     'items' : IDL.Vec(NFTMetadata),
   });
   const CollectionPhase = IDL.Variant({
-    'premium' : IDL.Null,
-    'free' : IDL.Null,
-    'bonus' : IDL.Null,
+    'Premium' : IDL.Null,
+    'Free' : IDL.Null,
+    'Bonus' : IDL.Null,
+  });
+  const CycleHealth = IDL.Variant({
+    'red' : IDL.Null,
+    'green' : IDL.Null,
+    'yellow' : IDL.Null,
+  });
+  const HealthStatus = IDL.Record({
+    'status' : IDL.Text,
+    'imagesRemaining' : IDL.Nat,
+    'healthColor' : CycleHealth,
+    'daysRemaining' : IDL.Nat,
   });
   const Standard = IDL.Record({ 'url' : IDL.Text, 'name' : IDL.Text });
   const Account = IDL.Record({
@@ -179,26 +225,41 @@ export const idlFactory = ({ IDL }) => {
   const TransferResult = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
   
   return IDL.Service({
-    'createMyCollection' : IDL.Func([], [IDL.Text], []),
+    'createMyCollection' : IDL.Func([], [IDL.Principal], []),
+    'estimateCycles' : IDL.Func([IDL.Nat], [IDL.Nat], ['query']),
+    'estimateICPForImages' : IDL.Func(
+        [IDL.Nat, IDL.Float64],
+        [IDL.Float64],
+        ['query'],
+      ),
+    'estimateImagesForICP' : IDL.Func(
+        [IDL.Float64, IDL.Float64],
+        [IDL.Nat],
+        ['query'],
+      ),
     'getAllPublicNFTs' : IDL.Func([], [IDL.Vec(NFTMetadata)], ['query']),
+    'getAllPublicNFTsByOwner' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(NFTMetadata)],
+        ['query'],
+      ),
     'getAllPublicNFTsPaginated' : IDL.Func(
         [IDL.Nat, IDL.Nat],
         [NFTPage],
         ['query'],
       ),
-    'getCollectionPhase' : IDL.Func(
-        [IDL.Principal],
-        [CollectionPhase],
-        ['query'],
-      ),
+    'getCollectionPhase' : IDL.Func([IDL.Principal], [CollectionPhase], []),
+    'getICPPrice' : IDL.Func([], [IDL.Float64], []),
     'getMyCollection' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(IDL.Principal)],
         ['query'],
       ),
-    'getMyMintCount' : IDL.Func([IDL.Principal], [IDL.Nat], ['query']),
-    'getMyNFTs' : IDL.Func([], [IDL.Vec(NFTMetadata)], ['query']),
-    'getMyNFTsPaginated' : IDL.Func([IDL.Nat, IDL.Nat], [NFTPage], ['query']),
+    'getMyCollectionCycles' : IDL.Func([], [IDL.Nat], []),
+    'getMyHealthStatus' : IDL.Func([], [HealthStatus], []),
+    'getMyMintCount' : IDL.Func([IDL.Principal], [IDL.Nat], []),
+    'getMyNFTs' : IDL.Func([], [IDL.Vec(NFTMetadata)], []),
+    'getMyNFTsPaginated' : IDL.Func([IDL.Nat, IDL.Nat], [NFTPage], []),
     'getNFT' : IDL.Func([TokenId], [IDL.Opt(NFTMetadata)], ['query']),
     'getNFTHistory' : IDL.Func(
         [TokenId],
@@ -233,6 +294,7 @@ export const idlFactory = ({ IDL }) => {
           IDL.Vec(IDL.Nat8),
           IDL.Opt(IDL.Principal),
           IDL.Bool,
+          IDL.Opt(IDL.Text),
         ],
         [MintResult],
         [],

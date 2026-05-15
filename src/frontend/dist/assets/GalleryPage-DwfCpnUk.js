@@ -1,16 +1,9 @@
-import { c as createLucideIcon, r as reactExports, j as jsxRuntimeExports, C as Check, X, V as Variant_Mint_Transfer, P as Principal, d as Copy, e as copyToClipboard, u as useAuth } from "./index-CQ236Vkp.js";
-import { u as useAddressHistory, C as Clock, I as ImageLightbox } from "./useAddressHistory-DkyiQF1t.js";
-import { u as useTransferNFT, a as useSetNFTVisibility, b as useGetNFTHistory, n as nftImageUrl, c as useGetMyNFTs } from "./nftImage-Bq6LRRLt.js";
-import { S as Skeleton } from "./skeleton-bmtD0niL.js";
-import "./utils-DWi2mX0G.js";
-/**
- * @license lucide-react v0.511.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */
-const __iconNode$5 = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
-const ChevronDown = createLucideIcon("chevron-down", __iconNode$5);
+import { c as createLucideIcon, r as reactExports, j as jsxRuntimeExports, C as Check, X, V as Variant_Mint_Transfer, P as Principal, d as Copy, e as copyToClipboard, f as useAuth, u as useTranslation } from "./index-B8lwuDBy.js";
+import { u as useAddressHistory, C as Clock, I as ImageLightbox } from "./useAddressHistory-CndP1UJA.js";
+import { u as useTransferNFT, a as useSetNFTVisibility, b as useGetNFTHistory, c as useGetMyNFTs, d as useGetAllPublicNFTs } from "./useQueries-D31pTvel.js";
+import { n as nftImageUrl } from "./utils-BsXaUsmB.js";
+import { C as ChevronDown } from "./chevron-down-DurnAk45.js";
+import { S as Skeleton } from "./skeleton-C_-9GLZE.js";
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -663,8 +656,15 @@ async function loadEnvConfig() {
   };
 }
 function GalleryPage() {
-  const { data: nfts, isLoading, isError } = useGetMyNFTs();
+  const {
+    data: myNfts,
+    isLoading: myLoading,
+    isError: myError
+  } = useGetMyNFTs();
+  const { data: allPublicNfts, isLoading: othersLoading } = useGetAllPublicNFTs();
   const { principalText } = useAuth();
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = reactExports.useState("collection");
   const [canisterId, setCanisterId] = reactExports.useState("");
   const [copiedCanister, setCopiedCanister] = reactExports.useState(false);
   const [copiedPrincipal, setCopiedPrincipal] = reactExports.useState(false);
@@ -686,10 +686,29 @@ function GalleryPage() {
       setTimeout(() => setCopiedPrincipal(false), 2e3);
     }
   };
+  const collectionNfts = (myNfts == null ? void 0 : myNfts.filter((nft) => !!nft.collectionName)) ?? [];
+  const standaloneNfts = (myNfts == null ? void 0 : myNfts.filter((nft) => !nft.collectionName)) ?? [];
+  const otherNfts = (allPublicNfts == null ? void 0 : allPublicNfts.filter((nft) => nft.owner.toText() !== principalText)) ?? [];
+  const isLoading = activeTab === "others" ? othersLoading : myLoading;
+  const isError = activeTab === "others" ? false : myError;
+  const currentNfts = activeTab === "collection" ? collectionNfts : activeTab === "standalone" ? standaloneNfts : otherNfts;
+  const tabs = [
+    {
+      id: "collection",
+      label: t("tabs.myCollection"),
+      count: collectionNfts.length
+    },
+    {
+      id: "standalone",
+      label: t("tabs.standalone"),
+      count: standaloneNfts.length
+    },
+    { id: "others", label: t("tabs.others") }
+  ];
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "section-content space-y-8", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-4 mb-2", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-5xl", "aria-hidden": "true", children: "▦" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("h1", { className: "font-display text-3xl md:text-4xl font-bold text-foreground tracking-tight", children: "Galéria" })
+      /* @__PURE__ */ jsxRuntimeExports.jsx("h1", { className: "font-display text-3xl md:text-4xl font-bold text-foreground tracking-tight", children: t("messages.galleryTitle") })
     ] }),
     principalText && /* @__PURE__ */ jsxRuntimeExports.jsx(
       "div",
@@ -698,9 +717,9 @@ function GalleryPage() {
         className: "border-2 border-primary/30 bg-card rounded-3xl px-6 py-5",
         children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col sm:flex-row sm:items-center gap-3", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 min-w-0", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1", children: "Vaše Principal ID" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1", children: t("labels.principalId") }),
             /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs font-mono text-foreground break-all leading-relaxed", children: principalText }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[10px] text-muted-foreground mt-1.5", children: "Zddieľajte toto ID s ostatnými, aby vám mohli previesť NFT." })
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[10px] text-muted-foreground mt-1.5", children: t("labels.principalShare") })
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
             "button",
@@ -708,14 +727,14 @@ function GalleryPage() {
               type: "button",
               "data-ocid": "gallery.copy_principal_button",
               onClick: handleCopyPrincipal,
-              "aria-label": "Kopírovať Principal ID",
+              "aria-label": t("aria.copyPrincipal"),
               className: "self-start sm:self-center shrink-0 flex items-center gap-1.5 px-4 py-2 glass-card rounded-2xl hover:bg-white/10 transition-colors duration-200 text-xs text-muted-foreground hover:text-foreground",
               children: copiedPrincipal ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
                 /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { className: "w-3.5 h-3.5 text-primary" }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-semibold text-primary", children: "Skopírované!" })
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-semibold text-primary", children: t("buttons.copied") })
               ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
                 /* @__PURE__ */ jsxRuntimeExports.jsx(Copy, { className: "w-3.5 h-3.5" }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: "Kopírovať" })
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: t("buttons.copy") })
               ] })
             }
           )
@@ -730,9 +749,9 @@ function GalleryPage() {
         children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 text-muted-foreground shrink-0", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(Wallet, { className: "w-4 h-4 text-primary" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-semibold uppercase tracking-wider text-foreground", children: "Canister ID" })
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-semibold uppercase tracking-wider text-foreground", children: t("labels.canisterId") })
           ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground flex-1", children: "Canister tejto kolekcie na ICP blockchaine." }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground flex-1", children: t("labels.canisterDesc") }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("code", { className: "text-xs font-mono bg-background border-2 border-border rounded-xl px-3 py-1.5 text-foreground select-all", children: canisterId }),
             /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -741,13 +760,53 @@ function GalleryPage() {
                 type: "button",
                 "data-ocid": "gallery.copy_canister_button",
                 onClick: handleCopyCanister,
-                "aria-label": "Kopírovať canister ID",
+                "aria-label": t("aria.copyCanister"),
                 className: "p-2.5 border-2 border-border rounded-xl bg-background hover:bg-muted transition-colors duration-200 text-muted-foreground hover:text-foreground",
                 children: copiedCanister ? /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { className: "w-3.5 h-3.5 text-primary" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Copy, { className: "w-3.5 h-3.5" })
               }
             )
           ] })
         ]
+      }
+    ),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "div",
+      {
+        "data-ocid": "gallery.tabs",
+        className: "flex gap-2",
+        role: "tablist",
+        "aria-label": t("aria.gallerySections"),
+        children: tabs.map((tab) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "button",
+          {
+            type: "button",
+            role: "tab",
+            "data-ocid": `gallery.${tab.id}_tab`,
+            "aria-selected": activeTab === tab.id,
+            onClick: () => setActiveTab(tab.id),
+            className: "flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            style: {
+              background: activeTab === tab.id ? "linear-gradient(135deg, rgba(var(--theme-color-1-rgb,180,80,220),0.25), rgba(var(--theme-color-2-rgb,230,100,180),0.15))" : "rgba(255,255,255,0.07)",
+              border: activeTab === tab.id ? "1.5px solid rgba(var(--theme-color-1-rgb,180,80,220),0.5)" : "1.5px solid rgba(255,255,255,0.12)",
+              color: activeTab === tab.id ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.5)"
+            },
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: tab.label }),
+              tab.count !== void 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "span",
+                {
+                  className: "rounded-full px-1.5 py-0.5 text-[10px] font-bold min-w-[18px] text-center",
+                  style: {
+                    background: activeTab === tab.id ? "rgba(var(--theme-color-1-rgb,180,80,220),0.35)" : "rgba(255,255,255,0.10)",
+                    color: activeTab === tab.id ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.4)"
+                  },
+                  children: tab.count
+                }
+              )
+            ]
+          },
+          tab.id
+        ))
       }
     ),
     isLoading && /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -774,7 +833,7 @@ function GalleryPage() {
       }
     ),
     isError && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { "data-ocid": "gallery.error_state", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "border border-destructive/50 bg-destructive/5 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center gap-3", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-destructive font-semibold flex-1", children: "Chyba pri načítávaní NFT. Skúste obnoviť stránku." }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-destructive font-semibold flex-1", children: t("errors.loadError") }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(
         "button",
         {
@@ -782,32 +841,69 @@ function GalleryPage() {
           "data-ocid": "gallery.manual_reload_button",
           onClick: () => window.location.reload(),
           className: "shrink-0 px-4 py-2 rounded-xl border-2 border-destructive/40 bg-destructive/10 text-destructive text-xs font-semibold hover:bg-destructive/20 transition-colors duration-200",
-          children: "Obnoviť stránku"
+          children: t("buttons.reload")
         }
       )
     ] }) }),
-    !isLoading && !isError && nfts && nfts.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    !isLoading && !isError && currentNfts.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
       {
         "data-ocid": "gallery.empty_state",
         className: "border-2 border-border bg-card rounded-3xl p-12 flex flex-col items-center text-center gap-4",
         children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-6xl", "aria-hidden": "true", children: "🎨" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-6xl", "aria-hidden": "true", children: activeTab === "collection" ? "🗂️" : activeTab === "standalone" ? "🎨" : "🌐" }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-display font-bold text-foreground text-lg", children: "Žiadne NFT" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground mt-1", children: "Zatiaľ ste nevyrazili žiadne NFT. Vyrazte svoje prvé NFT!" })
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-display font-bold text-foreground text-lg", children: activeTab === "collection" ? t("messages.noCollectionNFTs") : activeTab === "standalone" ? t("messages.noStandaloneNFTs") : t("messages.noOthersNFTs") }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground mt-1", children: activeTab === "collection" ? t("messages.noCollectionNFTsDesc") : activeTab === "standalone" ? t("messages.noStandaloneNFTsDesc") : t("messages.noOthersNFTsDesc") })
           ] })
         ]
       }
     ),
-    !isLoading && nfts && nfts.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { children: [
+    !isLoading && currentNfts.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("section", { children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4", children: [
-        "Galéria · ",
-        nfts.length,
+        activeTab === "collection" ? t("messages.myCollectionSection") : activeTab === "standalone" ? t("messages.standaloneSection") : t("messages.othersSection"),
         " ",
-        nfts.length === 1 ? "token" : "tokenov"
+        "· ",
+        currentNfts.length,
+        " ",
+        currentNfts.length === 1 ? "token" : "tokenov"
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-2.5", children: nfts.map((nft, i) => /* @__PURE__ */ jsxRuntimeExports.jsx(NFTCard, { nft, index: i + 1 }, nft.tokenId.toString())) })
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-2.5", children: currentNfts.map((nft, i) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "relative", children: [
+        activeTab === "others" && nft.collectionName && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute top-2 left-2 z-10", children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "span",
+          {
+            className: "inline-flex items-center gap-1 rounded-xl px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
+            style: {
+              background: "rgba(var(--theme-color-1-rgb,180,80,220),0.28)",
+              border: "1px solid rgba(var(--theme-color-1-rgb,180,80,220),0.45)",
+              color: "rgba(255,255,255,0.85)",
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)"
+            },
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "svg",
+                {
+                  viewBox: "0 0 12 12",
+                  className: "w-2.5 h-2.5",
+                  fill: "none",
+                  stroke: "currentColor",
+                  strokeWidth: "1.5",
+                  "aria-hidden": "true",
+                  children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("rect", { x: "1", y: "4", width: "10", height: "7", rx: "1.5" }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M3.5 4V3a1.5 1.5 0 0 1 3 0v1" })
+                  ]
+                }
+              ),
+              t("messages.collectionBadge"),
+              ": ",
+              nft.collectionName
+            ]
+          }
+        ) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(NFTCard, { nft, index: i + 1 })
+      ] }, nft.tokenId.toString())) })
     ] })
   ] });
 }

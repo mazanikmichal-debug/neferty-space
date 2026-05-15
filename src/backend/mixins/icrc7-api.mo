@@ -76,7 +76,7 @@ mixin (state : NFTLib.State) {
   public query func icrc7_tokens_of(account : Account, prev : ?Nat, take : ?Nat) : async [Nat] {
     let owned = state.nfts.entries()
       .filter(func((_, nft)) { Principal.equal(nft.owner, account.owner) })
-      .map(func((id, _)) { id })
+      .map<(Nat, NFTLib.State), Nat>(func(entry) { entry.0 })
       .toArray();
     let startIndex = switch (prev) {
       case null 0;

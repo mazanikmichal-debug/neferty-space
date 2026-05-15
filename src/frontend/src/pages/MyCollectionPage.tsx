@@ -6,6 +6,7 @@ import { useBackend } from "@/context/BackendContext";
 import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { Layers, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { CyclesCalculator } from "../components/CyclesCalculator";
 
 // ---------- helpers ----------
 function glassInput(hasError = false) {
@@ -72,17 +73,17 @@ function GradientButton({
 
 // ---------- phase helpers ----------
 const PHASE_CONFIG = {
-  [CollectionPhase.free]: {
+  [CollectionPhase.Free]: {
     limit: 10,
     label: "Fáza 1: 0–10 NFT zadarmo",
     color: "#22d3ee",
   },
-  [CollectionPhase.bonus]: {
+  [CollectionPhase.Bonus]: {
     limit: 25,
     label: "Fáza 2: 10–25 NFT (bonus cycles)",
     color: "#a78bfa",
   },
-  [CollectionPhase.premium]: {
+  [CollectionPhase.Premium]: {
     limit: null,
     label: "Fáza 3: Prémiový umelec",
     color: "#fbbf24",
@@ -105,7 +106,7 @@ function PhaseIndicator({
         >
           {cfg.label}
         </span>
-        {phase === CollectionPhase.premium ? (
+        {phase === CollectionPhase.Premium ? (
           <span
             className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full"
             style={{
@@ -140,8 +141,11 @@ function PhaseIndicator({
   );
 }
 
-// ---------- Payment Required Modal ----------
-function PaymentModal({ onClose }: { onClose: () => void }) {
+// ---------- Payment Modal (wraps CyclesCalculator) ----------
+function PaymentModal({
+  onClose,
+  onTopUp,
+}: { onClose: () => void; onTopUp: (icpAmount: number) => void }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -153,9 +157,9 @@ function PaymentModal({ onClose }: { onClose: () => void }) {
   return (
     <dialog
       data-ocid="mycollection.payment_dialog"
-      open
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 m-0 max-w-none w-full h-full border-none bg-transparent"
       aria-labelledby="payment-modal-title"
+      open
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 m-0 w-full h-full max-w-none max-h-none border-0 bg-transparent"
       style={{
         background: "rgba(0,0,0,0.72)",
         backdropFilter: "blur(16px)",
@@ -172,6 +176,7 @@ function PaymentModal({ onClose }: { onClose: () => void }) {
           boxShadow: "0 24px 80px rgba(0,0,0,0.6)",
         }}
       >
+        {/* Close button */}
         <button
           type="button"
           data-ocid="mycollection.payment_modal.close_button"
@@ -186,7 +191,8 @@ function PaymentModal({ onClose }: { onClose: () => void }) {
           <X className="w-4 h-4 text-white" />
         </button>
 
-        <div className="flex items-center gap-3">
+        {/* Header */}
+        <div className="flex items-center gap-3 pr-10">
           <div
             className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
             style={{
@@ -200,61 +206,12 @@ function PaymentModal({ onClose }: { onClose: () => void }) {
             id="payment-modal-title"
             className="font-display font-bold text-xl text-foreground"
           >
-            Limit dosiahnutý
+            Dobiť zbierku
           </h2>
         </div>
 
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Dosiahol si limit{" "}
-          <span className="text-foreground font-semibold">25 NFT</span>. Pre
-          ďalšiu tvorbu prosím vlož ICP.
-        </p>
-
-        <div
-          className="rounded-2xl p-4 space-y-2"
-          style={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.10)",
-          }}
-        >
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-            Ako sa rozdeľujú prostriedky
-          </p>
-          {[
-            { pct: "70%", desc: "Cycles pre tvoju zbierku", color: "#22d3ee" },
-            {
-              pct: "20%",
-              desc: "Komunitný fond pre nových umelcov",
-              color: "#a78bfa",
-            },
-            {
-              pct: "10%",
-              desc: "Rozvoj platformy Neferty Space",
-              color: "#fbbf24",
-            },
-          ].map((item) => (
-            <div key={item.pct} className="flex items-center gap-3">
-              <span
-                className="text-sm font-bold font-mono min-w-[40px]"
-                style={{ color: item.color }}
-              >
-                {item.pct}
-              </span>
-              <span className="text-sm text-muted-foreground">{item.desc}</span>
-            </div>
-          ))}
-        </div>
-
-        <button
-          type="button"
-          data-ocid="mycollection.payment_modal.confirm_button"
-          onClick={onClose}
-          className="relative overflow-hidden w-full rounded-2xl py-4 font-display font-bold text-sm uppercase tracking-widest text-white transition-all duration-200 hover:scale-[1.02]"
-          style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.2)" }}
-        >
-          <span className="gradient-btn-inner" aria-hidden="true" />
-          <span className="relative z-[1]">Rozumiem</span>
-        </button>
+        {/* Calculator */}
+        <CyclesCalculator onTopUp={onTopUp} onClose={onClose} />
       </div>
     </dialog>
   );
@@ -267,7 +224,7 @@ export default function MyCollectionPage() {
 
   // collection state
   const [collectionId, setCollectionId] = useState<string | null>(null);
-  const [phase, setPhase] = useState<CollectionPhase>(CollectionPhase.free);
+  const [phase, setPhase] = useState<CollectionPhase>(CollectionPhase.Free);
   const [mintCount, setMintCount] = useState(0);
   const [loadingCollection, setLoadingCollection] = useState(true);
   const [collectionError, setCollectionError] = useState<string | null>(null);
@@ -362,12 +319,21 @@ export default function MyCollectionPage() {
     }
   };
 
+  const handleTopUp = (icpAmount: number) => {
+    alert(
+      `Funkcia dobíjania bude čoskoro dostupná. Potrebná suma: ${icpAmount.toFixed(4)} ICP`,
+    );
+    setShowPaymentModal(false);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setMintFile(file);
     setMintPreview(URL.createObjectURL(file));
     setMintFormErrors((p) => ({ ...p, image: undefined }));
+    const autoName = file.name.replace(/\.[^.]*$/, "");
+    if (!mintName) setMintName(autoName);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLElement>) => {
@@ -378,6 +344,8 @@ export default function MyCollectionPage() {
     setMintFile(file);
     setMintPreview(URL.createObjectURL(file));
     setMintFormErrors((p) => ({ ...p, image: undefined }));
+    const autoName = file.name.replace(/\.[^.]*$/, "");
+    if (!mintName) setMintName(autoName);
   };
 
   const handleMintSubmit = async (e: React.FormEvent) => {
@@ -399,6 +367,7 @@ export default function MyCollectionPage() {
         bytes,
         null,
         true,
+        null,
       );
 
       if (result.__kind__ === "paymentRequired") {
@@ -441,7 +410,10 @@ export default function MyCollectionPage() {
   return (
     <>
       {showPaymentModal && (
-        <PaymentModal onClose={() => setShowPaymentModal(false)} />
+        <PaymentModal
+          onClose={() => setShowPaymentModal(false)}
+          onTopUp={handleTopUp}
+        />
       )}
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 space-y-8">
@@ -588,6 +560,30 @@ export default function MyCollectionPage() {
               >
                 <PhaseIndicator phase={phase} mintCount={mintCount} />
               </div>
+
+              {/* Premium phase — top-up CTA */}
+              {phase === CollectionPhase.Premium && (
+                <button
+                  type="button"
+                  data-ocid="mycollection.topup_button"
+                  onClick={() => setShowPaymentModal(true)}
+                  className="relative overflow-hidden w-full rounded-2xl py-3.5 font-display font-bold text-sm uppercase tracking-widest text-white transition-all duration-200 hover:scale-[1.02]"
+                  style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.2)" }}
+                >
+                  <span
+                    className="absolute inset-0 rounded-2xl"
+                    aria-hidden="true"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, rgba(251,191,36,0.85), rgba(245,158,11,0.75))",
+                    }}
+                  />
+                  <span className="relative z-[1] flex items-center justify-center gap-2">
+                    <Sparkles className="w-4 h-4" />
+                    Dobiť zbierku
+                  </span>
+                </button>
+              )}
             </div>
           </GlassCard>
         )}

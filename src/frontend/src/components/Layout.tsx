@@ -8,25 +8,27 @@ import {
   Copy,
   Home,
   Images,
-  Layers,
   Settings,
+  Sliders,
   Sparkles,
   Star,
   Store,
 } from "lucide-react";
 import React from "react";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const NAV_LINKS = [
-  { to: "/", label: "Domov", Icon: Home },
-  { to: "/mint", label: "Raziť", Icon: Sparkles },
-  { to: "/gallery", label: "Galéria", Icon: Images },
-  { to: "/my-collection", label: "Moja Zbierka", Icon: Layers },
-  { to: "/marketplace", label: "Trhovisko", Icon: Store },
-  { to: "/rating", label: "Hodnotenie", Icon: Star },
+  { to: "/", key: "home", Icon: Home },
+  { to: "/mint", key: "mint", Icon: Sparkles },
+  { to: "/gallery", key: "gallery", Icon: Images },
+  { to: "/marketplace", key: "marketplace", Icon: Store },
+  { to: "/rating", key: "rating", Icon: Star },
+  { to: "/settings", key: "settings", Icon: Sliders },
 ];
 
 export function Layout({ children }: LayoutProps) {
@@ -39,6 +41,7 @@ export function Layout({ children }: LayoutProps) {
   } = useAuth();
   const { isOpen: themeOpen, setIsOpen: setThemeOpen } = useTheme();
   const [copiedPrincipal, setCopiedPrincipal] = React.useState(false);
+  const { t } = useTranslation();
 
   const handleCopyPrincipal = async () => {
     if (!principalText) return;
@@ -76,12 +79,13 @@ export function Layout({ children }: LayoutProps) {
             </span>
             {isAuthenticated && (
               <div className="flex items-center gap-3">
+                <LanguageSwitcher />
                 {shortPrincipal && principalText && (
                   <button
                     type="button"
                     data-ocid="nav.copy_principal_button"
                     onClick={handleCopyPrincipal}
-                    aria-label="Kopírovať Principal ID"
+                    aria-label={t("aria.copyPrincipal")}
                     title={principalText}
                     className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors duration-200 rounded-2xl px-3 py-2 glass-nav-inactive hover:border-primary/40"
                   >
@@ -97,7 +101,7 @@ export function Layout({ children }: LayoutProps) {
                   type="button"
                   data-ocid="nav.settings_button"
                   onClick={() => setThemeOpen(true)}
-                  aria-label="Nastavenia dizajnu"
+                  aria-label={t("aria.designSettings")}
                   className="flex items-center justify-center w-9 h-9 rounded-2xl transition-all duration-200 text-white hover:scale-110"
                   style={{
                     background: "rgba(255,255,255,0.09)",
@@ -117,7 +121,7 @@ export function Layout({ children }: LayoutProps) {
                   }}
                 >
                   <span className="gradient-btn-inner" aria-hidden="true" />
-                  <span className="relative z-[1]">Odhlásiť</span>
+                  <span className="relative z-[1]">{t("buttons.logout")}</span>
                 </button>
               </div>
             )}
@@ -127,7 +131,7 @@ export function Layout({ children }: LayoutProps) {
           {isAuthenticated && (
             <nav
               className="flex items-stretch gap-3"
-              aria-label="Hlavná navigácia"
+              aria-label={t("aria.mainNav")}
             >
               {NAV_LINKS.map((link) => {
                 const active =
@@ -163,7 +167,7 @@ export function Layout({ children }: LayoutProps) {
                       aria-hidden="true"
                     />
                     <span className="text-[11px] uppercase tracking-widest font-bold relative z-[1]">
-                      {link.label}
+                      {t(`nav.${link.key}`)}
                     </span>
                   </Link>
                 );

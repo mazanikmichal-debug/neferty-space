@@ -1,7 +1,7 @@
-import { o, r as reactExports, v as vt, i as useRatingDisplay, j as jsxRuntimeExports, h as reactDomExports, R as RATING_DISPLAY_PRESETS } from "./index-CQ236Vkp.js";
-import { S as Skeleton } from "./skeleton-bmtD0niL.js";
-import { e as useGetAllPublicNFTs, n as nftImageUrl } from "./nftImage-Bq6LRRLt.js";
-import "./utils-DWi2mX0G.js";
+import { o, r as reactExports, v as vt, u as useTranslation, i as useRatingDisplay, j as jsxRuntimeExports, h as reactDomExports, k as RATING_DISPLAY_PRESETS } from "./index-B8lwuDBy.js";
+import { S as Skeleton } from "./skeleton-C_-9GLZE.js";
+import { d as useGetAllPublicNFTs } from "./useQueries-D31pTvel.js";
+import { n as nftImageUrl } from "./utils-BsXaUsmB.js";
 var jt = (n) => {
   switch (n) {
     case "success":
@@ -302,6 +302,7 @@ function useShuffledNFTs(nfts) {
 const EMOTIONS = [
   {
     id: -3,
+    labelKey: "emotions.disgusting",
     label: "Odporné",
     size: 56,
     colorBg: "rgba(220,38,38,0.18)",
@@ -311,6 +312,7 @@ const EMOTIONS = [
   },
   {
     id: -2,
+    labelKey: "emotions.boring",
     label: "Nudné",
     size: 46,
     colorBg: "rgba(234,88,12,0.18)",
@@ -320,6 +322,7 @@ const EMOTIONS = [
   },
   {
     id: -1,
+    labelKey: "emotions.weak",
     label: "Slabé",
     size: 34,
     colorBg: "rgba(202,138,4,0.18)",
@@ -329,6 +332,7 @@ const EMOTIONS = [
   },
   {
     id: 0,
+    labelKey: "emotions.neutral",
     label: "Jedno mi to",
     size: 64,
     colorBg: "rgba(156,163,175,0.18)",
@@ -338,6 +342,7 @@ const EMOTIONS = [
   },
   {
     id: 1,
+    labelKey: "emotions.interesting",
     label: "Zaujímavé",
     size: 34,
     colorBg: "rgba(34,197,94,0.18)",
@@ -347,6 +352,7 @@ const EMOTIONS = [
   },
   {
     id: 2,
+    labelKey: "emotions.likeIt",
     label: "Páči sa mi",
     size: 46,
     colorBg: "rgba(6,182,212,0.18)",
@@ -356,6 +362,7 @@ const EMOTIONS = [
   },
   {
     id: 3,
+    labelKey: "emotions.beautiful",
     label: "Nádherné",
     size: 56,
     colorBg: "rgba(59,130,246,0.18)",
@@ -509,6 +516,7 @@ function EmotionCircle({
   selected,
   onSelect
 }) {
+  const { t } = useTranslation();
   const [hovered, setHovered] = reactExports.useState(false);
   const d = emotion.size;
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
@@ -521,7 +529,7 @@ function EmotionCircle({
           "button",
           {
             type: "button",
-            "aria-label": emotion.label,
+            "aria-label": t(emotion.labelKey),
             "aria-pressed": selected,
             onClick: onSelect,
             onMouseEnter: () => setHovered(true),
@@ -556,7 +564,7 @@ function EmotionCircle({
               fontWeight: 600,
               letterSpacing: "0.03em"
             },
-            children: emotion.label
+            children: t(emotion.labelKey)
           }
         )
       ]
@@ -961,21 +969,21 @@ const SHAPE_ICONS = {
   )
 };
 const SHAPE_LABELS = {
-  line: "Priamka",
-  "arc-up": "Oblúk hore",
-  "arc-down": "Oblúk dole",
-  "arc-left": "Oblúk ľavo",
-  "arc-right": "Oblúk pravo",
-  spiral: "Špirála",
-  fan: "Vejár",
-  wave: "Vlna",
-  grid: "Mriežka",
-  steps: "Stupne",
-  circle: "Kruh",
-  teardrop: "Kvapka",
-  concentric: "Sústrečné",
-  diamond: "Diamant",
-  cascade: "Kaskáda"
+  line: "rating.shapes.line",
+  "arc-up": "rating.shapes.arc-up",
+  "arc-down": "rating.shapes.arc-down",
+  "arc-left": "rating.shapes.arc-left",
+  "arc-right": "rating.shapes.arc-right",
+  spiral: "rating.shapes.spiral",
+  fan: "rating.shapes.fan",
+  wave: "rating.shapes.wave",
+  grid: "rating.shapes.grid",
+  steps: "rating.shapes.steps",
+  circle: "rating.shapes.circle",
+  teardrop: "rating.shapes.teardrop",
+  concentric: "rating.shapes.concentric",
+  diamond: "rating.shapes.diamond",
+  cascade: "rating.shapes.cascade"
 };
 const ALL_SHAPES = [
   "line",
@@ -1416,6 +1424,7 @@ function RatingArrangementPanel({
   loadProfile,
   deleteProfile
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = reactExports.useState(false);
   const [profileNameInput, setProfileNameInput] = reactExports.useState("");
   const [isDragging, setIsDragging] = reactExports.useState(false);
@@ -1493,7 +1502,7 @@ function RatingArrangementPanel({
           "div",
           {
             onMouseDown: onDragHandleMouseDown,
-            title: "Potiahnite pre presun",
+            title: t("rating.labels.dragToMove"),
             style: {
               width: "100%",
               height: 20,
@@ -1543,7 +1552,7 @@ function RatingArrangementPanel({
                   type: "button",
                   "data-ocid": "rating.reset_settings_button",
                   onClick: resetToDefault,
-                  "aria-label": "Resetovať nastavenia",
+                  "aria-label": t("rating.labels.resetSettings"),
                   style: {
                     flex: 1,
                     height: 30,
@@ -1568,7 +1577,7 @@ function RatingArrangementPanel({
                   },
                   children: [
                     /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontSize: 13, lineHeight: 1 }, children: "↺" }),
-                    "Resetovať"
+                    t("buttons.reset")
                   ]
                 }
               ),
@@ -1578,7 +1587,7 @@ function RatingArrangementPanel({
                   type: "button",
                   "data-ocid": "rating.randomize_settings_button",
                   onClick: () => updateSettings(buildRandomSettings()),
-                  "aria-label": "Náhodné nastavenia",
+                  "aria-label": t("rating.labels.randomSettings"),
                   style: {
                     flex: 1,
                     height: 30,
@@ -1603,7 +1612,7 @@ function RatingArrangementPanel({
                   },
                   children: [
                     /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontSize: 12, lineHeight: 1 }, children: "🎲" }),
-                    "Náhodné"
+                    t("buttons.random")
                   ]
                 }
               )
@@ -1633,7 +1642,7 @@ function RatingArrangementPanel({
                   type: "button",
                   "data-ocid": "rating.arrangement_settings_button",
                   onClick: () => setOpen((v2) => !v2),
-                  "aria-label": "Nastavenia zoradenia",
+                  "aria-label": t("rating.labels.settings"),
                   style: {
                     width: 32,
                     height: 32,
@@ -1678,7 +1687,7 @@ function RatingArrangementPanel({
                     letterSpacing: "0.05em",
                     pointerEvents: "none"
                   },
-                  children: "Nastavenia"
+                  children: t("rating.labels.settings")
                 }
               )
             ]
@@ -1712,123 +1721,130 @@ function RatingArrangementPanel({
                   overflowY: "auto"
                 },
                 children: [
-                  /* @__PURE__ */ jsxRuntimeExports.jsxs(PanelSection, { title: "Tvar a zoradenie", defaultOpen: true, children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      "div",
-                      {
-                        style: {
-                          display: "grid",
-                          gridTemplateColumns: "repeat(5,1fr)",
-                          gap: 4,
-                          marginBottom: 12
-                        },
-                        children: ALL_SHAPES.map((shape) => {
-                          const active = s.arrangementShape === shape;
-                          return /* @__PURE__ */ jsxRuntimeExports.jsxs(
-                            "button",
-                            {
-                              type: "button",
-                              "data-ocid": `rating.shape_${shape.replace(/-/g, "_")}_button`,
-                              onClick: () => u({ arrangementShape: shape }),
-                              "aria-label": SHAPE_LABELS[shape],
-                              style: {
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "center",
-                                gap: 3,
-                                padding: "7px 2px 5px",
-                                borderRadius: 8,
-                                border: active ? "1.5px solid rgba(255,255,255,0.45)" : "1.5px solid rgba(255,255,255,0.10)",
-                                background: active ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)",
-                                cursor: "pointer",
-                                color: active ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.40)",
-                                transition: "all 0.15s ease"
-                              },
-                              children: [
-                                /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { width: 26, height: 18 }, children: SHAPE_ICONS[shape] }),
-                                /* @__PURE__ */ jsxRuntimeExports.jsx(
-                                  "span",
-                                  {
-                                    style: {
-                                      fontSize: 7,
-                                      fontWeight: 600,
-                                      letterSpacing: "0.03em",
-                                      whiteSpace: "nowrap"
-                                    },
-                                    children: SHAPE_LABELS[shape]
-                                  }
-                                )
-                              ]
-                            },
-                            shape
-                          );
-                        })
-                      }
-                    ),
-                    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: 10 }, children: [
-                      /* @__PURE__ */ jsxRuntimeExports.jsx(
-                        "p",
-                        {
-                          style: {
-                            fontSize: 11,
-                            color: "rgba(255,255,255,0.60)",
-                            fontWeight: 600,
-                            marginBottom: 6
-                          },
-                          children: "Smer"
-                        }
-                      ),
-                      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { display: "flex", gap: 5 }, children: DIRECTION_OPTIONS.map(({ value, label }) => {
-                        const active = s.direction === value;
-                        return /* @__PURE__ */ jsxRuntimeExports.jsx(
-                          "button",
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                    PanelSection,
+                    {
+                      title: t("rating.sections.shapeArrangement"),
+                      defaultOpen: true,
+                      children: [
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          "div",
                           {
-                            type: "button",
-                            "data-ocid": `rating.direction_${value.replace("-", "_")}_button`,
-                            onClick: () => u({ direction: value }),
                             style: {
-                              flex: 1,
-                              padding: "5px 0",
-                              borderRadius: 7,
-                              border: active ? "1.5px solid rgba(255,255,255,0.45)" : "1.5px solid rgba(255,255,255,0.10)",
-                              background: active ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)",
-                              color: active ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.40)",
-                              fontSize: 15,
-                              cursor: "pointer",
-                              transition: "all 0.15s ease"
+                              display: "grid",
+                              gridTemplateColumns: "repeat(5,1fr)",
+                              gap: 4,
+                              marginBottom: 12
                             },
-                            children: label
-                          },
-                          value
-                        );
-                      }) })
-                    ] }),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      SliderRow,
-                      {
-                        label: "Intenzita krivky",
-                        value: s.curveIntensity,
-                        min: 0,
-                        max: 100,
-                        step: 5,
-                        ocid: "rating.curveIntensity_slider",
-                        onChange: (v2) => u({ curveIntensity: v2 })
-                      }
-                    ),
-                    s.arrangementShape === "wave" && /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      SliderRow,
-                      {
-                        label: "Amplituda vlny",
-                        value: s.waveAmplitude,
-                        min: 0,
-                        max: 120,
-                        step: 5,
-                        ocid: "rating.waveAmplitude_slider",
-                        onChange: (v2) => u({ waveAmplitude: v2 })
-                      }
-                    )
-                  ] }),
-                  /* @__PURE__ */ jsxRuntimeExports.jsxs(PanelSection, { title: "Rozostupy a hustota", defaultOpen: true, children: [
+                            children: ALL_SHAPES.map((shape) => {
+                              const active = s.arrangementShape === shape;
+                              return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                                "button",
+                                {
+                                  type: "button",
+                                  "data-ocid": `rating.shape_${shape.replace(/-/g, "_")}_button`,
+                                  onClick: () => u({ arrangementShape: shape }),
+                                  "aria-label": t(SHAPE_LABELS[shape]),
+                                  style: {
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    gap: 3,
+                                    padding: "7px 2px 5px",
+                                    borderRadius: 8,
+                                    border: active ? "1.5px solid rgba(255,255,255,0.45)" : "1.5px solid rgba(255,255,255,0.10)",
+                                    background: active ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)",
+                                    cursor: "pointer",
+                                    color: active ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.40)",
+                                    transition: "all 0.15s ease"
+                                  },
+                                  children: [
+                                    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { width: 26, height: 18 }, children: SHAPE_ICONS[shape] }),
+                                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                                      "span",
+                                      {
+                                        style: {
+                                          fontSize: 7,
+                                          fontWeight: 600,
+                                          letterSpacing: "0.03em",
+                                          whiteSpace: "nowrap"
+                                        },
+                                        children: t(SHAPE_LABELS[shape])
+                                      }
+                                    )
+                                  ]
+                                },
+                                shape
+                              );
+                            })
+                          }
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: 10 }, children: [
+                          /* @__PURE__ */ jsxRuntimeExports.jsx(
+                            "p",
+                            {
+                              style: {
+                                fontSize: 11,
+                                color: "rgba(255,255,255,0.60)",
+                                fontWeight: 600,
+                                marginBottom: 6
+                              },
+                              children: t("rating.labels.direction")
+                            }
+                          ),
+                          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { display: "flex", gap: 5 }, children: DIRECTION_OPTIONS.map(({ value, label }) => {
+                            const active = s.direction === value;
+                            return /* @__PURE__ */ jsxRuntimeExports.jsx(
+                              "button",
+                              {
+                                type: "button",
+                                "data-ocid": `rating.direction_${value.replace("-", "_")}_button`,
+                                onClick: () => u({ direction: value }),
+                                style: {
+                                  flex: 1,
+                                  padding: "5px 0",
+                                  borderRadius: 7,
+                                  border: active ? "1.5px solid rgba(255,255,255,0.45)" : "1.5px solid rgba(255,255,255,0.10)",
+                                  background: active ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)",
+                                  color: active ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.40)",
+                                  fontSize: 15,
+                                  cursor: "pointer",
+                                  transition: "all 0.15s ease"
+                                },
+                                children: label
+                              },
+                              value
+                            );
+                          }) })
+                        ] }),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          SliderRow,
+                          {
+                            label: t("rating.labels.curveIntensity"),
+                            value: s.curveIntensity,
+                            min: 0,
+                            max: 100,
+                            step: 5,
+                            ocid: "rating.curveIntensity_slider",
+                            onChange: (v2) => u({ curveIntensity: v2 })
+                          }
+                        ),
+                        s.arrangementShape === "wave" && /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          SliderRow,
+                          {
+                            label: t("rating.labels.waveAmplitude"),
+                            value: s.waveAmplitude,
+                            min: 0,
+                            max: 120,
+                            step: 5,
+                            ocid: "rating.waveAmplitude_slider",
+                            onChange: (v2) => u({ waveAmplitude: v2 })
+                          }
+                        )
+                      ]
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs(PanelSection, { title: t("rating.sections.spacing"), defaultOpen: true, children: [
                     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: 11 }, children: [
                       /* @__PURE__ */ jsxRuntimeExports.jsxs(
                         "div",
@@ -1848,7 +1864,7 @@ function RatingArrangementPanel({
                                   color: "rgba(255,255,255,0.60)",
                                   fontWeight: 600
                                 },
-                                children: "Hustota X"
+                                children: t("rating.labels.spacingX")
                               }
                             ),
                             /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -1860,7 +1876,7 @@ function RatingArrangementPanel({
                                   fontFamily: "monospace",
                                   fontWeight: s.spacingX < 0 ? 700 : 400
                                 },
-                                children: s.spacingX < 0 ? `Overlap ${s.spacingX}` : `${s.spacingX}px`
+                                children: s.spacingX < 0 ? `${t("rating.labels.overlapLabel")} ${s.spacingX}` : `${s.spacingX}px`
                               }
                             )
                           ]
@@ -1894,8 +1910,14 @@ function RatingArrangementPanel({
                             marginTop: 2
                           },
                           children: [
-                            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontSize: 8, color: "rgba(255,160,80,0.5)" }, children: "←Prehustenie" }),
-                            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: { fontSize: 8, color: "rgba(255,255,255,0.22)" }, children: "Roztiahnuté→" })
+                            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { fontSize: 8, color: "rgba(255,160,80,0.5)" }, children: [
+                              "←",
+                              t("rating.labels.overlapLabel")
+                            ] }),
+                            /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { fontSize: 8, color: "rgba(255,255,255,0.22)" }, children: [
+                              t("rating.labels.spreadLabel"),
+                              "→"
+                            ] })
                           ]
                         }
                       )
@@ -1919,7 +1941,7 @@ function RatingArrangementPanel({
                                   color: "rgba(255,255,255,0.60)",
                                   fontWeight: 600
                                 },
-                                children: "Hustota Y"
+                                children: t("rating.labels.spacingY")
                               }
                             ),
                             /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -1931,7 +1953,7 @@ function RatingArrangementPanel({
                                   fontFamily: "monospace",
                                   fontWeight: s.spacingY < 0 ? 700 : 400
                                 },
-                                children: s.spacingY < 0 ? `Overlap ${s.spacingY}` : `${s.spacingY}px`
+                                children: s.spacingY < 0 ? `${t("rating.labels.overlapLabel")} ${s.spacingY}` : `${s.spacingY}px`
                               }
                             )
                           ]
@@ -1960,7 +1982,7 @@ function RatingArrangementPanel({
                     /* @__PURE__ */ jsxRuntimeExports.jsx(
                       SliderRow,
                       {
-                        label: "Posun hore/dole",
+                        label: t("rating.labels.verticalOffset"),
                         value: s.verticalOffset,
                         min: -200,
                         max: 200,
@@ -1973,7 +1995,7 @@ function RatingArrangementPanel({
                     /* @__PURE__ */ jsxRuntimeExports.jsx(
                       SliderRow,
                       {
-                        label: "Posun vľavo/vpravo",
+                        label: t("rating.labels.horizontalOffset"),
                         value: s.horizontalOffset,
                         min: -300,
                         max: 300,
@@ -1984,11 +2006,11 @@ function RatingArrangementPanel({
                       }
                     )
                   ] }),
-                  /* @__PURE__ */ jsxRuntimeExports.jsxs(PanelSection, { title: "Karty", defaultOpen: true, children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs(PanelSection, { title: t("rating.sections.cards"), defaultOpen: true, children: [
                     /* @__PURE__ */ jsxRuntimeExports.jsx(
                       SliderRow,
                       {
-                        label: "Počet kariet",
+                        label: t("rating.labels.visibleCards"),
                         value: s.visibleCards,
                         min: 1,
                         max: 50,
@@ -2000,7 +2022,7 @@ function RatingArrangementPanel({
                     /* @__PURE__ */ jsxRuntimeExports.jsx(
                       SliderRow,
                       {
-                        label: "Veľkosť aktívnej",
+                        label: t("rating.labels.activeCardScale"),
                         value: s.activeCardScale,
                         min: 1,
                         max: 2.5,
@@ -2013,7 +2035,7 @@ function RatingArrangementPanel({
                     /* @__PURE__ */ jsxRuntimeExports.jsx(
                       SliderRow,
                       {
-                        label: "Rotácia kariet",
+                        label: t("rating.labels.cardRotation"),
                         value: s.cardRotation,
                         min: -45,
                         max: 45,
@@ -2033,7 +2055,7 @@ function RatingArrangementPanel({
                             fontWeight: 600,
                             marginBottom: 6
                           },
-                          children: "Pomer strán"
+                          children: t("rating.labels.aspectRatio")
                         }
                       ),
                       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { display: "flex", gap: 5 }, children: aspectOptions.map(({ value, label }) => {
@@ -2064,7 +2086,7 @@ function RatingArrangementPanel({
                     /* @__PURE__ */ jsxRuntimeExports.jsx(
                       ToggleRow,
                       {
-                        label: "Rám kariet",
+                        label: t("rating.labels.cardBorder"),
                         value: s.showCardBorder,
                         ocid: "rating.showCardBorder_toggle",
                         onChange: (v2) => u({ showCardBorder: v2 })
@@ -2080,7 +2102,7 @@ function RatingArrangementPanel({
                             fontWeight: 600,
                             marginBottom: 6
                           },
-                          children: "Farba rámu"
+                          children: t("rating.labels.borderColor")
                         }
                       ),
                       /* @__PURE__ */ jsxRuntimeExports.jsxs(
@@ -2127,7 +2149,7 @@ function RatingArrangementPanel({
                                   padding: 0,
                                   background: "none"
                                 },
-                                title: "Vlastná farba"
+                                title: t("rating.labels.borderColor")
                               }
                             )
                           ]
@@ -2135,432 +2157,460 @@ function RatingArrangementPanel({
                       )
                     ] })
                   ] }),
-                  /* @__PURE__ */ jsxRuntimeExports.jsxs(PanelSection, { title: "3D a hľbka", defaultOpen: false, children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      SliderRow,
-                      {
-                        label: "Perspektíva",
-                        value: s.perspectiveDepth,
-                        min: 200,
-                        max: 2e3,
-                        step: 50,
-                        ocid: "rating.perspectiveDepth_slider",
-                        onChange: (v2) => u({ perspectiveDepth: v2 }),
-                        format: (v2) => `${v2}px`
-                      }
-                    ),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      SliderRow,
-                      {
-                        label: "Hľbkový krok",
-                        value: s.depthStep,
-                        min: 0,
-                        max: 300,
-                        step: 5,
-                        ocid: "rating.depthStep_slider",
-                        onChange: (v2) => u({ depthStep: v2 }),
-                        format: (v2) => `${v2}px`
-                      }
-                    ),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      SliderRow,
-                      {
-                        label: "Náklon (tilt)",
-                        value: s.cardTilt,
-                        min: -30,
-                        max: 30,
-                        step: 1,
-                        ocid: "rating.cardTilt_slider",
-                        onChange: (v2) => u({ cardTilt: v2 }),
-                        format: (v2) => `${v2}°`
-                      }
-                    ),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      SliderRow,
-                      {
-                        label: "Rozostrenie",
-                        value: s.blurInactive,
-                        min: 0,
-                        max: 10,
-                        step: 0.5,
-                        ocid: "rating.blurInactive_slider",
-                        onChange: (v2) => u({ blurInactive: v2 }),
-                        format: (v2) => `${v2}px`
-                      }
-                    ),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      SliderRow,
-                      {
-                        label: "Tieň",
-                        value: s.shadowIntensity,
-                        min: 0,
-                        max: 1,
-                        step: 0.05,
-                        ocid: "rating.shadowIntensity_slider",
-                        onChange: (v2) => u({ shadowIntensity: v2 }),
-                        format: (v2) => v2.toFixed(2)
-                      }
-                    ),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      SliderRow,
-                      {
-                        label: "Zmenšenie",
-                        value: s.cardScale,
-                        min: 0.3,
-                        max: 1,
-                        step: 0.02,
-                        ocid: "rating.cardScale_slider",
-                        onChange: (v2) => u({ cardScale: v2 }),
-                        format: (v2) => v2.toFixed(2)
-                      }
-                    )
-                  ] }),
-                  /* @__PURE__ */ jsxRuntimeExports.jsxs(PanelSection, { title: "Animácia", defaultOpen: false, children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      SliderRow,
-                      {
-                        label: "Trvanie",
-                        value: s.animationDuration,
-                        min: 0.1,
-                        max: 1.2,
-                        step: 0.05,
-                        ocid: "rating.animationDuration_slider",
-                        onChange: (v2) => u({ animationDuration: v2 }),
-                        format: (v2) => `${v2.toFixed(2)}s`
-                      }
-                    ),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      SliderRow,
-                      {
-                        label: "Rýchlosť kolečka",
-                        value: 1600 - s.scrollCooldown,
-                        min: 100,
-                        max: 1500,
-                        step: 50,
-                        ocid: "rating.scroll_speed_slider",
-                        onChange: (v2) => u({ scrollCooldown: 1600 - v2 }),
-                        format: (_v) => s.scrollCooldown <= 200 ? "Rýchle" : s.scrollCooldown >= 1100 ? "Pomaly" : `${s.scrollCooldown}ms`
-                      }
-                    ),
-                    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: 11 }, children: [
-                      /* @__PURE__ */ jsxRuntimeExports.jsx(
-                        "p",
-                        {
-                          style: {
-                            fontSize: 11,
-                            color: "rgba(255,255,255,0.60)",
-                            fontWeight: 600,
-                            marginBottom: 6
-                          },
-                          children: "Easing"
-                        }
-                      ),
-                      /* @__PURE__ */ jsxRuntimeExports.jsx(
-                        "div",
-                        {
-                          style: { display: "flex", gap: 4, flexWrap: "wrap" },
-                          children: easingOptions.map(({ value, label }) => {
-                            const active = s.animationEasing === value;
-                            return /* @__PURE__ */ jsxRuntimeExports.jsx(
-                              "button",
-                              {
-                                type: "button",
-                                "data-ocid": `rating.easing_${value.replace("-", "_")}_button`,
-                                onClick: () => u({ animationEasing: value }),
-                                style: {
-                                  padding: "4px 8px",
-                                  borderRadius: 6,
-                                  fontSize: 10,
-                                  border: active ? "1.5px solid rgba(255,255,255,0.45)" : "1.5px solid rgba(255,255,255,0.10)",
-                                  background: active ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)",
-                                  color: active ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.40)",
-                                  cursor: "pointer",
-                                  transition: "all 0.15s ease"
-                                },
-                                children: label
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                    PanelSection,
+                    {
+                      title: t("rating.sections.depth3d"),
+                      defaultOpen: false,
+                      children: [
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          SliderRow,
+                          {
+                            label: t("rating.labels.perspective"),
+                            value: s.perspectiveDepth,
+                            min: 200,
+                            max: 2e3,
+                            step: 50,
+                            ocid: "rating.perspectiveDepth_slider",
+                            onChange: (v2) => u({ perspectiveDepth: v2 }),
+                            format: (v2) => `${v2}px`
+                          }
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          SliderRow,
+                          {
+                            label: t("rating.labels.depthStep"),
+                            value: s.depthStep,
+                            min: 0,
+                            max: 300,
+                            step: 5,
+                            ocid: "rating.depthStep_slider",
+                            onChange: (v2) => u({ depthStep: v2 }),
+                            format: (v2) => `${v2}px`
+                          }
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          SliderRow,
+                          {
+                            label: t("rating.labels.tilt"),
+                            value: s.cardTilt,
+                            min: -30,
+                            max: 30,
+                            step: 1,
+                            ocid: "rating.cardTilt_slider",
+                            onChange: (v2) => u({ cardTilt: v2 }),
+                            format: (v2) => `${v2}°`
+                          }
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          SliderRow,
+                          {
+                            label: t("rating.labels.blur"),
+                            value: s.blurInactive,
+                            min: 0,
+                            max: 10,
+                            step: 0.5,
+                            ocid: "rating.blurInactive_slider",
+                            onChange: (v2) => u({ blurInactive: v2 }),
+                            format: (v2) => `${v2}px`
+                          }
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          SliderRow,
+                          {
+                            label: t("rating.labels.shadow"),
+                            value: s.shadowIntensity,
+                            min: 0,
+                            max: 1,
+                            step: 0.05,
+                            ocid: "rating.shadowIntensity_slider",
+                            onChange: (v2) => u({ shadowIntensity: v2 }),
+                            format: (v2) => v2.toFixed(2)
+                          }
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          SliderRow,
+                          {
+                            label: t("rating.labels.shrink"),
+                            value: s.cardScale,
+                            min: 0.3,
+                            max: 1,
+                            step: 0.02,
+                            ocid: "rating.cardScale_slider",
+                            onChange: (v2) => u({ cardScale: v2 }),
+                            format: (v2) => v2.toFixed(2)
+                          }
+                        )
+                      ]
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                    PanelSection,
+                    {
+                      title: t("rating.sections.animation"),
+                      defaultOpen: false,
+                      children: [
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          SliderRow,
+                          {
+                            label: t("rating.labels.duration"),
+                            value: s.animationDuration,
+                            min: 0.1,
+                            max: 1.2,
+                            step: 0.05,
+                            ocid: "rating.animationDuration_slider",
+                            onChange: (v2) => u({ animationDuration: v2 }),
+                            format: (v2) => `${v2.toFixed(2)}s`
+                          }
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          SliderRow,
+                          {
+                            label: t("rating.labels.scrollSpeed"),
+                            value: 1600 - s.scrollCooldown,
+                            min: 100,
+                            max: 1500,
+                            step: 50,
+                            ocid: "rating.scroll_speed_slider",
+                            onChange: (v2) => u({ scrollCooldown: 1600 - v2 }),
+                            format: (_v) => s.scrollCooldown <= 200 ? "Rýchle" : s.scrollCooldown >= 1100 ? "Pomaly" : `${s.scrollCooldown}ms`
+                          }
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: 11 }, children: [
+                          /* @__PURE__ */ jsxRuntimeExports.jsx(
+                            "p",
+                            {
+                              style: {
+                                fontSize: 11,
+                                color: "rgba(255,255,255,0.60)",
+                                fontWeight: 600,
+                                marginBottom: 6
                               },
-                              value
-                            );
-                          })
-                        }
-                      )
-                    ] }),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      ToggleRow,
-                      {
-                        label: "Hover efekt",
-                        value: s.interactiveHover,
-                        ocid: "rating.interactiveHover_toggle",
-                        onChange: (v2) => u({ interactiveHover: v2 })
-                      }
-                    )
-                  ] }),
-                  /* @__PURE__ */ jsxRuntimeExports.jsxs(PanelSection, { title: "Zobrazenie", defaultOpen: false, children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: 11 }, children: [
-                      /* @__PURE__ */ jsxRuntimeExports.jsxs(
-                        "div",
-                        {
-                          style: {
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            marginBottom: 4
-                          },
-                          children: [
-                            /* @__PURE__ */ jsxRuntimeExports.jsx(
-                              "span",
-                              {
-                                style: {
-                                  fontSize: 11,
-                                  color: "rgba(255,255,255,0.60)",
-                                  fontWeight: 600
-                                },
-                                children: "Priehľadnosť"
-                              }
-                            ),
-                            /* @__PURE__ */ jsxRuntimeExports.jsx(
-                              "span",
-                              {
-                                style: {
-                                  fontSize: 10,
-                                  color: s.opacity >= 1 ? "rgba(100,220,150,0.85)" : "rgba(255,255,255,0.35)",
-                                  fontFamily: "monospace",
-                                  fontWeight: s.opacity >= 1 ? 700 : 400,
-                                  transition: "color 0.15s ease"
-                                },
-                                children: s.opacity >= 1 ? "Orig" : s.opacity.toFixed(2)
-                              }
-                            )
-                          ]
-                        }
-                      ),
-                      /* @__PURE__ */ jsxRuntimeExports.jsx(
-                        "input",
-                        {
-                          type: "range",
-                          "data-ocid": "rating.opacity_slider",
-                          min: 0,
-                          max: 1,
-                          step: 0.05,
-                          value: s.opacity,
-                          onChange: (e) => u({ opacity: Number(e.target.value) }),
-                          style: {
-                            width: "100%",
-                            height: 4,
-                            borderRadius: 2,
-                            accentColor: "rgba(255,255,255,0.7)",
-                            cursor: "pointer"
-                          }
-                        }
-                      )
-                    ] }),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      ToggleRow,
-                      {
-                        label: "Nápisy",
-                        value: s.showLabels,
-                        ocid: "rating.showLabels_toggle",
-                        onChange: (v2) => u({ showLabels: v2 })
-                      }
-                    ),
-                    s.showLabels && /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      SliderRow,
-                      {
-                        label: "Veľkosť nápisov",
-                        value: s.labelFontSize,
-                        min: 8,
-                        max: 24,
-                        step: 1,
-                        ocid: "rating.labelFontSize_slider",
-                        onChange: (v2) => u({ labelFontSize: v2 }),
-                        format: (v2) => `${v2}px`
-                      }
-                    )
-                  ] }),
-                  /* @__PURE__ */ jsxRuntimeExports.jsxs(PanelSection, { title: "Profily", defaultOpen: false, children: [
-                    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", gap: 6, marginBottom: 10 }, children: [
-                      /* @__PURE__ */ jsxRuntimeExports.jsx(
-                        "input",
-                        {
-                          type: "text",
-                          "data-ocid": "rating.profile_name_input",
-                          placeholder: "Názov profilu",
-                          value: profileNameInput,
-                          onChange: (e) => setProfileNameInput(e.target.value),
-                          onKeyDown: (e) => {
-                            if (e.key === "Enter" && profileNameInput.trim()) {
-                              saveProfile(profileNameInput.trim());
-                              setProfileNameInput("");
+                              children: t("rating.labels.easing")
                             }
-                          },
-                          maxLength: 30,
-                          style: {
-                            flex: 1,
-                            height: 30,
-                            borderRadius: 8,
-                            border: "1px solid rgba(255,255,255,0.14)",
-                            background: "rgba(255,255,255,0.06)",
-                            color: "rgba(255,255,255,0.85)",
-                            fontSize: 11,
-                            padding: "0 8px",
-                            outline: "none"
-                          }
-                        }
-                      ),
-                      /* @__PURE__ */ jsxRuntimeExports.jsx(
-                        "button",
-                        {
-                          type: "button",
-                          "data-ocid": "rating.save_profile_button",
-                          disabled: !profileNameInput.trim(),
-                          onClick: () => {
-                            if (!profileNameInput.trim()) return;
-                            saveProfile(profileNameInput.trim());
-                            setProfileNameInput("");
-                          },
-                          style: {
-                            height: 30,
-                            padding: "0 10px",
-                            borderRadius: 8,
-                            border: "1px solid rgba(255,255,255,0.20)",
-                            background: profileNameInput.trim() ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.04)",
-                            color: profileNameInput.trim() ? "rgba(255,255,255,0.90)" : "rgba(255,255,255,0.25)",
-                            fontSize: 11,
-                            fontWeight: 600,
-                            cursor: profileNameInput.trim() ? "pointer" : "default",
-                            transition: "all 0.15s ease",
-                            whiteSpace: "nowrap"
-                          },
-                          children: "Uložiť"
-                        }
-                      )
-                    ] }),
-                    savedProfiles.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      "p",
-                      {
-                        style: {
-                          fontSize: 10,
-                          color: "rgba(255,255,255,0.22)",
-                          textAlign: "center",
-                          padding: "6px 0",
-                          fontStyle: "italic"
-                        },
-                        children: "Žiadne uložené profily"
-                      }
-                    ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      "div",
-                      {
-                        style: {
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 4,
-                          maxHeight: 150,
-                          overflowY: "auto"
-                        },
-                        children: savedProfiles.map((profile) => {
-                          const isActive = activeProfileName === profile.name;
-                          return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                          ),
+                          /* @__PURE__ */ jsxRuntimeExports.jsx(
                             "div",
                             {
-                              style: { display: "flex", alignItems: "center", gap: 4 },
-                              children: [
-                                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                              style: { display: "flex", gap: 4, flexWrap: "wrap" },
+                              children: easingOptions.map(({ value, label }) => {
+                                const active = s.animationEasing === value;
+                                return /* @__PURE__ */ jsxRuntimeExports.jsx(
                                   "button",
                                   {
                                     type: "button",
-                                    "data-ocid": "rating.profile_load_button",
-                                    onClick: () => loadProfile(profile.name),
+                                    "data-ocid": `rating.easing_${value.replace("-", "_")}_button`,
+                                    onClick: () => u({ animationEasing: value }),
                                     style: {
-                                      flex: 1,
-                                      height: 26,
-                                      borderRadius: 7,
-                                      border: isActive ? "1.5px solid rgba(100,220,150,0.55)" : "1px solid rgba(255,255,255,0.10)",
-                                      background: isActive ? "rgba(100,220,150,0.12)" : "rgba(255,255,255,0.04)",
-                                      color: isActive ? "rgba(100,220,150,0.90)" : "rgba(255,255,255,0.65)",
-                                      fontSize: 11,
-                                      fontWeight: isActive ? 700 : 500,
+                                      padding: "4px 8px",
+                                      borderRadius: 6,
+                                      fontSize: 10,
+                                      border: active ? "1.5px solid rgba(255,255,255,0.45)" : "1.5px solid rgba(255,255,255,0.10)",
+                                      background: active ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.04)",
+                                      color: active ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.40)",
                                       cursor: "pointer",
-                                      textAlign: "left",
-                                      padding: "0 8px",
-                                      overflow: "hidden",
-                                      textOverflow: "ellipsis",
-                                      whiteSpace: "nowrap",
                                       transition: "all 0.15s ease"
                                     },
-                                    children: isActive ? `✓ ${profile.name}` : profile.name
+                                    children: label
+                                  },
+                                  value
+                                );
+                              })
+                            }
+                          )
+                        ] }),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          ToggleRow,
+                          {
+                            label: t("rating.labels.hoverEffect"),
+                            value: s.interactiveHover,
+                            ocid: "rating.interactiveHover_toggle",
+                            onChange: (v2) => u({ interactiveHover: v2 })
+                          }
+                        )
+                      ]
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                    PanelSection,
+                    {
+                      title: t("rating.sections.display"),
+                      defaultOpen: false,
+                      children: [
+                        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: 11 }, children: [
+                          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                            "div",
+                            {
+                              style: {
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                marginBottom: 4
+                              },
+                              children: [
+                                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                                  "span",
+                                  {
+                                    style: {
+                                      fontSize: 11,
+                                      color: "rgba(255,255,255,0.60)",
+                                      fontWeight: 600
+                                    },
+                                    children: t("rating.labels.opacity")
                                   }
                                 ),
                                 /* @__PURE__ */ jsxRuntimeExports.jsx(
-                                  "button",
+                                  "span",
                                   {
-                                    type: "button",
-                                    "data-ocid": "rating.profile_delete_button",
-                                    onClick: () => deleteProfile(profile.name),
-                                    "aria-label": `Zmazať profil ${profile.name}`,
                                     style: {
-                                      width: 22,
-                                      height: 22,
-                                      borderRadius: 5,
-                                      border: "1px solid rgba(255,255,255,0.10)",
-                                      background: "rgba(255,255,255,0.04)",
-                                      color: "rgba(255,255,255,0.35)",
-                                      fontSize: 12,
-                                      cursor: "pointer",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "center",
-                                      flexShrink: 0,
-                                      lineHeight: 1
+                                      fontSize: 10,
+                                      color: s.opacity >= 1 ? "rgba(100,220,150,0.85)" : "rgba(255,255,255,0.35)",
+                                      fontFamily: "monospace",
+                                      fontWeight: s.opacity >= 1 ? 700 : 400,
+                                      transition: "color 0.15s ease"
                                     },
-                                    children: "×"
+                                    children: s.opacity >= 1 ? "Orig" : s.opacity.toFixed(2)
                                   }
                                 )
                               ]
+                            }
+                          ),
+                          /* @__PURE__ */ jsxRuntimeExports.jsx(
+                            "input",
+                            {
+                              type: "range",
+                              "data-ocid": "rating.opacity_slider",
+                              min: 0,
+                              max: 1,
+                              step: 0.05,
+                              value: s.opacity,
+                              onChange: (e) => u({ opacity: Number(e.target.value) }),
+                              style: {
+                                width: "100%",
+                                height: 4,
+                                borderRadius: 2,
+                                accentColor: "rgba(255,255,255,0.7)",
+                                cursor: "pointer"
+                              }
+                            }
+                          )
+                        ] }),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          ToggleRow,
+                          {
+                            label: t("rating.labels.labels"),
+                            value: s.showLabels,
+                            ocid: "rating.showLabels_toggle",
+                            onChange: (v2) => u({ showLabels: v2 })
+                          }
+                        ),
+                        s.showLabels && /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          SliderRow,
+                          {
+                            label: t("rating.labels.labelSize"),
+                            value: s.labelFontSize,
+                            min: 8,
+                            max: 24,
+                            step: 1,
+                            ocid: "rating.labelFontSize_slider",
+                            onChange: (v2) => u({ labelFontSize: v2 }),
+                            format: (v2) => `${v2}px`
+                          }
+                        )
+                      ]
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                    PanelSection,
+                    {
+                      title: t("rating.sections.profiles"),
+                      defaultOpen: false,
+                      children: [
+                        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", gap: 6, marginBottom: 10 }, children: [
+                          /* @__PURE__ */ jsxRuntimeExports.jsx(
+                            "input",
+                            {
+                              type: "text",
+                              "data-ocid": "rating.profile_name_input",
+                              placeholder: t("rating.labels.profileName"),
+                              value: profileNameInput,
+                              onChange: (e) => setProfileNameInput(e.target.value),
+                              onKeyDown: (e) => {
+                                if (e.key === "Enter" && profileNameInput.trim()) {
+                                  saveProfile(profileNameInput.trim());
+                                  setProfileNameInput("");
+                                }
+                              },
+                              maxLength: 30,
+                              style: {
+                                flex: 1,
+                                height: 30,
+                                borderRadius: 8,
+                                border: "1px solid rgba(255,255,255,0.14)",
+                                background: "rgba(255,255,255,0.06)",
+                                color: "rgba(255,255,255,0.85)",
+                                fontSize: 11,
+                                padding: "0 8px",
+                                outline: "none"
+                              }
+                            }
+                          ),
+                          /* @__PURE__ */ jsxRuntimeExports.jsx(
+                            "button",
+                            {
+                              type: "button",
+                              "data-ocid": "rating.save_profile_button",
+                              disabled: !profileNameInput.trim(),
+                              onClick: () => {
+                                if (!profileNameInput.trim()) return;
+                                saveProfile(profileNameInput.trim());
+                                setProfileNameInput("");
+                              },
+                              style: {
+                                height: 30,
+                                padding: "0 10px",
+                                borderRadius: 8,
+                                border: "1px solid rgba(255,255,255,0.20)",
+                                background: profileNameInput.trim() ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.04)",
+                                color: profileNameInput.trim() ? "rgba(255,255,255,0.90)" : "rgba(255,255,255,0.25)",
+                                fontSize: 11,
+                                fontWeight: 600,
+                                cursor: profileNameInput.trim() ? "pointer" : "default",
+                                transition: "all 0.15s ease",
+                                whiteSpace: "nowrap"
+                              },
+                              children: t("buttons.save")
+                            }
+                          )
+                        ] }),
+                        savedProfiles.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          "p",
+                          {
+                            style: {
+                              fontSize: 10,
+                              color: "rgba(255,255,255,0.22)",
+                              textAlign: "center",
+                              padding: "6px 0",
+                              fontStyle: "italic"
                             },
-                            profile.name
-                          );
-                        })
-                      }
-                    ),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      "p",
-                      {
-                        style: {
-                          fontSize: 9,
-                          fontWeight: 700,
-                          letterSpacing: "0.1em",
-                          color: "rgba(255,255,255,0.25)",
-                          textTransform: "uppercase",
-                          marginTop: 12,
-                          marginBottom: 6
-                        },
-                        children: "Rýchle prednastavené"
-                      }
-                    ),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: 4 }, children: RATING_DISPLAY_PRESETS.map((preset) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-                      "button",
-                      {
-                        type: "button",
-                        "data-ocid": `rating.preset_${preset.name.replace(/\s+/g, "_").toLowerCase()}_button`,
-                        onClick: () => {
-                          updateSettings({ ...preset.settings, preset: preset.name });
-                        },
-                        style: {
-                          padding: "3px 7px",
-                          borderRadius: 5,
-                          fontSize: 9,
-                          fontWeight: 600,
-                          border: "1px solid rgba(255,255,255,0.12)",
-                          background: "rgba(255,255,255,0.05)",
-                          color: "rgba(255,255,255,0.50)",
-                          cursor: "pointer",
-                          transition: "all 0.15s ease"
-                        },
-                        children: preset.name
-                      },
-                      preset.name
-                    )) })
-                  ] })
+                            children: t("rating.labels.noProfiles")
+                          }
+                        ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          "div",
+                          {
+                            style: {
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 4,
+                              maxHeight: 150,
+                              overflowY: "auto"
+                            },
+                            children: savedProfiles.map((profile) => {
+                              const isActive = activeProfileName === profile.name;
+                              return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                                "div",
+                                {
+                                  style: { display: "flex", alignItems: "center", gap: 4 },
+                                  children: [
+                                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                                      "button",
+                                      {
+                                        type: "button",
+                                        "data-ocid": "rating.profile_load_button",
+                                        onClick: () => loadProfile(profile.name),
+                                        style: {
+                                          flex: 1,
+                                          height: 26,
+                                          borderRadius: 7,
+                                          border: isActive ? "1.5px solid rgba(100,220,150,0.55)" : "1px solid rgba(255,255,255,0.10)",
+                                          background: isActive ? "rgba(100,220,150,0.12)" : "rgba(255,255,255,0.04)",
+                                          color: isActive ? "rgba(100,220,150,0.90)" : "rgba(255,255,255,0.65)",
+                                          fontSize: 11,
+                                          fontWeight: isActive ? 700 : 500,
+                                          cursor: "pointer",
+                                          textAlign: "left",
+                                          padding: "0 8px",
+                                          overflow: "hidden",
+                                          textOverflow: "ellipsis",
+                                          whiteSpace: "nowrap",
+                                          transition: "all 0.15s ease"
+                                        },
+                                        children: isActive ? `✓ ${profile.name}` : profile.name
+                                      }
+                                    ),
+                                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                                      "button",
+                                      {
+                                        type: "button",
+                                        "data-ocid": "rating.profile_delete_button",
+                                        onClick: () => deleteProfile(profile.name),
+                                        "aria-label": `${t("buttons.remove")} ${profile.name}`,
+                                        style: {
+                                          width: 22,
+                                          height: 22,
+                                          borderRadius: 5,
+                                          border: "1px solid rgba(255,255,255,0.10)",
+                                          background: "rgba(255,255,255,0.04)",
+                                          color: "rgba(255,255,255,0.35)",
+                                          fontSize: 12,
+                                          cursor: "pointer",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          flexShrink: 0,
+                                          lineHeight: 1
+                                        },
+                                        children: "×"
+                                      }
+                                    )
+                                  ]
+                                },
+                                profile.name
+                              );
+                            })
+                          }
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          "p",
+                          {
+                            style: {
+                              fontSize: 9,
+                              fontWeight: 700,
+                              letterSpacing: "0.1em",
+                              color: "rgba(255,255,255,0.25)",
+                              textTransform: "uppercase",
+                              marginTop: 12,
+                              marginBottom: 6
+                            },
+                            children: t("rating.labels.quickPresets")
+                          }
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { display: "flex", flexWrap: "wrap", gap: 4 }, children: RATING_DISPLAY_PRESETS.map((preset) => /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          "button",
+                          {
+                            type: "button",
+                            "data-ocid": `rating.preset_${preset.name.replace(/\s+/g, "_").toLowerCase()}_button`,
+                            onClick: () => {
+                              updateSettings({ ...preset.settings, preset: preset.name });
+                            },
+                            style: {
+                              padding: "3px 7px",
+                              borderRadius: 5,
+                              fontSize: 9,
+                              fontWeight: 600,
+                              border: "1px solid rgba(255,255,255,0.12)",
+                              background: "rgba(255,255,255,0.05)",
+                              color: "rgba(255,255,255,0.50)",
+                              cursor: "pointer",
+                              transition: "all 0.15s ease"
+                            },
+                            children: preset.name
+                          },
+                          preset.name
+                        )) })
+                      ]
+                    }
+                  )
                 ]
               }
             )
@@ -2583,6 +2633,7 @@ function getEasingValue(easing) {
   }
 }
 function RatingPage() {
+  const { t } = useTranslation();
   const { data: rawNfts, isLoading, isError } = useGetAllPublicNFTs();
   const nfts = useShuffledNFTs(rawNfts);
   const {
@@ -2643,9 +2694,9 @@ function RatingPage() {
     setRatings((prev) => ({ ...prev, [key]: emotionId }));
     const emotion = EMOTIONS.find((e) => e.id === emotionId);
     if (emotion)
-      ue.success(emotion.label, {
+      ue.success(t(emotion.labelKey), {
         duration: 2e3,
-        description: "Hodnotenie uložené"
+        description: t("messages.ratingDesc")
       });
     const dir = emotionId < 0 ? "left" : "right";
     const currentNft = nfts[activeIndex];
@@ -2703,8 +2754,8 @@ function RatingPage() {
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "section-content max-w-4xl mx-auto", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mb-8 flex items-end justify-between gap-4", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("h1", { className: "font-display text-3xl md:text-4xl font-bold tracking-tight gradient-text", children: "Hodnotenie" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground mt-0.5", children: "Vyjadrite pocit z každého umeleckého diela" })
+        /* @__PURE__ */ jsxRuntimeExports.jsx("h1", { className: "font-display text-3xl md:text-4xl font-bold tracking-tight gradient-text", children: t("messages.ratingTitle") }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground mt-0.5", children: t("messages.ratingSubtitle") })
       ] }),
       nfts && nfts.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-xs font-semibold uppercase tracking-widest text-muted-foreground", children: [
         Math.min(activeIndex + 1, nfts.length),
@@ -2724,7 +2775,7 @@ function RatingPage() {
       }
     ) }),
     isError && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { "data-ocid": "rating.error_state", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "glass-card border border-destructive/50 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center gap-3", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-destructive font-semibold flex-1", children: "Chyba pri načítaní NFT. Skúste obnoviť stránku." }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-destructive font-semibold flex-1", children: t("errors.loadError") }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(
         "button",
         {
@@ -2732,7 +2783,7 @@ function RatingPage() {
           "data-ocid": "rating.manual_reload_button",
           onClick: () => window.location.reload(),
           className: "shrink-0 px-4 py-2 rounded-xl border-2 border-destructive/40 bg-destructive/10 text-destructive text-xs font-semibold hover:bg-destructive/20 transition-colors duration-200",
-          children: "Obnoviť stránku"
+          children: t("buttons.reload")
         }
       )
     ] }) }),
@@ -2742,8 +2793,8 @@ function RatingPage() {
         "data-ocid": "rating.empty_state",
         className: "glass-card rounded-2xl p-12 flex flex-col items-center text-center gap-4",
         children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-display font-bold text-foreground text-lg", children: "Žiadne verejné NFT na hodnotenie" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground mt-1", children: "Zatiaľ neboli vyrazené žiadne verejné NFT" })
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-display font-bold text-foreground text-lg", children: t("messages.ratingEmpty") }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground mt-1", children: t("messages.ratingEmptyDesc") })
         ]
       }
     ),
@@ -2764,7 +2815,7 @@ function RatingPage() {
               }
             }
           ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-display font-bold text-foreground text-lg", children: "Všetky NFT ohodnotené" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "font-display font-bold text-foreground text-lg", children: t("messages.ratingAllDone") }),
           /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-muted-foreground", children: [
             nfts.length,
             " ",
@@ -2915,7 +2966,7 @@ function RatingPage() {
                   fontWeight: 600,
                   letterSpacing: "0.05em"
                 },
-                children: "kolečko na prechádzanie"
+                children: t("messages.scrollHint")
               }
             )
           ]
@@ -2927,7 +2978,7 @@ function RatingPage() {
           className: "flex items-end justify-center",
           style: { gap: 10, marginTop: 28 },
           role: "radiogroup",
-          "aria-label": "Emočné hodnotenie",
+          "aria-label": t("messages.ratingTitle"),
           "data-ocid": "rating.circles",
           children: EMOTIONS.map((emotion) => {
             const activeNft = visibleNFTs[0];

@@ -1,5 +1,12 @@
-import type { backendInterface, NFTMetadata, MintResult, TransferResult, VisibilityResult, Standard } from "../backend.d";
-import { Variant_Mint_Transfer, CollectionPhase } from "../backend.d";
+import { CollectionPhase, CycleHealth, HealthStatus, Variant_Mint_Transfer } from "../backend.d";
+import type { 
+  MintResult,
+  NFTMetadata,
+  Standard,
+  TransferResult,
+  VisibilityResult,
+  backendInterface,
+ } from "../backend.d";
 import { Principal } from "@icp-sdk/core/principal";
 
 // Minimal 1x1 transparent PNG as sample image bytes
@@ -45,9 +52,10 @@ const sampleNFTs: NFTMetadata[] = [
 
 export const mockBackend: backendInterface = {
   getAllPublicNFTs: async () => sampleNFTs.filter((n) => n.isPublic),
+  getAllPublicNFTsByOwner: async (owner: Principal) => sampleNFTs.filter((n) => n.isPublic && n.owner.toText() === owner.toText()),
   getMyNFTs: async () => sampleNFTs,
   getNFT: async (tokenId) => sampleNFTs.find((n) => n.tokenId === tokenId) ?? null,
-  mintNFT: async (_name, _description, _image): Promise<MintResult> => ({
+  mintNFT: async (_name, _description, _image, _recipient, _isPublic, _collectionName): Promise<MintResult> => ({
     __kind__: "ok",
     ok: BigInt(sampleNFTs.length + 1),
   }),
@@ -85,8 +93,27 @@ export const mockBackend: backendInterface = {
   icrc10_supported_standards: async (): Promise<Standard[]> => [
     { name: "ICRC-7", url: "https://github.com/dfinity/ICRC/ICRCs/ICRC-7" },
   ],
-  createMyCollection: async () => "mock-collection-id",
-  getCollectionPhase: async (_user: Principal): Promise<CollectionPhase> => CollectionPhase.free,
+  createMyCollection: async () => Principal.fromText("aaaaa-aa"),
+  getCollectionPhase: async (_user: Principal): Promise<CollectionPhase> => CollectionPhase.Free,
   getMyCollection: async (_user: Principal): Promise<Principal | null> => null,
   getMyMintCount: async (_user: Principal): Promise<bigint> => BigInt(0),
+  getICPPrice: async (): Promise<number> => 10.0,
+  estimateCycles: async (_imageCount: bigint): Promise<bigint> => BigInt(20_000_000_000) * _imageCount,
+  estimateICPForImages: async (_imageCount: bigint, _icpPriceUSD: number): Promise<number> => {
+    const cycles = Number(_imageCount) * 20_000_000_000;
+    const usd = (cycles / 1_000_000_000_000) * 1.2 * 1.25;
+    return _icpPriceUSD > 0 ? usd / _icpPriceUSD : 0;
+  },
+  estimateImagesForICP: async (_icpAmount: number, _icpPriceUSD: number): Promise<bigint> => {
+    const usd = _icpAmount * _icpPriceUSD * 0.75;
+    const cycles = (usd / 1.2) * 1_000_000_000_000;
+    return BigInt(Math.floor(cycles / 20_000_000_000));
+  },
+  getMyCollectionCycles: async (): Promise<bigint> => BigInt(500_000_000_000_000),
+  getMyHealthStatus: async (): Promise<HealthStatus> => ({
+    status: "Zbierka má palivo na cca 450 dní",
+    imagesRemaining: BigInt(250),
+    healthColor: CycleHealth.green,
+    daysRemaining: BigInt(450),
+  }),
 };

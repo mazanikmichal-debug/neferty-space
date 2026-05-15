@@ -6,7 +6,13 @@
  * If actor is null (env.json failed), pages show "Konfigurácia chýba".
  */
 import { useBackend } from "@/context/BackendContext";
-import type { NFTMetadata, TokenId, TransactionEvent } from "@/types/nft";
+import type {
+  CollectionPhase,
+  HealthStatus,
+  NFTMetadata,
+  TokenId,
+  TransactionEvent,
+} from "@/types/nft";
 import { Principal } from "@dfinity/principal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -36,12 +42,14 @@ export function useMintNFT() {
       imageFile,
       recipientId,
       isPublic,
+      collectionName,
     }: {
       name: string;
       description: string;
       imageFile: File;
       recipientId?: string;
       isPublic?: boolean;
+      collectionName?: string;
     }) => {
       if (!actor || actorLoading) {
         throw new Error("Konfigurácia chýba");
@@ -54,12 +62,15 @@ export function useMintNFT() {
         ? Principal.fromText(recipientId.trim())
         : null;
 
+      const collectionNameOpt: string | null = collectionName?.trim() || null;
+
       const result = await actor.mintNFT(
         name,
         description,
         imageBytes,
         recipientOpt,
         isPublic ?? true,
+        collectionNameOpt,
       );
       if (result.__kind__ === "err") throw new Error(result.err);
       if (result.__kind__ === "paymentRequired")
@@ -128,6 +139,8 @@ export function useSetNFTVisibility() {
 }
 
 export function useGetNFTHistory(tokenId: TokenId | null) {
+  // Note: useGetNFTHistory continues below
+
   const { actor, isLoading: actorLoading } = useBackend();
   const actorReady = !!actor && !actorLoading;
 
@@ -140,5 +153,87 @@ export function useGetNFTHistory(tokenId: TokenId | null) {
     },
     enabled: actorReady && tokenId !== null,
     staleTime: 30_000,
+  });
+}
+
+/**
+ * useGetICPPrice — fetches current ICP/USD price if backend supports it.
+ * Falls back to $10.00 estimate; no error thrown.
+ */
+export function useGetICPPrice() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+
+  return useQuery<number, Error, number, string[]>({
+    queryKey: ["icpPrice"],
+    queryFn: async () => {
+      if (!actor) return 10.0;
+      try {
+        const price = await actor.getICPPrice();
+        return price > 0 ? price : 10.0;
+      } catch {
+        return 10.0;
+      }
+    },
+    enabled: actorReady,
+    staleTime: 60_000,
+    placeholderData: 10.0,
+  });
+}
+/**
+ * useGetMyCollectionCycles — fetches cycle balance of caller's collection canister.
+ */
+export function useGetMyCollectionCycles() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+
+  return useQuery<number, Error, number, string[]>({
+    queryKey: ["myCollectionCycles"],
+    queryFn: async () => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      const result = await actor.getMyCollectionCycles();
+      // bigint → number for display
+      return Number(result);
+    },
+    enabled: actorReady,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * useGetMyHealthStatus — fetches visual health status of caller's collection canister.
+ */
+export function useGetMyHealthStatus() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+
+  return useQuery<HealthStatus, Error, HealthStatus, string[]>({
+    queryKey: ["myHealthStatus"],
+    queryFn: async () => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      return actor.getMyHealthStatus() as Promise<HealthStatus>;
+    },
+    enabled: actorReady,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * useCreateMyCollection — mutation to create or return existing collection canister.
+ */
+export function useCreateMyCollection() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (): Promise<string> => {
+      if (!actor || actorLoading) throw new Error("Konfigurácia chýba");
+      const principal = await actor.createMyCollection();
+      return principal.toText();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myCollectionCycles"] });
+      queryClient.invalidateQueries({ queryKey: ["myHealthStatus"] });
+    },
   });
 }

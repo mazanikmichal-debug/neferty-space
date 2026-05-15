@@ -1,22 +1,29 @@
 {
-  "overview": "Neferty Space is a modern NFT minting and management app on the Internet Computer blockchain. Users can mint NFTs with custom images, manage their gallery, and transfer NFTs to other users — with full transparent transaction history for every NFT.",
+  "overview": "Neferty Space is a decentralized NFT platform on the Internet Computer blockchain. Artists create their own independent collection canisters, mint NFTs with full ownership, and top up fuel (cycles) through a transparent 75/25 payment model. The platform features a cycles health dashboard, bidirectional ICP calculator, multilingual support in 10 languages, and a rich gallery with 3D rating system.",
   "features": [
-    "Mint NFTs with custom images stored on-chain",
-    "Gallery view of all owned NFTs",
-    "Transfer NFTs to other users by principal ID",
-    "Full transaction history per NFT (mint + all transfers)",
-    "Liquid glass UI with fully customizable color themes",
+    "Factory/Collection architecture: each artist owns an independent canister",
+    "Freemium model: first 10 NFTs free, bonus up to 25, premium beyond",
+    "Cycles Management dashboard: health indicator, remaining days and images",
+    "Bidirectional ICP ↔ images calculator with live XRC rate",
+    "75/25 payment split: 75% cycles for artist, 25% platform fund",
+    "10-language support: SK, EN, DE, FR, ES, ZH, JA, AR, PT, RU",
+    "3-tab gallery: my collection, standalone, from others",
+    "3D NFT rating with color circles and drag-and-drop config",
+    "ICRC-7 compliant NFT standard",
     "Internet Identity authentication"
   ],
-  "category": "blockchain",
+  "category": "nft-platform",
   "tags": [
     "nft",
     "icp",
     "blockchain",
+    "art",
     "gallery",
-    "mint",
-    "transfer",
-    "history"
+    "cycles",
+    "factory",
+    "icrc7",
+    "multilingual",
+    "web3"
   ],
-  "last_updated": "2026-05-09T20:56:37.718Z"
+  "last_updated": "2026-05-15T08:46:03.234Z"
 }

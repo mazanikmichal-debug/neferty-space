@@ -9,6 +9,7 @@ mixin (state : NFTLib.State, factoryState : NFTLib.FactoryState) {
     image : Blob,
     recipientOpt : ?Principal,
     isPublic : Bool,
+    collectionName : ?Text,
   ) : async Types.MintResult {
     // Phase check: minter must be under the premium limit
     let mintCount = NFTLib.getMintCount(factoryState, caller);
@@ -25,7 +26,7 @@ mixin (state : NFTLib.State, factoryState : NFTLib.FactoryState) {
       to = owner;
       timestamp = Time.now();
     };
-    let result = NFTLib.mint(state, owner, name, description, image, mintEvent, isPublic);
+    let result = NFTLib.mint(state, owner, name, description, image, mintEvent, isPublic, collectionName);
     // Increment count on successful mint (count is per-caller, not per-recipient)
     switch (result) {
       case (#ok _) { NFTLib.incrementMintCount(factoryState, caller) };
@@ -34,7 +35,7 @@ mixin (state : NFTLib.State, factoryState : NFTLib.FactoryState) {
     result;
   };
 
-  public shared query ({ caller }) func getMyNFTs() : async [Types.NFTMetadata] {
+  public shared ({ caller }) func getMyNFTs() : async [Types.NFTMetadata] {
     NFTLib.getByOwner(state, caller);
   };
 
@@ -63,8 +64,12 @@ mixin (state : NFTLib.State, factoryState : NFTLib.FactoryState) {
     NFTLib.getAllPublicPaginated(state, offset, limit);
   };
 
-  public shared query ({ caller }) func getMyNFTsPaginated(offset : Nat, limit : Nat) : async Types.NFTPage {
+  public shared ({ caller }) func getMyNFTsPaginated(offset : Nat, limit : Nat) : async Types.NFTPage {
     NFTLib.getByOwnerPaginated(state, caller, offset, limit);
+  };
+
+  public query func getAllPublicNFTsByOwner(owner : Principal) : async [Types.NFTMetadata] {
+    NFTLib.getAllPublicByOwner(state, owner);
   };
 
   public shared ({ caller }) func setNFTVisibility(

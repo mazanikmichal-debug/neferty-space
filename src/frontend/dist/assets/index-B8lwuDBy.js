@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/GalleryPage-C2T9pJIs.js","assets/useAddressHistory-DkyiQF1t.js","assets/nftImage-Bq6LRRLt.js","assets/skeleton-bmtD0niL.js","assets/utils-DWi2mX0G.js","assets/MintPage-DIJSX60g.js","assets/textarea-uw_IfjNx.js","assets/RatingPage-C-6wI_Rq.js","assets/MyCollectionPage-DRBejF0n.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/GalleryPage-DwfCpnUk.js","assets/useAddressHistory-CndP1UJA.js","assets/useQueries-D31pTvel.js","assets/utils-BsXaUsmB.js","assets/chevron-down-DurnAk45.js","assets/skeleton-C_-9GLZE.js","assets/MintPage-CgHOWD_k.js","assets/RatingPage-BvTCiGI8.js","assets/SettingsPage-9Q1saK-u.js"])))=>i.map(i=>d[i]);
 var __defProp = Object.defineProperty;
 var __typeError = (msg) => {
   throw TypeError(msg);
@@ -115,6 +115,5637 @@ reactJsxRuntime_production.jsxs = jsxProd;
   jsxRuntime.exports = reactJsxRuntime_production;
 }
 var jsxRuntimeExports = jsxRuntime.exports;
+const isString$1 = (obj) => typeof obj === "string";
+const defer = () => {
+  let res;
+  let rej;
+  const promise = new Promise((resolve, reject) => {
+    res = resolve;
+    rej = reject;
+  });
+  promise.resolve = res;
+  promise.reject = rej;
+  return promise;
+};
+const makeString = (object) => {
+  if (object == null) return "";
+  return String(object);
+};
+const copy = (a2, s2, t) => {
+  a2.forEach((m2) => {
+    if (s2[m2]) t[m2] = s2[m2];
+  });
+};
+const lastOfPathSeparatorRegExp = /###/g;
+const cleanKey = (key) => key && key.includes("###") ? key.replace(lastOfPathSeparatorRegExp, ".") : key;
+const canNotTraverseDeeper = (object) => !object || isString$1(object);
+const getLastOfPath = (object, path, Empty2) => {
+  const stack = !isString$1(path) ? path : path.split(".");
+  let stackIndex = 0;
+  while (stackIndex < stack.length - 1) {
+    if (canNotTraverseDeeper(object)) return {};
+    const key = cleanKey(stack[stackIndex]);
+    if (!object[key] && Empty2) object[key] = new Empty2();
+    if (Object.prototype.hasOwnProperty.call(object, key)) {
+      object = object[key];
+    } else {
+      object = {};
+    }
+    ++stackIndex;
+  }
+  if (canNotTraverseDeeper(object)) return {};
+  return {
+    obj: object,
+    k: cleanKey(stack[stackIndex])
+  };
+};
+const setPath = (object, path, newValue) => {
+  const {
+    obj,
+    k: k2
+  } = getLastOfPath(object, path, Object);
+  if (obj !== void 0 || path.length === 1) {
+    obj[k2] = newValue;
+    return;
+  }
+  let e = path[path.length - 1];
+  let p2 = path.slice(0, path.length - 1);
+  let last2 = getLastOfPath(object, p2, Object);
+  while (last2.obj === void 0 && p2.length) {
+    e = `${p2[p2.length - 1]}.${e}`;
+    p2 = p2.slice(0, p2.length - 1);
+    last2 = getLastOfPath(object, p2, Object);
+    if ((last2 == null ? void 0 : last2.obj) && typeof last2.obj[`${last2.k}.${e}`] !== "undefined") {
+      last2.obj = void 0;
+    }
+  }
+  last2.obj[`${last2.k}.${e}`] = newValue;
+};
+const pushPath = (object, path, newValue, concat2) => {
+  const {
+    obj,
+    k: k2
+  } = getLastOfPath(object, path, Object);
+  obj[k2] = obj[k2] || [];
+  obj[k2].push(newValue);
+};
+const getPath = (object, path) => {
+  const {
+    obj,
+    k: k2
+  } = getLastOfPath(object, path);
+  if (!obj) return void 0;
+  if (!Object.prototype.hasOwnProperty.call(obj, k2)) return void 0;
+  return obj[k2];
+};
+const getPathWithDefaults = (data, defaultData, key) => {
+  const value = getPath(data, key);
+  if (value !== void 0) {
+    return value;
+  }
+  return getPath(defaultData, key);
+};
+const deepExtend = (target, source, overwrite) => {
+  for (const prop in source) {
+    if (prop !== "__proto__" && prop !== "constructor") {
+      if (prop in target) {
+        if (isString$1(target[prop]) || target[prop] instanceof String || isString$1(source[prop]) || source[prop] instanceof String) {
+          if (overwrite) target[prop] = source[prop];
+        } else {
+          deepExtend(target[prop], source[prop], overwrite);
+        }
+      } else {
+        target[prop] = source[prop];
+      }
+    }
+  }
+  return target;
+};
+const regexEscape = (str) => str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+const _entityMap = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+  "/": "&#x2F;"
+};
+const escape$1 = (data) => {
+  if (isString$1(data)) {
+    return data.replace(/[&<>"'\/]/g, (s2) => _entityMap[s2]);
+  }
+  return data;
+};
+class RegExpCache {
+  constructor(capacity) {
+    this.capacity = capacity;
+    this.regExpMap = /* @__PURE__ */ new Map();
+    this.regExpQueue = [];
+  }
+  getRegExp(pattern) {
+    const regExpFromCache = this.regExpMap.get(pattern);
+    if (regExpFromCache !== void 0) {
+      return regExpFromCache;
+    }
+    const regExpNew = new RegExp(pattern);
+    if (this.regExpQueue.length === this.capacity) {
+      this.regExpMap.delete(this.regExpQueue.shift());
+    }
+    this.regExpMap.set(pattern, regExpNew);
+    this.regExpQueue.push(pattern);
+    return regExpNew;
+  }
+}
+const chars = [" ", ",", "?", "!", ";"];
+const looksLikeObjectPathRegExpCache = new RegExpCache(20);
+const looksLikeObjectPath = (key, nsSeparator, keySeparator) => {
+  nsSeparator = nsSeparator || "";
+  keySeparator = keySeparator || "";
+  const possibleChars = chars.filter((c2) => !nsSeparator.includes(c2) && !keySeparator.includes(c2));
+  if (possibleChars.length === 0) return true;
+  const r2 = looksLikeObjectPathRegExpCache.getRegExp(`(${possibleChars.map((c2) => c2 === "?" ? "\\?" : c2).join("|")})`);
+  let matched = !r2.test(key);
+  if (!matched) {
+    const ki = key.indexOf(keySeparator);
+    if (ki > 0 && !r2.test(key.substring(0, ki))) {
+      matched = true;
+    }
+  }
+  return matched;
+};
+const deepFind = (obj, path, keySeparator = ".") => {
+  if (!obj) return void 0;
+  if (obj[path]) {
+    if (!Object.prototype.hasOwnProperty.call(obj, path)) return void 0;
+    return obj[path];
+  }
+  const tokens = path.split(keySeparator);
+  let current = obj;
+  for (let i = 0; i < tokens.length; ) {
+    if (!current || typeof current !== "object") {
+      return void 0;
+    }
+    let next;
+    let nextPath = "";
+    for (let j2 = i; j2 < tokens.length; ++j2) {
+      if (j2 !== i) {
+        nextPath += keySeparator;
+      }
+      nextPath += tokens[j2];
+      next = current[nextPath];
+      if (next !== void 0) {
+        if (["string", "number", "boolean"].includes(typeof next) && j2 < tokens.length - 1) {
+          continue;
+        }
+        i += j2 - i + 1;
+        break;
+      }
+    }
+    current = next;
+  }
+  return current;
+};
+const getCleanedCode = (code) => code == null ? void 0 : code.replace(/_/g, "-");
+const consoleLogger = {
+  type: "logger",
+  log(args) {
+    this.output("log", args);
+  },
+  warn(args) {
+    this.output("warn", args);
+  },
+  error(args) {
+    this.output("error", args);
+  },
+  output(type, args) {
+    var _a3, _b3;
+    (_b3 = (_a3 = console == null ? void 0 : console[type]) == null ? void 0 : _a3.apply) == null ? void 0 : _b3.call(_a3, console, args);
+  }
+};
+class Logger {
+  constructor(concreteLogger, options = {}) {
+    this.init(concreteLogger, options);
+  }
+  init(concreteLogger, options = {}) {
+    this.prefix = options.prefix || "i18next:";
+    this.logger = concreteLogger || consoleLogger;
+    this.options = options;
+    this.debug = options.debug;
+  }
+  log(...args) {
+    return this.forward(args, "log", "", true);
+  }
+  warn(...args) {
+    return this.forward(args, "warn", "", true);
+  }
+  error(...args) {
+    return this.forward(args, "error", "");
+  }
+  deprecate(...args) {
+    return this.forward(args, "warn", "WARNING DEPRECATED: ", true);
+  }
+  forward(args, lvl, prefix2, debugOnly) {
+    if (debugOnly && !this.debug) return null;
+    args = args.map((a2) => isString$1(a2) ? a2.replace(/[\r\n\x00-\x1F\x7F]/g, " ") : a2);
+    if (isString$1(args[0])) args[0] = `${prefix2}${this.prefix} ${args[0]}`;
+    return this.logger[lvl](args);
+  }
+  create(moduleName) {
+    return new Logger(this.logger, {
+      ...{
+        prefix: `${this.prefix}:${moduleName}:`
+      },
+      ...this.options
+    });
+  }
+  clone(options) {
+    options = options || this.options;
+    options.prefix = options.prefix || this.prefix;
+    return new Logger(this.logger, options);
+  }
+}
+var baseLogger = new Logger();
+class EventEmitter {
+  constructor() {
+    this.observers = {};
+  }
+  on(events2, listener) {
+    events2.split(" ").forEach((event) => {
+      if (!this.observers[event]) this.observers[event] = /* @__PURE__ */ new Map();
+      const numListeners = this.observers[event].get(listener) || 0;
+      this.observers[event].set(listener, numListeners + 1);
+    });
+    return this;
+  }
+  off(event, listener) {
+    if (!this.observers[event]) return;
+    if (!listener) {
+      delete this.observers[event];
+      return;
+    }
+    this.observers[event].delete(listener);
+  }
+  once(event, listener) {
+    const wrapper = (...args) => {
+      listener(...args);
+      this.off(event, wrapper);
+    };
+    this.on(event, wrapper);
+    return this;
+  }
+  emit(event, ...args) {
+    if (this.observers[event]) {
+      const cloned = Array.from(this.observers[event].entries());
+      cloned.forEach(([observer, numTimesAdded]) => {
+        for (let i = 0; i < numTimesAdded; i++) {
+          observer(...args);
+        }
+      });
+    }
+    if (this.observers["*"]) {
+      const cloned = Array.from(this.observers["*"].entries());
+      cloned.forEach(([observer, numTimesAdded]) => {
+        for (let i = 0; i < numTimesAdded; i++) {
+          observer(event, ...args);
+        }
+      });
+    }
+  }
+}
+class ResourceStore extends EventEmitter {
+  constructor(data, options = {
+    ns: ["translation"],
+    defaultNS: "translation"
+  }) {
+    super();
+    this.data = data || {};
+    this.options = options;
+    if (this.options.keySeparator === void 0) {
+      this.options.keySeparator = ".";
+    }
+    if (this.options.ignoreJSONStructure === void 0) {
+      this.options.ignoreJSONStructure = true;
+    }
+  }
+  addNamespaces(ns) {
+    if (!this.options.ns.includes(ns)) {
+      this.options.ns.push(ns);
+    }
+  }
+  removeNamespaces(ns) {
+    const index2 = this.options.ns.indexOf(ns);
+    if (index2 > -1) {
+      this.options.ns.splice(index2, 1);
+    }
+  }
+  getResource(lng, ns, key, options = {}) {
+    var _a3, _b3;
+    const keySeparator = options.keySeparator !== void 0 ? options.keySeparator : this.options.keySeparator;
+    const ignoreJSONStructure = options.ignoreJSONStructure !== void 0 ? options.ignoreJSONStructure : this.options.ignoreJSONStructure;
+    let path;
+    if (lng.includes(".")) {
+      path = lng.split(".");
+    } else {
+      path = [lng, ns];
+      if (key) {
+        if (Array.isArray(key)) {
+          path.push(...key);
+        } else if (isString$1(key) && keySeparator) {
+          path.push(...key.split(keySeparator));
+        } else {
+          path.push(key);
+        }
+      }
+    }
+    const result = getPath(this.data, path);
+    if (!result && !ns && !key && lng.includes(".")) {
+      lng = path[0];
+      ns = path[1];
+      key = path.slice(2).join(".");
+    }
+    if (result || !ignoreJSONStructure || !isString$1(key)) return result;
+    return deepFind((_b3 = (_a3 = this.data) == null ? void 0 : _a3[lng]) == null ? void 0 : _b3[ns], key, keySeparator);
+  }
+  addResource(lng, ns, key, value, options = {
+    silent: false
+  }) {
+    const keySeparator = options.keySeparator !== void 0 ? options.keySeparator : this.options.keySeparator;
+    let path = [lng, ns];
+    if (key) path = path.concat(keySeparator ? key.split(keySeparator) : key);
+    if (lng.includes(".")) {
+      path = lng.split(".");
+      value = ns;
+      ns = path[1];
+    }
+    this.addNamespaces(ns);
+    setPath(this.data, path, value);
+    if (!options.silent) this.emit("added", lng, ns, key, value);
+  }
+  addResources(lng, ns, resources, options = {
+    silent: false
+  }) {
+    for (const m2 in resources) {
+      if (isString$1(resources[m2]) || Array.isArray(resources[m2])) this.addResource(lng, ns, m2, resources[m2], {
+        silent: true
+      });
+    }
+    if (!options.silent) this.emit("added", lng, ns, resources);
+  }
+  addResourceBundle(lng, ns, resources, deep, overwrite, options = {
+    silent: false,
+    skipCopy: false
+  }) {
+    let path = [lng, ns];
+    if (lng.includes(".")) {
+      path = lng.split(".");
+      deep = resources;
+      resources = ns;
+      ns = path[1];
+    }
+    this.addNamespaces(ns);
+    let pack = getPath(this.data, path) || {};
+    if (!options.skipCopy) resources = JSON.parse(JSON.stringify(resources));
+    if (deep) {
+      deepExtend(pack, resources, overwrite);
+    } else {
+      pack = {
+        ...pack,
+        ...resources
+      };
+    }
+    setPath(this.data, path, pack);
+    if (!options.silent) this.emit("added", lng, ns, resources);
+  }
+  removeResourceBundle(lng, ns) {
+    if (this.hasResourceBundle(lng, ns)) {
+      delete this.data[lng][ns];
+    }
+    this.removeNamespaces(ns);
+    this.emit("removed", lng, ns);
+  }
+  hasResourceBundle(lng, ns) {
+    return this.getResource(lng, ns) !== void 0;
+  }
+  getResourceBundle(lng, ns) {
+    if (!ns) ns = this.options.defaultNS;
+    return this.getResource(lng, ns);
+  }
+  getDataByLanguage(lng) {
+    return this.data[lng];
+  }
+  hasLanguageSomeTranslations(lng) {
+    const data = this.getDataByLanguage(lng);
+    const n = data && Object.keys(data) || [];
+    return !!n.find((v2) => data[v2] && Object.keys(data[v2]).length > 0);
+  }
+  toJSON() {
+    return this.data;
+  }
+}
+var postProcessor = {
+  processors: {},
+  addPostProcessor(module) {
+    this.processors[module.name] = module;
+  },
+  handle(processors, value, key, options, translator) {
+    processors.forEach((processor) => {
+      var _a3;
+      value = ((_a3 = this.processors[processor]) == null ? void 0 : _a3.process(value, key, options, translator)) ?? value;
+    });
+    return value;
+  }
+};
+const PATH_KEY = Symbol("i18next/PATH_KEY");
+function createProxy() {
+  const state = [];
+  const handler = /* @__PURE__ */ Object.create(null);
+  let proxy;
+  handler.get = (target, key) => {
+    var _a3;
+    (_a3 = proxy == null ? void 0 : proxy.revoke) == null ? void 0 : _a3.call(proxy);
+    if (key === PATH_KEY) return state;
+    state.push(key);
+    proxy = Proxy.revocable(target, handler);
+    return proxy.proxy;
+  };
+  return Proxy.revocable(/* @__PURE__ */ Object.create(null), handler).proxy;
+}
+function keysFromSelector(selector, opts) {
+  const {
+    [PATH_KEY]: path
+  } = selector(createProxy());
+  const keySeparator = (opts == null ? void 0 : opts.keySeparator) ?? ".";
+  const nsSeparator = (opts == null ? void 0 : opts.nsSeparator) ?? ":";
+  const strict = (opts == null ? void 0 : opts.enableSelector) === "strict";
+  if (path.length > 1 && nsSeparator) {
+    const ns = opts == null ? void 0 : opts.ns;
+    const nsList = strict ? Array.isArray(ns) ? ns : ns ? [ns] : null : Array.isArray(ns) ? ns : null;
+    if (nsList) {
+      const candidates = strict ? nsList : nsList.length > 1 ? nsList.slice(1) : [];
+      if (candidates.includes(path[0])) {
+        return `${path[0]}${nsSeparator}${path.slice(1).join(keySeparator)}`;
+      }
+    }
+  }
+  return path.join(keySeparator);
+}
+const shouldHandleAsObject = (res) => !isString$1(res) && typeof res !== "boolean" && typeof res !== "number";
+class Translator extends EventEmitter {
+  constructor(services, options = {}) {
+    super();
+    copy(["resourceStore", "languageUtils", "pluralResolver", "interpolator", "backendConnector", "i18nFormat", "utils"], services, this);
+    this.options = options;
+    if (this.options.keySeparator === void 0) {
+      this.options.keySeparator = ".";
+    }
+    this.logger = baseLogger.create("translator");
+    this.checkedLoadedFor = {};
+  }
+  changeLanguage(lng) {
+    if (lng) this.language = lng;
+  }
+  exists(key, o2 = {
+    interpolation: {}
+  }) {
+    const opt = {
+      ...o2
+    };
+    if (key == null) return false;
+    const resolved = this.resolve(key, opt);
+    if ((resolved == null ? void 0 : resolved.res) === void 0) return false;
+    const isObject2 = shouldHandleAsObject(resolved.res);
+    if (opt.returnObjects === false && isObject2) {
+      return false;
+    }
+    return true;
+  }
+  extractFromKey(key, opt) {
+    let nsSeparator = opt.nsSeparator !== void 0 ? opt.nsSeparator : this.options.nsSeparator;
+    if (nsSeparator === void 0) nsSeparator = ":";
+    const keySeparator = opt.keySeparator !== void 0 ? opt.keySeparator : this.options.keySeparator;
+    let namespaces = opt.ns || this.options.defaultNS || [];
+    const wouldCheckForNsInKey = nsSeparator && key.includes(nsSeparator);
+    const seemsNaturalLanguage = !this.options.userDefinedKeySeparator && !opt.keySeparator && !this.options.userDefinedNsSeparator && !opt.nsSeparator && !looksLikeObjectPath(key, nsSeparator, keySeparator);
+    if (wouldCheckForNsInKey && !seemsNaturalLanguage) {
+      const m2 = key.match(this.interpolator.nestingRegexp);
+      if (m2 && m2.length > 0) {
+        return {
+          key,
+          namespaces: isString$1(namespaces) ? [namespaces] : namespaces
+        };
+      }
+      const parts = key.split(nsSeparator);
+      if (nsSeparator !== keySeparator || nsSeparator === keySeparator && this.options.ns.includes(parts[0])) namespaces = parts.shift();
+      key = parts.join(keySeparator);
+    }
+    return {
+      key,
+      namespaces: isString$1(namespaces) ? [namespaces] : namespaces
+    };
+  }
+  translate(keys, o2, lastKey) {
+    let opt = typeof o2 === "object" ? {
+      ...o2
+    } : o2;
+    if (typeof opt !== "object" && this.options.overloadTranslationOptionHandler) {
+      opt = this.options.overloadTranslationOptionHandler(arguments);
+    }
+    if (typeof opt === "object") opt = {
+      ...opt
+    };
+    if (!opt) opt = {};
+    if (keys == null) return "";
+    if (typeof keys === "function") keys = keysFromSelector(keys, {
+      ...this.options,
+      ...opt
+    });
+    if (!Array.isArray(keys)) keys = [String(keys)];
+    keys = keys.map((k2) => typeof k2 === "function" ? keysFromSelector(k2, {
+      ...this.options,
+      ...opt
+    }) : String(k2));
+    const returnDetails = opt.returnDetails !== void 0 ? opt.returnDetails : this.options.returnDetails;
+    const keySeparator = opt.keySeparator !== void 0 ? opt.keySeparator : this.options.keySeparator;
+    const {
+      key,
+      namespaces
+    } = this.extractFromKey(keys[keys.length - 1], opt);
+    const namespace = namespaces[namespaces.length - 1];
+    let nsSeparator = opt.nsSeparator !== void 0 ? opt.nsSeparator : this.options.nsSeparator;
+    if (nsSeparator === void 0) nsSeparator = ":";
+    const lng = opt.lng || this.language;
+    const appendNamespaceToCIMode = opt.appendNamespaceToCIMode || this.options.appendNamespaceToCIMode;
+    if ((lng == null ? void 0 : lng.toLowerCase()) === "cimode") {
+      if (appendNamespaceToCIMode) {
+        if (returnDetails) {
+          return {
+            res: `${namespace}${nsSeparator}${key}`,
+            usedKey: key,
+            exactUsedKey: key,
+            usedLng: lng,
+            usedNS: namespace,
+            usedParams: this.getUsedParamsDetails(opt)
+          };
+        }
+        return `${namespace}${nsSeparator}${key}`;
+      }
+      if (returnDetails) {
+        return {
+          res: key,
+          usedKey: key,
+          exactUsedKey: key,
+          usedLng: lng,
+          usedNS: namespace,
+          usedParams: this.getUsedParamsDetails(opt)
+        };
+      }
+      return key;
+    }
+    const resolved = this.resolve(keys, opt);
+    let res = resolved == null ? void 0 : resolved.res;
+    const resUsedKey = (resolved == null ? void 0 : resolved.usedKey) || key;
+    const resExactUsedKey = (resolved == null ? void 0 : resolved.exactUsedKey) || key;
+    const noObject = ["[object Number]", "[object Function]", "[object RegExp]"];
+    const joinArrays = opt.joinArrays !== void 0 ? opt.joinArrays : this.options.joinArrays;
+    const handleAsObjectInI18nFormat = !this.i18nFormat || this.i18nFormat.handleAsObject;
+    const needsPluralHandling = opt.count !== void 0 && !isString$1(opt.count);
+    const hasDefaultValue = Translator.hasDefaultValue(opt);
+    const defaultValueSuffix = needsPluralHandling ? this.pluralResolver.getSuffix(lng, opt.count, opt) : "";
+    const defaultValueSuffixOrdinalFallback = opt.ordinal && needsPluralHandling ? this.pluralResolver.getSuffix(lng, opt.count, {
+      ordinal: false
+    }) : "";
+    const needsZeroSuffixLookup = needsPluralHandling && !opt.ordinal && opt.count === 0;
+    const defaultValue = needsZeroSuffixLookup && opt[`defaultValue${this.options.pluralSeparator}zero`] || opt[`defaultValue${defaultValueSuffix}`] || opt[`defaultValue${defaultValueSuffixOrdinalFallback}`] || opt.defaultValue;
+    let resForObjHndl = res;
+    if (handleAsObjectInI18nFormat && !res && hasDefaultValue) {
+      resForObjHndl = defaultValue;
+    }
+    const handleAsObject = shouldHandleAsObject(resForObjHndl);
+    const resType = Object.prototype.toString.apply(resForObjHndl);
+    if (handleAsObjectInI18nFormat && resForObjHndl && handleAsObject && !noObject.includes(resType) && !(isString$1(joinArrays) && Array.isArray(resForObjHndl))) {
+      if (!opt.returnObjects && !this.options.returnObjects) {
+        if (!this.options.returnedObjectHandler) {
+          this.logger.warn("accessing an object - but returnObjects options is not enabled!");
+        }
+        const r2 = this.options.returnedObjectHandler ? this.options.returnedObjectHandler(resUsedKey, resForObjHndl, {
+          ...opt,
+          ns: namespaces
+        }) : `key '${key} (${this.language})' returned an object instead of string.`;
+        if (returnDetails) {
+          resolved.res = r2;
+          resolved.usedParams = this.getUsedParamsDetails(opt);
+          return resolved;
+        }
+        return r2;
+      }
+      if (keySeparator) {
+        const resTypeIsArray = Array.isArray(resForObjHndl);
+        const copy2 = resTypeIsArray ? [] : {};
+        const newKeyToUse = resTypeIsArray ? resExactUsedKey : resUsedKey;
+        for (const m2 in resForObjHndl) {
+          if (Object.prototype.hasOwnProperty.call(resForObjHndl, m2)) {
+            const deepKey = `${newKeyToUse}${keySeparator}${m2}`;
+            if (hasDefaultValue && !res) {
+              copy2[m2] = this.translate(deepKey, {
+                ...opt,
+                defaultValue: shouldHandleAsObject(defaultValue) ? defaultValue[m2] : void 0,
+                ...{
+                  joinArrays: false,
+                  ns: namespaces
+                }
+              });
+            } else {
+              copy2[m2] = this.translate(deepKey, {
+                ...opt,
+                ...{
+                  joinArrays: false,
+                  ns: namespaces
+                }
+              });
+            }
+            if (copy2[m2] === deepKey) copy2[m2] = resForObjHndl[m2];
+          }
+        }
+        res = copy2;
+      }
+    } else if (handleAsObjectInI18nFormat && isString$1(joinArrays) && Array.isArray(res)) {
+      res = res.join(joinArrays);
+      if (res) res = this.extendTranslation(res, keys, opt, lastKey);
+    } else {
+      let usedDefault = false;
+      let usedKey = false;
+      if (!this.isValidLookup(res) && hasDefaultValue) {
+        usedDefault = true;
+        res = defaultValue;
+      }
+      if (!this.isValidLookup(res)) {
+        usedKey = true;
+        res = key;
+      }
+      const missingKeyNoValueFallbackToKey = opt.missingKeyNoValueFallbackToKey || this.options.missingKeyNoValueFallbackToKey;
+      const resForMissing = missingKeyNoValueFallbackToKey && usedKey ? void 0 : res;
+      const updateMissing = hasDefaultValue && defaultValue !== res && this.options.updateMissing;
+      if (usedKey || usedDefault || updateMissing) {
+        this.logger.log(updateMissing ? "updateKey" : "missingKey", lng, namespace, needsPluralHandling && !updateMissing ? `${key}${this.pluralResolver.getSuffix(lng, opt.count, opt)}` : key, updateMissing ? defaultValue : res);
+        if (keySeparator) {
+          const fk = this.resolve(key, {
+            ...opt,
+            keySeparator: false
+          });
+          if (fk && fk.res) this.logger.warn("Seems the loaded translations were in flat JSON format instead of nested. Either set keySeparator: false on init or make sure your translations are published in nested format.");
+        }
+        let lngs = [];
+        const fallbackLngs = this.languageUtils.getFallbackCodes(this.options.fallbackLng, opt.lng || this.language);
+        if (this.options.saveMissingTo === "fallback" && fallbackLngs && fallbackLngs[0]) {
+          for (let i = 0; i < fallbackLngs.length; i++) {
+            lngs.push(fallbackLngs[i]);
+          }
+        } else if (this.options.saveMissingTo === "all") {
+          lngs = this.languageUtils.toResolveHierarchy(opt.lng || this.language);
+        } else {
+          lngs.push(opt.lng || this.language);
+        }
+        const send = (l, k2, specificDefaultValue) => {
+          var _a3;
+          const defaultForMissing = hasDefaultValue && specificDefaultValue !== res ? specificDefaultValue : resForMissing;
+          if (this.options.missingKeyHandler) {
+            this.options.missingKeyHandler(l, namespace, k2, defaultForMissing, updateMissing, opt);
+          } else if ((_a3 = this.backendConnector) == null ? void 0 : _a3.saveMissing) {
+            this.backendConnector.saveMissing(l, namespace, k2, defaultForMissing, updateMissing, opt);
+          }
+          this.emit("missingKey", l, namespace, k2, res);
+        };
+        if (this.options.saveMissing) {
+          if (this.options.saveMissingPlurals && needsPluralHandling) {
+            lngs.forEach((language) => {
+              const suffixes = this.pluralResolver.getSuffixes(language, opt);
+              if (needsZeroSuffixLookup && opt[`defaultValue${this.options.pluralSeparator}zero`] && !suffixes.includes(`${this.options.pluralSeparator}zero`)) {
+                suffixes.push(`${this.options.pluralSeparator}zero`);
+              }
+              suffixes.forEach((suffix2) => {
+                send([language], key + suffix2, opt[`defaultValue${suffix2}`] || defaultValue);
+              });
+            });
+          } else {
+            send(lngs, key, defaultValue);
+          }
+        }
+      }
+      res = this.extendTranslation(res, keys, opt, resolved, lastKey);
+      if (usedKey && res === key && this.options.appendNamespaceToMissingKey) {
+        res = `${namespace}${nsSeparator}${key}`;
+      }
+      if ((usedKey || usedDefault) && this.options.parseMissingKeyHandler) {
+        res = this.options.parseMissingKeyHandler(this.options.appendNamespaceToMissingKey ? `${namespace}${nsSeparator}${key}` : key, usedDefault ? res : void 0, opt);
+      }
+    }
+    if (returnDetails) {
+      resolved.res = res;
+      resolved.usedParams = this.getUsedParamsDetails(opt);
+      return resolved;
+    }
+    return res;
+  }
+  extendTranslation(res, key, opt, resolved, lastKey) {
+    var _a3, _b3;
+    if ((_a3 = this.i18nFormat) == null ? void 0 : _a3.parse) {
+      res = this.i18nFormat.parse(res, {
+        ...this.options.interpolation.defaultVariables,
+        ...opt
+      }, opt.lng || this.language || resolved.usedLng, resolved.usedNS, resolved.usedKey, {
+        resolved
+      });
+    } else if (!opt.skipInterpolation) {
+      if (opt.interpolation) this.interpolator.init({
+        ...opt,
+        ...{
+          interpolation: {
+            ...this.options.interpolation,
+            ...opt.interpolation
+          }
+        }
+      });
+      const skipOnVariables = isString$1(res) && (((_b3 = opt == null ? void 0 : opt.interpolation) == null ? void 0 : _b3.skipOnVariables) !== void 0 ? opt.interpolation.skipOnVariables : this.options.interpolation.skipOnVariables);
+      let nestBef;
+      if (skipOnVariables) {
+        const nb = res.match(this.interpolator.nestingRegexp);
+        nestBef = nb && nb.length;
+      }
+      let data = opt.replace && !isString$1(opt.replace) ? opt.replace : opt;
+      if (this.options.interpolation.defaultVariables) data = {
+        ...this.options.interpolation.defaultVariables,
+        ...data
+      };
+      res = this.interpolator.interpolate(res, data, opt.lng || this.language || resolved.usedLng, opt);
+      if (skipOnVariables) {
+        const na = res.match(this.interpolator.nestingRegexp);
+        const nestAft = na && na.length;
+        if (nestBef < nestAft) opt.nest = false;
+      }
+      if (!opt.lng && resolved && resolved.res) opt.lng = this.language || resolved.usedLng;
+      if (opt.nest !== false) res = this.interpolator.nest(res, (...args) => {
+        if ((lastKey == null ? void 0 : lastKey[0]) === args[0] && !opt.context) {
+          this.logger.warn(`It seems you are nesting recursively key: ${args[0]} in key: ${key[0]}`);
+          return null;
+        }
+        return this.translate(...args, key);
+      }, opt);
+      if (opt.interpolation) this.interpolator.reset();
+    }
+    const postProcess = opt.postProcess || this.options.postProcess;
+    const postProcessorNames = isString$1(postProcess) ? [postProcess] : postProcess;
+    if (res != null && (postProcessorNames == null ? void 0 : postProcessorNames.length) && opt.applyPostProcessor !== false) {
+      res = postProcessor.handle(postProcessorNames, res, key, this.options && this.options.postProcessPassResolved ? {
+        i18nResolved: {
+          ...resolved,
+          usedParams: this.getUsedParamsDetails(opt)
+        },
+        ...opt
+      } : opt, this);
+    }
+    return res;
+  }
+  resolve(keys, opt = {}) {
+    let found;
+    let usedKey;
+    let exactUsedKey;
+    let usedLng;
+    let usedNS;
+    if (isString$1(keys)) keys = [keys];
+    if (Array.isArray(keys)) keys = keys.map((k2) => typeof k2 === "function" ? keysFromSelector(k2, {
+      ...this.options,
+      ...opt
+    }) : k2);
+    keys.forEach((k2) => {
+      if (this.isValidLookup(found)) return;
+      const extracted = this.extractFromKey(k2, opt);
+      const key = extracted.key;
+      usedKey = key;
+      let namespaces = extracted.namespaces;
+      if (this.options.fallbackNS) namespaces = namespaces.concat(this.options.fallbackNS);
+      const needsPluralHandling = opt.count !== void 0 && !isString$1(opt.count);
+      const needsZeroSuffixLookup = needsPluralHandling && !opt.ordinal && opt.count === 0;
+      const needsContextHandling = opt.context !== void 0 && (isString$1(opt.context) || typeof opt.context === "number") && opt.context !== "";
+      const codes = opt.lngs ? opt.lngs : this.languageUtils.toResolveHierarchy(opt.lng || this.language, opt.fallbackLng);
+      namespaces.forEach((ns) => {
+        var _a3, _b3;
+        if (this.isValidLookup(found)) return;
+        usedNS = ns;
+        if (!this.checkedLoadedFor[`${codes[0]}-${ns}`] && ((_a3 = this.utils) == null ? void 0 : _a3.hasLoadedNamespace) && !((_b3 = this.utils) == null ? void 0 : _b3.hasLoadedNamespace(usedNS))) {
+          this.checkedLoadedFor[`${codes[0]}-${ns}`] = true;
+          this.logger.warn(`key "${usedKey}" for languages "${codes.join(", ")}" won't get resolved as namespace "${usedNS}" was not yet loaded`, "This means something IS WRONG in your setup. You access the t function before i18next.init / i18next.loadNamespace / i18next.changeLanguage was done. Wait for the callback or Promise to resolve before accessing it!!!");
+        }
+        codes.forEach((code) => {
+          var _a4;
+          if (this.isValidLookup(found)) return;
+          usedLng = code;
+          const finalKeys = [key];
+          if ((_a4 = this.i18nFormat) == null ? void 0 : _a4.addLookupKeys) {
+            this.i18nFormat.addLookupKeys(finalKeys, key, code, ns, opt);
+          } else {
+            let pluralSuffix;
+            if (needsPluralHandling) pluralSuffix = this.pluralResolver.getSuffix(code, opt.count, opt);
+            const zeroSuffix = `${this.options.pluralSeparator}zero`;
+            const ordinalPrefix = `${this.options.pluralSeparator}ordinal${this.options.pluralSeparator}`;
+            if (needsPluralHandling) {
+              if (opt.ordinal && pluralSuffix.startsWith(ordinalPrefix)) {
+                finalKeys.push(key + pluralSuffix.replace(ordinalPrefix, this.options.pluralSeparator));
+              }
+              finalKeys.push(key + pluralSuffix);
+              if (needsZeroSuffixLookup) {
+                finalKeys.push(key + zeroSuffix);
+              }
+            }
+            if (needsContextHandling) {
+              const contextKey = `${key}${this.options.contextSeparator || "_"}${opt.context}`;
+              finalKeys.push(contextKey);
+              if (needsPluralHandling) {
+                if (opt.ordinal && pluralSuffix.startsWith(ordinalPrefix)) {
+                  finalKeys.push(contextKey + pluralSuffix.replace(ordinalPrefix, this.options.pluralSeparator));
+                }
+                finalKeys.push(contextKey + pluralSuffix);
+                if (needsZeroSuffixLookup) {
+                  finalKeys.push(contextKey + zeroSuffix);
+                }
+              }
+            }
+          }
+          let possibleKey;
+          while (possibleKey = finalKeys.pop()) {
+            if (!this.isValidLookup(found)) {
+              exactUsedKey = possibleKey;
+              found = this.getResource(code, ns, possibleKey, opt);
+            }
+          }
+        });
+      });
+    });
+    return {
+      res: found,
+      usedKey,
+      exactUsedKey,
+      usedLng,
+      usedNS
+    };
+  }
+  isValidLookup(res) {
+    return res !== void 0 && !(!this.options.returnNull && res === null) && !(!this.options.returnEmptyString && res === "");
+  }
+  getResource(code, ns, key, options = {}) {
+    var _a3;
+    if ((_a3 = this.i18nFormat) == null ? void 0 : _a3.getResource) return this.i18nFormat.getResource(code, ns, key, options);
+    return this.resourceStore.getResource(code, ns, key, options);
+  }
+  getUsedParamsDetails(options = {}) {
+    const optionsKeys = ["defaultValue", "ordinal", "context", "replace", "lng", "lngs", "fallbackLng", "ns", "keySeparator", "nsSeparator", "returnObjects", "returnDetails", "joinArrays", "postProcess", "interpolation"];
+    const useOptionsReplaceForData = options.replace && !isString$1(options.replace);
+    let data = useOptionsReplaceForData ? options.replace : options;
+    if (useOptionsReplaceForData && typeof options.count !== "undefined") {
+      data.count = options.count;
+    }
+    if (this.options.interpolation.defaultVariables) {
+      data = {
+        ...this.options.interpolation.defaultVariables,
+        ...data
+      };
+    }
+    if (!useOptionsReplaceForData) {
+      data = {
+        ...data
+      };
+      for (const key of optionsKeys) {
+        delete data[key];
+      }
+    }
+    return data;
+  }
+  static hasDefaultValue(options) {
+    const prefix2 = "defaultValue";
+    for (const option in options) {
+      if (Object.prototype.hasOwnProperty.call(options, option) && option.startsWith(prefix2) && void 0 !== options[option]) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+class LanguageUtil {
+  constructor(options) {
+    this.options = options;
+    this.supportedLngs = this.options.supportedLngs || false;
+    this.logger = baseLogger.create("languageUtils");
+  }
+  getScriptPartFromCode(code) {
+    code = getCleanedCode(code);
+    if (!code || !code.includes("-")) return null;
+    const p2 = code.split("-");
+    if (p2.length === 2) return null;
+    p2.pop();
+    if (p2[p2.length - 1].toLowerCase() === "x") return null;
+    return this.formatLanguageCode(p2.join("-"));
+  }
+  getLanguagePartFromCode(code) {
+    code = getCleanedCode(code);
+    if (!code || !code.includes("-")) return code;
+    const p2 = code.split("-");
+    return this.formatLanguageCode(p2[0]);
+  }
+  formatLanguageCode(code) {
+    if (isString$1(code) && code.includes("-")) {
+      let formattedCode;
+      try {
+        formattedCode = Intl.getCanonicalLocales(code)[0];
+      } catch (e) {
+      }
+      if (formattedCode && this.options.lowerCaseLng) {
+        formattedCode = formattedCode.toLowerCase();
+      }
+      if (formattedCode) return formattedCode;
+      if (this.options.lowerCaseLng) {
+        return code.toLowerCase();
+      }
+      return code;
+    }
+    return this.options.cleanCode || this.options.lowerCaseLng ? code.toLowerCase() : code;
+  }
+  isSupportedCode(code) {
+    if (this.options.load === "languageOnly" || this.options.nonExplicitSupportedLngs) {
+      code = this.getLanguagePartFromCode(code);
+    }
+    return !this.supportedLngs || !this.supportedLngs.length || this.supportedLngs.includes(code);
+  }
+  getBestMatchFromCodes(codes) {
+    if (!codes) return null;
+    let found;
+    codes.forEach((code) => {
+      if (found) return;
+      const cleanedLng = this.formatLanguageCode(code);
+      if (!this.options.supportedLngs || this.isSupportedCode(cleanedLng)) found = cleanedLng;
+    });
+    if (!found && this.options.supportedLngs) {
+      codes.forEach((code) => {
+        if (found) return;
+        const lngScOnly = this.getScriptPartFromCode(code);
+        if (this.isSupportedCode(lngScOnly)) return found = lngScOnly;
+        const lngOnly = this.getLanguagePartFromCode(code);
+        if (this.isSupportedCode(lngOnly)) return found = lngOnly;
+        found = this.options.supportedLngs.find((supportedLng) => {
+          if (supportedLng === lngOnly) return true;
+          if (!supportedLng.includes("-") && !lngOnly.includes("-")) return false;
+          if (supportedLng.includes("-") && !lngOnly.includes("-") && supportedLng.slice(0, supportedLng.indexOf("-")) === lngOnly) return true;
+          if (supportedLng.startsWith(lngOnly) && lngOnly.length > 1) return true;
+          return false;
+        });
+      });
+    }
+    if (!found) found = this.getFallbackCodes(this.options.fallbackLng)[0];
+    return found;
+  }
+  getFallbackCodes(fallbacks, code) {
+    if (!fallbacks) return [];
+    if (typeof fallbacks === "function") fallbacks = fallbacks(code);
+    if (isString$1(fallbacks)) fallbacks = [fallbacks];
+    if (Array.isArray(fallbacks)) return fallbacks;
+    if (!code) return fallbacks.default || [];
+    let found = fallbacks[code];
+    if (!found) found = fallbacks[this.getScriptPartFromCode(code)];
+    if (!found) found = fallbacks[this.formatLanguageCode(code)];
+    if (!found) found = fallbacks[this.getLanguagePartFromCode(code)];
+    if (!found) found = fallbacks.default;
+    return found || [];
+  }
+  toResolveHierarchy(code, fallbackCode) {
+    const fallbackCodes = this.getFallbackCodes((fallbackCode === false ? [] : fallbackCode) || this.options.fallbackLng || [], code);
+    const codes = [];
+    const addCode = (c2) => {
+      if (!c2) return;
+      if (this.isSupportedCode(c2)) {
+        codes.push(c2);
+      } else {
+        this.logger.warn(`rejecting language code not found in supportedLngs: ${c2}`);
+      }
+    };
+    if (isString$1(code) && (code.includes("-") || code.includes("_"))) {
+      if (this.options.load !== "languageOnly") addCode(this.formatLanguageCode(code));
+      if (this.options.load !== "languageOnly" && this.options.load !== "currentOnly") addCode(this.getScriptPartFromCode(code));
+      if (this.options.load !== "currentOnly") addCode(this.getLanguagePartFromCode(code));
+    } else if (isString$1(code)) {
+      addCode(this.formatLanguageCode(code));
+    }
+    fallbackCodes.forEach((fc) => {
+      if (!codes.includes(fc)) addCode(this.formatLanguageCode(fc));
+    });
+    return codes;
+  }
+}
+const suffixesOrder = {
+  zero: 0,
+  one: 1,
+  two: 2,
+  few: 3,
+  many: 4,
+  other: 5
+};
+const dummyRule = {
+  select: (count) => count === 1 ? "one" : "other",
+  resolvedOptions: () => ({
+    pluralCategories: ["one", "other"]
+  })
+};
+class PluralResolver {
+  constructor(languageUtils, options = {}) {
+    this.languageUtils = languageUtils;
+    this.options = options;
+    this.logger = baseLogger.create("pluralResolver");
+    this.pluralRulesCache = {};
+  }
+  clearCache() {
+    this.pluralRulesCache = {};
+  }
+  getRule(code, options = {}) {
+    const cleanedCode = getCleanedCode(code === "dev" ? "en" : code);
+    const type = options.ordinal ? "ordinal" : "cardinal";
+    const cacheKey = JSON.stringify({
+      cleanedCode,
+      type
+    });
+    if (cacheKey in this.pluralRulesCache) {
+      return this.pluralRulesCache[cacheKey];
+    }
+    let rule;
+    try {
+      rule = new Intl.PluralRules(cleanedCode, {
+        type
+      });
+    } catch (err) {
+      if (typeof Intl === "undefined") {
+        this.logger.error("No Intl support, please use an Intl polyfill!");
+        return dummyRule;
+      }
+      if (!code.match(/-|_/)) return dummyRule;
+      const lngPart = this.languageUtils.getLanguagePartFromCode(code);
+      rule = this.getRule(lngPart, options);
+    }
+    this.pluralRulesCache[cacheKey] = rule;
+    return rule;
+  }
+  needsPlural(code, options = {}) {
+    let rule = this.getRule(code, options);
+    if (!rule) rule = this.getRule("dev", options);
+    return (rule == null ? void 0 : rule.resolvedOptions().pluralCategories.length) > 1;
+  }
+  getPluralFormsOfKey(code, key, options = {}) {
+    return this.getSuffixes(code, options).map((suffix2) => `${key}${suffix2}`);
+  }
+  getSuffixes(code, options = {}) {
+    let rule = this.getRule(code, options);
+    if (!rule) rule = this.getRule("dev", options);
+    if (!rule) return [];
+    return rule.resolvedOptions().pluralCategories.sort((pluralCategory1, pluralCategory2) => suffixesOrder[pluralCategory1] - suffixesOrder[pluralCategory2]).map((pluralCategory) => `${this.options.prepend}${options.ordinal ? `ordinal${this.options.prepend}` : ""}${pluralCategory}`);
+  }
+  getSuffix(code, count, options = {}) {
+    const rule = this.getRule(code, options);
+    if (rule) {
+      return `${this.options.prepend}${options.ordinal ? `ordinal${this.options.prepend}` : ""}${rule.select(count)}`;
+    }
+    this.logger.warn(`no plural rule found for: ${code}`);
+    return this.getSuffix("dev", count, options);
+  }
+}
+const deepFindWithDefaults = (data, defaultData, key, keySeparator = ".", ignoreJSONStructure = true) => {
+  let path = getPathWithDefaults(data, defaultData, key);
+  if (!path && ignoreJSONStructure && isString$1(key)) {
+    path = deepFind(data, key, keySeparator);
+    if (path === void 0) path = deepFind(defaultData, key, keySeparator);
+  }
+  return path;
+};
+const regexSafe = (val) => val.replace(/\$/g, "$$$$");
+class Interpolator {
+  constructor(options = {}) {
+    var _a3;
+    this.logger = baseLogger.create("interpolator");
+    this.options = options;
+    this.format = ((_a3 = options == null ? void 0 : options.interpolation) == null ? void 0 : _a3.format) || ((value) => value);
+    this.init(options);
+  }
+  init(options = {}) {
+    if (!options.interpolation) options.interpolation = {
+      escapeValue: true
+    };
+    const {
+      escape: escape$1$1,
+      escapeValue,
+      useRawValueToEscape,
+      prefix: prefix2,
+      prefixEscaped,
+      suffix: suffix2,
+      suffixEscaped,
+      formatSeparator,
+      unescapeSuffix,
+      unescapePrefix,
+      nestingPrefix,
+      nestingPrefixEscaped,
+      nestingSuffix,
+      nestingSuffixEscaped,
+      nestingOptionsSeparator,
+      maxReplaces,
+      alwaysFormat
+    } = options.interpolation;
+    this.escape = escape$1$1 !== void 0 ? escape$1$1 : escape$1;
+    this.escapeValue = escapeValue !== void 0 ? escapeValue : true;
+    this.useRawValueToEscape = useRawValueToEscape !== void 0 ? useRawValueToEscape : false;
+    this.prefix = prefix2 ? regexEscape(prefix2) : prefixEscaped || "{{";
+    this.suffix = suffix2 ? regexEscape(suffix2) : suffixEscaped || "}}";
+    this.formatSeparator = formatSeparator || ",";
+    this.unescapePrefix = unescapeSuffix ? "" : unescapePrefix ? regexEscape(unescapePrefix) : "-";
+    this.unescapeSuffix = this.unescapePrefix ? "" : unescapeSuffix ? regexEscape(unescapeSuffix) : "";
+    this.nestingPrefix = nestingPrefix ? regexEscape(nestingPrefix) : nestingPrefixEscaped || regexEscape("$t(");
+    this.nestingSuffix = nestingSuffix ? regexEscape(nestingSuffix) : nestingSuffixEscaped || regexEscape(")");
+    this.nestingOptionsSeparator = nestingOptionsSeparator || ",";
+    this.maxReplaces = maxReplaces || 1e3;
+    this.alwaysFormat = alwaysFormat !== void 0 ? alwaysFormat : false;
+    this.resetRegExp();
+  }
+  reset() {
+    if (this.options) this.init(this.options);
+  }
+  resetRegExp() {
+    const getOrResetRegExp = (existingRegExp, pattern) => {
+      if ((existingRegExp == null ? void 0 : existingRegExp.source) === pattern) {
+        existingRegExp.lastIndex = 0;
+        return existingRegExp;
+      }
+      return new RegExp(pattern, "g");
+    };
+    this.regexp = getOrResetRegExp(this.regexp, `${this.prefix}(.+?)${this.suffix}`);
+    this.regexpUnescape = getOrResetRegExp(this.regexpUnescape, `${this.prefix}${this.unescapePrefix}(.+?)${this.unescapeSuffix}${this.suffix}`);
+    this.nestingRegexp = getOrResetRegExp(this.nestingRegexp, `${this.nestingPrefix}((?:[^()"']+|"[^"]*"|'[^']*'|\\((?:[^()]|"[^"]*"|'[^']*')*\\))*?)${this.nestingSuffix}`);
+  }
+  interpolate(str, data, lng, options) {
+    var _a3;
+    let match;
+    let value;
+    let replaces;
+    const defaultData = this.options && this.options.interpolation && this.options.interpolation.defaultVariables || {};
+    const handleFormat = (key) => {
+      if (!key.includes(this.formatSeparator)) {
+        const path = deepFindWithDefaults(data, defaultData, key, this.options.keySeparator, this.options.ignoreJSONStructure);
+        return this.alwaysFormat ? this.format(path, void 0, lng, {
+          ...options,
+          ...data,
+          interpolationkey: key
+        }) : path;
+      }
+      const p2 = key.split(this.formatSeparator);
+      const k2 = p2.shift().trim();
+      const f = p2.join(this.formatSeparator).trim();
+      return this.format(deepFindWithDefaults(data, defaultData, k2, this.options.keySeparator, this.options.ignoreJSONStructure), f, lng, {
+        ...options,
+        ...data,
+        interpolationkey: k2
+      });
+    };
+    this.resetRegExp();
+    if (!this.escapeValue && typeof str === "string" && /\$t\([^)]*\{[^}]*\{\{/.test(str)) {
+      this.logger.warn("nesting options string contains interpolated variables with escapeValue: false — if any of those values are attacker-controlled they can inject additional nesting options (e.g. redirect lng/ns). Sanitise untrusted input before passing it to t(), or keep escapeValue: true.");
+    }
+    const missingInterpolationHandler = (options == null ? void 0 : options.missingInterpolationHandler) || this.options.missingInterpolationHandler;
+    const skipOnVariables = ((_a3 = options == null ? void 0 : options.interpolation) == null ? void 0 : _a3.skipOnVariables) !== void 0 ? options.interpolation.skipOnVariables : this.options.interpolation.skipOnVariables;
+    const todos = [{
+      regex: this.regexpUnescape,
+      safeValue: (val) => regexSafe(val)
+    }, {
+      regex: this.regexp,
+      safeValue: (val) => this.escapeValue ? regexSafe(this.escape(val)) : regexSafe(val)
+    }];
+    todos.forEach((todo) => {
+      replaces = 0;
+      while (match = todo.regex.exec(str)) {
+        const matchedVar = match[1].trim();
+        value = handleFormat(matchedVar);
+        if (value === void 0) {
+          if (typeof missingInterpolationHandler === "function") {
+            const temp = missingInterpolationHandler(str, match, options);
+            value = isString$1(temp) ? temp : "";
+          } else if (options && Object.prototype.hasOwnProperty.call(options, matchedVar)) {
+            value = "";
+          } else if (skipOnVariables) {
+            value = match[0];
+            continue;
+          } else {
+            this.logger.warn(`missed to pass in variable ${matchedVar} for interpolating ${str}`);
+            value = "";
+          }
+        } else if (!isString$1(value) && !this.useRawValueToEscape) {
+          value = makeString(value);
+        }
+        const safeValue = todo.safeValue(value);
+        str = str.replace(match[0], safeValue);
+        if (skipOnVariables) {
+          todo.regex.lastIndex += value.length;
+          todo.regex.lastIndex -= match[0].length;
+        } else {
+          todo.regex.lastIndex = 0;
+        }
+        replaces++;
+        if (replaces >= this.maxReplaces) {
+          break;
+        }
+      }
+    });
+    return str;
+  }
+  nest(str, fc, options = {}) {
+    let match;
+    let value;
+    let clonedOptions;
+    const handleHasOptions = (key, inheritedOptions) => {
+      const sep = this.nestingOptionsSeparator;
+      if (!key.includes(sep)) return key;
+      const c2 = key.split(new RegExp(`${regexEscape(sep)}[ ]*{`));
+      let optionsString = `{${c2[1]}`;
+      key = c2[0];
+      optionsString = this.interpolate(optionsString, clonedOptions);
+      const matchedSingleQuotes = optionsString.match(/'/g);
+      const matchedDoubleQuotes = optionsString.match(/"/g);
+      if (((matchedSingleQuotes == null ? void 0 : matchedSingleQuotes.length) ?? 0) % 2 === 0 && !matchedDoubleQuotes || ((matchedDoubleQuotes == null ? void 0 : matchedDoubleQuotes.length) ?? 0) % 2 !== 0) {
+        optionsString = optionsString.replace(/'/g, '"');
+      }
+      try {
+        clonedOptions = JSON.parse(optionsString);
+        if (inheritedOptions) clonedOptions = {
+          ...inheritedOptions,
+          ...clonedOptions
+        };
+      } catch (e) {
+        this.logger.warn(`failed parsing options string in nesting for key ${key}`, e);
+        return `${key}${sep}${optionsString}`;
+      }
+      if (clonedOptions.defaultValue && clonedOptions.defaultValue.includes(this.prefix)) delete clonedOptions.defaultValue;
+      return key;
+    };
+    while (match = this.nestingRegexp.exec(str)) {
+      let formatters = [];
+      clonedOptions = {
+        ...options
+      };
+      clonedOptions = clonedOptions.replace && !isString$1(clonedOptions.replace) ? clonedOptions.replace : clonedOptions;
+      clonedOptions.applyPostProcessor = false;
+      delete clonedOptions.defaultValue;
+      const keyEndIndex = /{.*}/.test(match[1]) ? match[1].lastIndexOf("}") + 1 : match[1].indexOf(this.formatSeparator);
+      if (keyEndIndex !== -1) {
+        formatters = match[1].slice(keyEndIndex).split(this.formatSeparator).map((elem) => elem.trim()).filter(Boolean);
+        match[1] = match[1].slice(0, keyEndIndex);
+      }
+      value = fc(handleHasOptions.call(this, match[1].trim(), clonedOptions), clonedOptions);
+      if (value && match[0] === str && !isString$1(value)) return value;
+      if (!isString$1(value)) value = makeString(value);
+      if (!value) {
+        this.logger.warn(`missed to resolve ${match[1]} for nesting ${str}`);
+        value = "";
+      }
+      if (formatters.length) {
+        value = formatters.reduce((v2, f) => this.format(v2, f, options.lng, {
+          ...options,
+          interpolationkey: match[1].trim()
+        }), value.trim());
+      }
+      str = str.replace(match[0], value);
+      this.regexp.lastIndex = 0;
+    }
+    return str;
+  }
+}
+const parseFormatStr = (formatStr) => {
+  let formatName = formatStr.toLowerCase().trim();
+  const formatOptions = {};
+  if (formatStr.includes("(")) {
+    const p2 = formatStr.split("(");
+    formatName = p2[0].toLowerCase().trim();
+    const optStr = p2[1].slice(0, -1);
+    if (formatName === "currency" && !optStr.includes(":")) {
+      if (!formatOptions.currency) formatOptions.currency = optStr.trim();
+    } else if (formatName === "relativetime" && !optStr.includes(":")) {
+      if (!formatOptions.range) formatOptions.range = optStr.trim();
+    } else {
+      const opts = optStr.split(";");
+      opts.forEach((opt) => {
+        if (opt) {
+          const [key, ...rest] = opt.split(":");
+          const val = rest.join(":").trim().replace(/^'+|'+$/g, "");
+          const trimmedKey = key.trim();
+          if (!formatOptions[trimmedKey]) formatOptions[trimmedKey] = val;
+          if (val === "false") formatOptions[trimmedKey] = false;
+          if (val === "true") formatOptions[trimmedKey] = true;
+          if (!isNaN(val)) formatOptions[trimmedKey] = parseInt(val, 10);
+        }
+      });
+    }
+  }
+  return {
+    formatName,
+    formatOptions
+  };
+};
+const createCachedFormatter = (fn) => {
+  const cache = {};
+  return (v2, l, o2) => {
+    let optForCache = o2;
+    if (o2 && o2.interpolationkey && o2.formatParams && o2.formatParams[o2.interpolationkey] && o2[o2.interpolationkey]) {
+      optForCache = {
+        ...optForCache,
+        [o2.interpolationkey]: void 0
+      };
+    }
+    const key = l + JSON.stringify(optForCache);
+    let frm = cache[key];
+    if (!frm) {
+      frm = fn(getCleanedCode(l), o2);
+      cache[key] = frm;
+    }
+    return frm(v2);
+  };
+};
+const createNonCachedFormatter = (fn) => (v2, l, o2) => fn(getCleanedCode(l), o2)(v2);
+class Formatter {
+  constructor(options = {}) {
+    this.logger = baseLogger.create("formatter");
+    this.options = options;
+    this.init(options);
+  }
+  init(services, options = {
+    interpolation: {}
+  }) {
+    this.formatSeparator = options.interpolation.formatSeparator || ",";
+    const cf = options.cacheInBuiltFormats ? createCachedFormatter : createNonCachedFormatter;
+    this.formats = {
+      number: cf((lng, opt) => {
+        const formatter = new Intl.NumberFormat(lng, {
+          ...opt
+        });
+        return (val) => formatter.format(val);
+      }),
+      currency: cf((lng, opt) => {
+        const formatter = new Intl.NumberFormat(lng, {
+          ...opt,
+          style: "currency"
+        });
+        return (val) => formatter.format(val);
+      }),
+      datetime: cf((lng, opt) => {
+        const formatter = new Intl.DateTimeFormat(lng, {
+          ...opt
+        });
+        return (val) => formatter.format(val);
+      }),
+      relativetime: cf((lng, opt) => {
+        const formatter = new Intl.RelativeTimeFormat(lng, {
+          ...opt
+        });
+        return (val) => formatter.format(val, opt.range || "day");
+      }),
+      list: cf((lng, opt) => {
+        const formatter = new Intl.ListFormat(lng, {
+          ...opt
+        });
+        return (val) => formatter.format(val);
+      })
+    };
+  }
+  add(name, fc) {
+    this.formats[name.toLowerCase().trim()] = fc;
+  }
+  addCached(name, fc) {
+    this.formats[name.toLowerCase().trim()] = createCachedFormatter(fc);
+  }
+  format(value, format, lng, options = {}) {
+    if (!format) return value;
+    if (value == null) return value;
+    const formats = format.split(this.formatSeparator);
+    if (formats.length > 1 && formats[0].indexOf("(") > 1 && !formats[0].includes(")") && formats.find((f) => f.includes(")"))) {
+      const lastIndex = formats.findIndex((f) => f.includes(")"));
+      formats[0] = [formats[0], ...formats.splice(1, lastIndex)].join(this.formatSeparator);
+    }
+    const result = formats.reduce((mem, f) => {
+      var _a3;
+      const {
+        formatName,
+        formatOptions
+      } = parseFormatStr(f);
+      if (this.formats[formatName]) {
+        let formatted = mem;
+        try {
+          const valOptions = ((_a3 = options == null ? void 0 : options.formatParams) == null ? void 0 : _a3[options.interpolationkey]) || {};
+          const l = valOptions.locale || valOptions.lng || options.locale || options.lng || lng;
+          formatted = this.formats[formatName](mem, l, {
+            ...formatOptions,
+            ...options,
+            ...valOptions
+          });
+        } catch (error) {
+          this.logger.warn(error);
+        }
+        return formatted;
+      } else {
+        this.logger.warn(`there was no format function for ${formatName}`);
+      }
+      return mem;
+    }, value);
+    return result;
+  }
+}
+const removePending = (q2, name) => {
+  if (q2.pending[name] !== void 0) {
+    delete q2.pending[name];
+    q2.pendingCount--;
+  }
+};
+class Connector extends EventEmitter {
+  constructor(backend, store, services, options = {}) {
+    var _a3, _b3;
+    super();
+    this.backend = backend;
+    this.store = store;
+    this.services = services;
+    this.languageUtils = services.languageUtils;
+    this.options = options;
+    this.logger = baseLogger.create("backendConnector");
+    this.waitingReads = [];
+    this.maxParallelReads = options.maxParallelReads || 10;
+    this.readingCalls = 0;
+    this.maxRetries = options.maxRetries >= 0 ? options.maxRetries : 5;
+    this.retryTimeout = options.retryTimeout >= 1 ? options.retryTimeout : 350;
+    this.state = {};
+    this.queue = [];
+    (_b3 = (_a3 = this.backend) == null ? void 0 : _a3.init) == null ? void 0 : _b3.call(_a3, services, options.backend, options);
+  }
+  queueLoad(languages, namespaces, options, callback) {
+    const toLoad = {};
+    const pending = {};
+    const toLoadLanguages = {};
+    const toLoadNamespaces = {};
+    languages.forEach((lng) => {
+      let hasAllNamespaces = true;
+      namespaces.forEach((ns) => {
+        const name = `${lng}|${ns}`;
+        if (!options.reload && this.store.hasResourceBundle(lng, ns)) {
+          this.state[name] = 2;
+        } else if (this.state[name] < 0) ;
+        else if (this.state[name] === 1) {
+          if (pending[name] === void 0) pending[name] = true;
+        } else {
+          this.state[name] = 1;
+          hasAllNamespaces = false;
+          if (pending[name] === void 0) pending[name] = true;
+          if (toLoad[name] === void 0) toLoad[name] = true;
+          if (toLoadNamespaces[ns] === void 0) toLoadNamespaces[ns] = true;
+        }
+      });
+      if (!hasAllNamespaces) toLoadLanguages[lng] = true;
+    });
+    if (Object.keys(toLoad).length || Object.keys(pending).length) {
+      this.queue.push({
+        pending,
+        pendingCount: Object.keys(pending).length,
+        loaded: {},
+        errors: [],
+        callback
+      });
+    }
+    return {
+      toLoad: Object.keys(toLoad),
+      pending: Object.keys(pending),
+      toLoadLanguages: Object.keys(toLoadLanguages),
+      toLoadNamespaces: Object.keys(toLoadNamespaces)
+    };
+  }
+  loaded(name, err, data) {
+    const s2 = name.split("|");
+    const lng = s2[0];
+    const ns = s2[1];
+    if (err) this.emit("failedLoading", lng, ns, err);
+    if (!err && data) {
+      this.store.addResourceBundle(lng, ns, data, void 0, void 0, {
+        skipCopy: true
+      });
+    }
+    this.state[name] = err ? -1 : 2;
+    if (err && data) this.state[name] = 0;
+    const loaded = {};
+    this.queue.forEach((q2) => {
+      pushPath(q2.loaded, [lng], ns);
+      removePending(q2, name);
+      if (err) q2.errors.push(err);
+      if (q2.pendingCount === 0 && !q2.done) {
+        Object.keys(q2.loaded).forEach((l) => {
+          if (!loaded[l]) loaded[l] = {};
+          const loadedKeys = q2.loaded[l];
+          if (loadedKeys.length) {
+            loadedKeys.forEach((n) => {
+              if (loaded[l][n] === void 0) loaded[l][n] = true;
+            });
+          }
+        });
+        q2.done = true;
+        if (q2.errors.length) {
+          q2.callback(q2.errors);
+        } else {
+          q2.callback();
+        }
+      }
+    });
+    this.emit("loaded", loaded);
+    this.queue = this.queue.filter((q2) => !q2.done);
+  }
+  read(lng, ns, fcName, tried = 0, wait = this.retryTimeout, callback) {
+    if (!lng.length) return callback(null, {});
+    if (this.readingCalls >= this.maxParallelReads) {
+      this.waitingReads.push({
+        lng,
+        ns,
+        fcName,
+        tried,
+        wait,
+        callback
+      });
+      return;
+    }
+    this.readingCalls++;
+    const resolver = (err, data) => {
+      this.readingCalls--;
+      if (this.waitingReads.length > 0) {
+        const next = this.waitingReads.shift();
+        this.read(next.lng, next.ns, next.fcName, next.tried, next.wait, next.callback);
+      }
+      if (err && data && tried < this.maxRetries) {
+        setTimeout(() => {
+          this.read(lng, ns, fcName, tried + 1, wait * 2, callback);
+        }, wait);
+        return;
+      }
+      callback(err, data);
+    };
+    const fc = this.backend[fcName].bind(this.backend);
+    if (fc.length === 2) {
+      try {
+        const r2 = fc(lng, ns);
+        if (r2 && typeof r2.then === "function") {
+          r2.then((data) => resolver(null, data)).catch(resolver);
+        } else {
+          resolver(null, r2);
+        }
+      } catch (err) {
+        resolver(err);
+      }
+      return;
+    }
+    return fc(lng, ns, resolver);
+  }
+  prepareLoading(languages, namespaces, options = {}, callback) {
+    if (!this.backend) {
+      this.logger.warn("No backend was added via i18next.use. Will not load resources.");
+      return callback && callback();
+    }
+    if (isString$1(languages)) languages = this.languageUtils.toResolveHierarchy(languages);
+    if (isString$1(namespaces)) namespaces = [namespaces];
+    const toLoad = this.queueLoad(languages, namespaces, options, callback);
+    if (!toLoad.toLoad.length) {
+      if (!toLoad.pending.length) callback();
+      return null;
+    }
+    toLoad.toLoad.forEach((name) => {
+      this.loadOne(name);
+    });
+  }
+  load(languages, namespaces, callback) {
+    this.prepareLoading(languages, namespaces, {}, callback);
+  }
+  reload(languages, namespaces, callback) {
+    this.prepareLoading(languages, namespaces, {
+      reload: true
+    }, callback);
+  }
+  loadOne(name, prefix2 = "") {
+    const s2 = name.split("|");
+    const lng = s2[0];
+    const ns = s2[1];
+    this.read(lng, ns, "read", void 0, void 0, (err, data) => {
+      if (err) this.logger.warn(`${prefix2}loading namespace ${ns} for language ${lng} failed`, err);
+      if (!err && data) this.logger.log(`${prefix2}loaded namespace ${ns} for language ${lng}`, data);
+      this.loaded(name, err, data);
+    });
+  }
+  saveMissing(languages, namespace, key, fallbackValue, isUpdate, options = {}, clb = () => {
+  }) {
+    var _a3, _b3, _c2, _d2, _e2;
+    if (((_b3 = (_a3 = this.services) == null ? void 0 : _a3.utils) == null ? void 0 : _b3.hasLoadedNamespace) && !((_d2 = (_c2 = this.services) == null ? void 0 : _c2.utils) == null ? void 0 : _d2.hasLoadedNamespace(namespace))) {
+      this.logger.warn(`did not save key "${key}" as the namespace "${namespace}" was not yet loaded`, "This means something IS WRONG in your setup. You access the t function before i18next.init / i18next.loadNamespace / i18next.changeLanguage was done. Wait for the callback or Promise to resolve before accessing it!!!");
+      return;
+    }
+    if (key === void 0 || key === null || key === "") return;
+    if ((_e2 = this.backend) == null ? void 0 : _e2.create) {
+      const opts = {
+        ...options,
+        isUpdate
+      };
+      const fc = this.backend.create.bind(this.backend);
+      if (fc.length < 6) {
+        try {
+          let r2;
+          if (fc.length === 5) {
+            r2 = fc(languages, namespace, key, fallbackValue, opts);
+          } else {
+            r2 = fc(languages, namespace, key, fallbackValue);
+          }
+          if (r2 && typeof r2.then === "function") {
+            r2.then((data) => clb(null, data)).catch(clb);
+          } else {
+            clb(null, r2);
+          }
+        } catch (err) {
+          clb(err);
+        }
+      } else {
+        fc(languages, namespace, key, fallbackValue, clb, opts);
+      }
+    }
+    if (!languages || !languages[0]) return;
+    this.store.addResource(languages[0], namespace, key, fallbackValue);
+  }
+}
+const get = () => ({
+  debug: false,
+  initAsync: true,
+  ns: ["translation"],
+  defaultNS: ["translation"],
+  fallbackLng: ["dev"],
+  fallbackNS: false,
+  supportedLngs: false,
+  nonExplicitSupportedLngs: false,
+  load: "all",
+  preload: false,
+  keySeparator: ".",
+  nsSeparator: ":",
+  pluralSeparator: "_",
+  contextSeparator: "_",
+  enableSelector: false,
+  partialBundledLanguages: false,
+  saveMissing: false,
+  updateMissing: false,
+  saveMissingTo: "fallback",
+  saveMissingPlurals: true,
+  missingKeyHandler: false,
+  missingInterpolationHandler: false,
+  postProcess: false,
+  postProcessPassResolved: false,
+  returnNull: false,
+  returnEmptyString: true,
+  returnObjects: false,
+  joinArrays: false,
+  returnedObjectHandler: false,
+  parseMissingKeyHandler: false,
+  appendNamespaceToMissingKey: false,
+  appendNamespaceToCIMode: false,
+  overloadTranslationOptionHandler: (args) => {
+    let ret = {};
+    if (typeof args[1] === "object") ret = args[1];
+    if (isString$1(args[1])) ret.defaultValue = args[1];
+    if (isString$1(args[2])) ret.tDescription = args[2];
+    if (typeof args[2] === "object" || typeof args[3] === "object") {
+      const options = args[3] || args[2];
+      Object.keys(options).forEach((key) => {
+        ret[key] = options[key];
+      });
+    }
+    return ret;
+  },
+  interpolation: {
+    escapeValue: true,
+    prefix: "{{",
+    suffix: "}}",
+    formatSeparator: ",",
+    unescapePrefix: "-",
+    nestingPrefix: "$t(",
+    nestingSuffix: ")",
+    nestingOptionsSeparator: ",",
+    maxReplaces: 1e3,
+    skipOnVariables: true
+  },
+  cacheInBuiltFormats: true
+});
+const transformOptions = (options) => {
+  if (isString$1(options.ns)) options.ns = [options.ns];
+  if (isString$1(options.fallbackLng)) options.fallbackLng = [options.fallbackLng];
+  if (isString$1(options.fallbackNS)) options.fallbackNS = [options.fallbackNS];
+  if (options.supportedLngs && !options.supportedLngs.includes("cimode")) {
+    options.supportedLngs = options.supportedLngs.concat(["cimode"]);
+  }
+  return options;
+};
+const noop$7 = () => {
+};
+const bindMemberFunctions = (inst) => {
+  const mems = Object.getOwnPropertyNames(Object.getPrototypeOf(inst));
+  mems.forEach((mem) => {
+    if (typeof inst[mem] === "function") {
+      inst[mem] = inst[mem].bind(inst);
+    }
+  });
+};
+class I18n extends EventEmitter {
+  constructor(options = {}, callback) {
+    super();
+    this.options = transformOptions(options);
+    this.services = {};
+    this.logger = baseLogger;
+    this.modules = {
+      external: []
+    };
+    bindMemberFunctions(this);
+    if (callback && !this.isInitialized && !options.isClone) {
+      if (!this.options.initAsync) {
+        this.init(options, callback);
+        return this;
+      }
+      setTimeout(() => {
+        this.init(options, callback);
+      }, 0);
+    }
+  }
+  init(options = {}, callback) {
+    this.isInitializing = true;
+    if (typeof options === "function") {
+      callback = options;
+      options = {};
+    }
+    if (options.defaultNS == null && options.ns) {
+      if (isString$1(options.ns)) {
+        options.defaultNS = options.ns;
+      } else if (!options.ns.includes("translation")) {
+        options.defaultNS = options.ns[0];
+      }
+    }
+    const defOpts = get();
+    this.options = {
+      ...defOpts,
+      ...this.options,
+      ...transformOptions(options)
+    };
+    this.options.interpolation = {
+      ...defOpts.interpolation,
+      ...this.options.interpolation
+    };
+    if (options.keySeparator !== void 0) {
+      this.options.userDefinedKeySeparator = options.keySeparator;
+    }
+    if (options.nsSeparator !== void 0) {
+      this.options.userDefinedNsSeparator = options.nsSeparator;
+    }
+    if (typeof this.options.overloadTranslationOptionHandler !== "function") {
+      this.options.overloadTranslationOptionHandler = defOpts.overloadTranslationOptionHandler;
+    }
+    const createClassOnDemand = (ClassOrObject) => {
+      if (!ClassOrObject) return null;
+      if (typeof ClassOrObject === "function") return new ClassOrObject();
+      return ClassOrObject;
+    };
+    if (!this.options.isClone) {
+      if (this.modules.logger) {
+        baseLogger.init(createClassOnDemand(this.modules.logger), this.options);
+      } else {
+        baseLogger.init(null, this.options);
+      }
+      let formatter;
+      if (this.modules.formatter) {
+        formatter = this.modules.formatter;
+      } else {
+        formatter = Formatter;
+      }
+      const lu = new LanguageUtil(this.options);
+      this.store = new ResourceStore(this.options.resources, this.options);
+      const s2 = this.services;
+      s2.logger = baseLogger;
+      s2.resourceStore = this.store;
+      s2.languageUtils = lu;
+      s2.pluralResolver = new PluralResolver(lu, {
+        prepend: this.options.pluralSeparator
+      });
+      if (formatter) {
+        s2.formatter = createClassOnDemand(formatter);
+        if (s2.formatter.init) s2.formatter.init(s2, this.options);
+        this.options.interpolation.format = s2.formatter.format.bind(s2.formatter);
+      }
+      s2.interpolator = new Interpolator(this.options);
+      s2.utils = {
+        hasLoadedNamespace: this.hasLoadedNamespace.bind(this)
+      };
+      s2.backendConnector = new Connector(createClassOnDemand(this.modules.backend), s2.resourceStore, s2, this.options);
+      s2.backendConnector.on("*", (event, ...args) => {
+        this.emit(event, ...args);
+      });
+      if (this.modules.languageDetector) {
+        s2.languageDetector = createClassOnDemand(this.modules.languageDetector);
+        if (s2.languageDetector.init) s2.languageDetector.init(s2, this.options.detection, this.options);
+      }
+      if (this.modules.i18nFormat) {
+        s2.i18nFormat = createClassOnDemand(this.modules.i18nFormat);
+        if (s2.i18nFormat.init) s2.i18nFormat.init(this);
+      }
+      this.translator = new Translator(this.services, this.options);
+      this.translator.on("*", (event, ...args) => {
+        this.emit(event, ...args);
+      });
+      this.modules.external.forEach((m2) => {
+        if (m2.init) m2.init(this);
+      });
+    }
+    this.format = this.options.interpolation.format;
+    if (!callback) callback = noop$7;
+    if (this.options.fallbackLng && !this.services.languageDetector && !this.options.lng) {
+      const codes = this.services.languageUtils.getFallbackCodes(this.options.fallbackLng);
+      if (codes.length > 0 && codes[0] !== "dev") this.options.lng = codes[0];
+    }
+    if (!this.services.languageDetector && !this.options.lng) {
+      this.logger.warn("init: no languageDetector is used and no lng is defined");
+    }
+    const storeApi = ["getResource", "hasResourceBundle", "getResourceBundle", "getDataByLanguage"];
+    storeApi.forEach((fcName) => {
+      this[fcName] = (...args) => this.store[fcName](...args);
+    });
+    const storeApiChained = ["addResource", "addResources", "addResourceBundle", "removeResourceBundle"];
+    storeApiChained.forEach((fcName) => {
+      this[fcName] = (...args) => {
+        this.store[fcName](...args);
+        return this;
+      };
+    });
+    const deferred = defer();
+    const load = () => {
+      const finish = (err, t) => {
+        this.isInitializing = false;
+        if (this.isInitialized && !this.initializedStoreOnce) this.logger.warn("init: i18next is already initialized. You should call init just once!");
+        this.isInitialized = true;
+        if (!this.options.isClone) this.logger.log("initialized", this.options);
+        this.emit("initialized", this.options);
+        deferred.resolve(t);
+        callback(err, t);
+      };
+      if ((this.languages || this.isLanguageChangingTo) && !this.isInitialized) return finish(null, this.t.bind(this));
+      this.changeLanguage(this.options.lng, finish);
+    };
+    if (this.options.resources || !this.options.initAsync) {
+      load();
+    } else {
+      setTimeout(load, 0);
+    }
+    return deferred;
+  }
+  loadResources(language, callback = noop$7) {
+    var _a3, _b3;
+    let usedCallback = callback;
+    const usedLng = isString$1(language) ? language : this.language;
+    if (typeof language === "function") usedCallback = language;
+    if (!this.options.resources || this.options.partialBundledLanguages) {
+      if ((usedLng == null ? void 0 : usedLng.toLowerCase()) === "cimode" && (!this.options.preload || this.options.preload.length === 0)) return usedCallback();
+      const toLoad = [];
+      const append = (lng) => {
+        if (!lng) return;
+        if (lng === "cimode") return;
+        const lngs = this.services.languageUtils.toResolveHierarchy(lng);
+        lngs.forEach((l) => {
+          if (l === "cimode") return;
+          if (!toLoad.includes(l)) toLoad.push(l);
+        });
+      };
+      if (!usedLng) {
+        const fallbacks = this.services.languageUtils.getFallbackCodes(this.options.fallbackLng);
+        fallbacks.forEach((l) => append(l));
+      } else {
+        append(usedLng);
+      }
+      (_b3 = (_a3 = this.options.preload) == null ? void 0 : _a3.forEach) == null ? void 0 : _b3.call(_a3, (l) => append(l));
+      this.services.backendConnector.load(toLoad, this.options.ns, (e) => {
+        if (!e && !this.resolvedLanguage && this.language) this.setResolvedLanguage(this.language);
+        usedCallback(e);
+      });
+    } else {
+      usedCallback(null);
+    }
+  }
+  reloadResources(lngs, ns, callback) {
+    const deferred = defer();
+    if (typeof lngs === "function") {
+      callback = lngs;
+      lngs = void 0;
+    }
+    if (typeof ns === "function") {
+      callback = ns;
+      ns = void 0;
+    }
+    if (!lngs) lngs = this.languages;
+    if (!ns) ns = this.options.ns;
+    if (!callback) callback = noop$7;
+    this.services.backendConnector.reload(lngs, ns, (err) => {
+      deferred.resolve();
+      callback(err);
+    });
+    return deferred;
+  }
+  use(module) {
+    if (!module) throw new Error("You are passing an undefined module! Please check the object you are passing to i18next.use()");
+    if (!module.type) throw new Error("You are passing a wrong module! Please check the object you are passing to i18next.use()");
+    if (module.type === "backend") {
+      this.modules.backend = module;
+    }
+    if (module.type === "logger" || module.log && module.warn && module.error) {
+      this.modules.logger = module;
+    }
+    if (module.type === "languageDetector") {
+      this.modules.languageDetector = module;
+    }
+    if (module.type === "i18nFormat") {
+      this.modules.i18nFormat = module;
+    }
+    if (module.type === "postProcessor") {
+      postProcessor.addPostProcessor(module);
+    }
+    if (module.type === "formatter") {
+      this.modules.formatter = module;
+    }
+    if (module.type === "3rdParty") {
+      this.modules.external.push(module);
+    }
+    return this;
+  }
+  setResolvedLanguage(l) {
+    if (!l || !this.languages) return;
+    if (["cimode", "dev"].includes(l)) return;
+    for (let li = 0; li < this.languages.length; li++) {
+      const lngInLngs = this.languages[li];
+      if (["cimode", "dev"].includes(lngInLngs)) continue;
+      if (this.store.hasLanguageSomeTranslations(lngInLngs)) {
+        this.resolvedLanguage = lngInLngs;
+        break;
+      }
+    }
+    if (!this.resolvedLanguage && !this.languages.includes(l) && this.store.hasLanguageSomeTranslations(l)) {
+      this.resolvedLanguage = l;
+      this.languages.unshift(l);
+    }
+  }
+  changeLanguage(lng, callback) {
+    this.isLanguageChangingTo = lng;
+    const deferred = defer();
+    this.emit("languageChanging", lng);
+    const setLngProps = (l) => {
+      this.language = l;
+      this.languages = this.services.languageUtils.toResolveHierarchy(l);
+      this.resolvedLanguage = void 0;
+      this.setResolvedLanguage(l);
+    };
+    const done = (err, l) => {
+      if (l) {
+        if (this.isLanguageChangingTo === lng) {
+          setLngProps(l);
+          this.translator.changeLanguage(l);
+          this.isLanguageChangingTo = void 0;
+          this.emit("languageChanged", l);
+          this.logger.log("languageChanged", l);
+        }
+      } else {
+        this.isLanguageChangingTo = void 0;
+      }
+      deferred.resolve((...args) => this.t(...args));
+      if (callback) callback(err, (...args) => this.t(...args));
+    };
+    const setLng = (lngs) => {
+      var _a3, _b3;
+      if (!lng && !lngs && this.services.languageDetector) lngs = [];
+      const fl = isString$1(lngs) ? lngs : lngs && lngs[0];
+      const l = this.store.hasLanguageSomeTranslations(fl) ? fl : this.services.languageUtils.getBestMatchFromCodes(isString$1(lngs) ? [lngs] : lngs);
+      if (l) {
+        if (!this.language) {
+          setLngProps(l);
+        }
+        if (!this.translator.language) this.translator.changeLanguage(l);
+        (_b3 = (_a3 = this.services.languageDetector) == null ? void 0 : _a3.cacheUserLanguage) == null ? void 0 : _b3.call(_a3, l);
+      }
+      this.loadResources(l, (err) => {
+        done(err, l);
+      });
+    };
+    if (!lng && this.services.languageDetector && !this.services.languageDetector.async) {
+      setLng(this.services.languageDetector.detect());
+    } else if (!lng && this.services.languageDetector && this.services.languageDetector.async) {
+      if (this.services.languageDetector.detect.length === 0) {
+        this.services.languageDetector.detect().then(setLng);
+      } else {
+        this.services.languageDetector.detect(setLng);
+      }
+    } else {
+      setLng(lng);
+    }
+    return deferred;
+  }
+  getFixedT(lng, ns, keyPrefix, fixedOpts) {
+    const scopeNs = fixedOpts == null ? void 0 : fixedOpts.scopeNs;
+    const fixedT = (key, opts, ...rest) => {
+      let o2;
+      if (typeof opts !== "object") {
+        o2 = this.options.overloadTranslationOptionHandler([key, opts].concat(rest));
+      } else {
+        o2 = {
+          ...opts
+        };
+      }
+      o2.lng = o2.lng || fixedT.lng;
+      o2.lngs = o2.lngs || fixedT.lngs;
+      const explicitCallNs = o2.ns !== void 0 && o2.ns !== null;
+      o2.ns = o2.ns || fixedT.ns;
+      if (o2.keyPrefix !== "") o2.keyPrefix = o2.keyPrefix || keyPrefix || fixedT.keyPrefix;
+      const selectorOpts = {
+        ...this.options,
+        ...o2
+      };
+      if (Array.isArray(scopeNs) && !explicitCallNs) selectorOpts.ns = scopeNs;
+      if (typeof o2.keyPrefix === "function") o2.keyPrefix = keysFromSelector(o2.keyPrefix, selectorOpts);
+      const keySeparator = this.options.keySeparator || ".";
+      let resultKey;
+      if (o2.keyPrefix && Array.isArray(key)) {
+        resultKey = key.map((k2) => {
+          if (typeof k2 === "function") k2 = keysFromSelector(k2, selectorOpts);
+          return `${o2.keyPrefix}${keySeparator}${k2}`;
+        });
+      } else {
+        if (typeof key === "function") key = keysFromSelector(key, selectorOpts);
+        resultKey = o2.keyPrefix ? `${o2.keyPrefix}${keySeparator}${key}` : key;
+      }
+      return this.t(resultKey, o2);
+    };
+    if (isString$1(lng)) {
+      fixedT.lng = lng;
+    } else {
+      fixedT.lngs = lng;
+    }
+    fixedT.ns = ns;
+    fixedT.keyPrefix = keyPrefix;
+    return fixedT;
+  }
+  t(...args) {
+    var _a3;
+    return (_a3 = this.translator) == null ? void 0 : _a3.translate(...args);
+  }
+  exists(...args) {
+    var _a3;
+    return (_a3 = this.translator) == null ? void 0 : _a3.exists(...args);
+  }
+  setDefaultNamespace(ns) {
+    this.options.defaultNS = ns;
+  }
+  hasLoadedNamespace(ns, options = {}) {
+    if (!this.isInitialized) {
+      this.logger.warn("hasLoadedNamespace: i18next was not initialized", this.languages);
+      return false;
+    }
+    if (!this.languages || !this.languages.length) {
+      this.logger.warn("hasLoadedNamespace: i18n.languages were undefined or empty", this.languages);
+      return false;
+    }
+    const lng = options.lng || this.resolvedLanguage || this.languages[0];
+    const fallbackLng = this.options ? this.options.fallbackLng : false;
+    const lastLng = this.languages[this.languages.length - 1];
+    if (lng.toLowerCase() === "cimode") return true;
+    const loadNotPending = (l, n) => {
+      const loadState = this.services.backendConnector.state[`${l}|${n}`];
+      return loadState === -1 || loadState === 0 || loadState === 2;
+    };
+    if (options.precheck) {
+      const preResult = options.precheck(this, loadNotPending);
+      if (preResult !== void 0) return preResult;
+    }
+    if (this.hasResourceBundle(lng, ns)) return true;
+    if (!this.services.backendConnector.backend || this.options.resources && !this.options.partialBundledLanguages) return true;
+    if (loadNotPending(lng, ns) && (!fallbackLng || loadNotPending(lastLng, ns))) return true;
+    return false;
+  }
+  loadNamespaces(ns, callback) {
+    const deferred = defer();
+    if (!this.options.ns) {
+      if (callback) callback();
+      return Promise.resolve();
+    }
+    if (isString$1(ns)) ns = [ns];
+    ns.forEach((n) => {
+      if (!this.options.ns.includes(n)) this.options.ns.push(n);
+    });
+    this.loadResources((err) => {
+      deferred.resolve();
+      if (callback) callback(err);
+    });
+    return deferred;
+  }
+  loadLanguages(lngs, callback) {
+    const deferred = defer();
+    if (isString$1(lngs)) lngs = [lngs];
+    const preloaded = this.options.preload || [];
+    const newLngs = lngs.filter((lng) => !preloaded.includes(lng) && this.services.languageUtils.isSupportedCode(lng));
+    if (!newLngs.length) {
+      if (callback) callback();
+      return Promise.resolve();
+    }
+    this.options.preload = preloaded.concat(newLngs);
+    this.loadResources((err) => {
+      deferred.resolve();
+      if (callback) callback(err);
+    });
+    return deferred;
+  }
+  dir(lng) {
+    var _a3, _b3;
+    if (!lng) lng = this.resolvedLanguage || (((_a3 = this.languages) == null ? void 0 : _a3.length) > 0 ? this.languages[0] : this.language);
+    if (!lng) return "rtl";
+    try {
+      const l = new Intl.Locale(lng);
+      if (l && l.getTextInfo) {
+        const ti = l.getTextInfo();
+        if (ti && ti.direction) return ti.direction;
+      }
+    } catch (e) {
+    }
+    const rtlLngs = ["ar", "shu", "sqr", "ssh", "xaa", "yhd", "yud", "aao", "abh", "abv", "acm", "acq", "acw", "acx", "acy", "adf", "ads", "aeb", "aec", "afb", "ajp", "apc", "apd", "arb", "arq", "ars", "ary", "arz", "auz", "avl", "ayh", "ayl", "ayn", "ayp", "bbz", "pga", "he", "iw", "ps", "pbt", "pbu", "pst", "prp", "prd", "ug", "ur", "ydd", "yds", "yih", "ji", "yi", "hbo", "men", "xmn", "fa", "jpr", "peo", "pes", "prs", "dv", "sam", "ckb"];
+    const languageUtils = ((_b3 = this.services) == null ? void 0 : _b3.languageUtils) || new LanguageUtil(get());
+    if (lng.toLowerCase().indexOf("-latn") > 1) return "ltr";
+    return rtlLngs.includes(languageUtils.getLanguagePartFromCode(lng)) || lng.toLowerCase().indexOf("-arab") > 1 ? "rtl" : "ltr";
+  }
+  static createInstance(options = {}, callback) {
+    const instance2 = new I18n(options, callback);
+    instance2.createInstance = I18n.createInstance;
+    return instance2;
+  }
+  cloneInstance(options = {}, callback = noop$7) {
+    const forkResourceStore = options.forkResourceStore;
+    if (forkResourceStore) delete options.forkResourceStore;
+    const mergedOptions = {
+      ...this.options,
+      ...options,
+      ...{
+        isClone: true
+      }
+    };
+    const clone = new I18n(mergedOptions);
+    if (options.debug !== void 0 || options.prefix !== void 0) {
+      clone.logger = clone.logger.clone(options);
+    }
+    const membersToCopy = ["store", "services", "language"];
+    membersToCopy.forEach((m2) => {
+      clone[m2] = this[m2];
+    });
+    clone.services = {
+      ...this.services
+    };
+    clone.services.utils = {
+      hasLoadedNamespace: clone.hasLoadedNamespace.bind(clone)
+    };
+    if (forkResourceStore) {
+      const clonedData = Object.keys(this.store.data).reduce((prev, l) => {
+        prev[l] = {
+          ...this.store.data[l]
+        };
+        prev[l] = Object.keys(prev[l]).reduce((acc, n) => {
+          acc[n] = {
+            ...prev[l][n]
+          };
+          return acc;
+        }, prev[l]);
+        return prev;
+      }, {});
+      clone.store = new ResourceStore(clonedData, mergedOptions);
+      clone.services.resourceStore = clone.store;
+    }
+    if (options.interpolation) {
+      const defOpts = get();
+      const mergedInterpolation = {
+        ...defOpts.interpolation,
+        ...this.options.interpolation,
+        ...options.interpolation
+      };
+      const mergedForInterpolator = {
+        ...mergedOptions,
+        interpolation: mergedInterpolation
+      };
+      clone.services.interpolator = new Interpolator(mergedForInterpolator);
+    }
+    clone.translator = new Translator(clone.services, mergedOptions);
+    clone.translator.on("*", (event, ...args) => {
+      clone.emit(event, ...args);
+    });
+    clone.init(mergedOptions, callback);
+    clone.translator.options = mergedOptions;
+    clone.translator.backendConnector.services.utils = {
+      hasLoadedNamespace: clone.hasLoadedNamespace.bind(clone)
+    };
+    return clone;
+  }
+  toJSON() {
+    return {
+      options: this.options,
+      store: this.store,
+      language: this.language,
+      languages: this.languages,
+      resolvedLanguage: this.resolvedLanguage
+    };
+  }
+}
+const instance = I18n.createInstance();
+instance.createInstance;
+instance.dir;
+instance.init;
+instance.loadResources;
+instance.reloadResources;
+instance.use;
+instance.changeLanguage;
+instance.getFixedT;
+instance.t;
+instance.exists;
+instance.setDefaultNamespace;
+instance.hasLoadedNamespace;
+instance.loadNamespaces;
+instance.loadLanguages;
+var react = { exports: {} };
+var react_production = {};
+/**
+ * @license React
+ * react.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+var REACT_ELEMENT_TYPE$1 = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE$2 = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE$1 = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE$1 = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE$1 = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE$1 = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE$1 = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE$1 = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE$1 = Symbol.for("react.suspense"), REACT_MEMO_TYPE$1 = Symbol.for("react.memo"), REACT_LAZY_TYPE$1 = Symbol.for("react.lazy"), MAYBE_ITERATOR_SYMBOL$1 = Symbol.iterator;
+function getIteratorFn$1(maybeIterable) {
+  if (null === maybeIterable || "object" !== typeof maybeIterable) return null;
+  maybeIterable = MAYBE_ITERATOR_SYMBOL$1 && maybeIterable[MAYBE_ITERATOR_SYMBOL$1] || maybeIterable["@@iterator"];
+  return "function" === typeof maybeIterable ? maybeIterable : null;
+}
+var ReactNoopUpdateQueue = {
+  isMounted: function() {
+    return false;
+  },
+  enqueueForceUpdate: function() {
+  },
+  enqueueReplaceState: function() {
+  },
+  enqueueSetState: function() {
+  }
+}, assign$1 = Object.assign, emptyObject = {};
+function Component(props, context, updater) {
+  this.props = props;
+  this.context = context;
+  this.refs = emptyObject;
+  this.updater = updater || ReactNoopUpdateQueue;
+}
+Component.prototype.isReactComponent = {};
+Component.prototype.setState = function(partialState, callback) {
+  if ("object" !== typeof partialState && "function" !== typeof partialState && null != partialState)
+    throw Error(
+      "takes an object of state variables to update or a function which returns an object of state variables."
+    );
+  this.updater.enqueueSetState(this, partialState, callback, "setState");
+};
+Component.prototype.forceUpdate = function(callback) {
+  this.updater.enqueueForceUpdate(this, callback, "forceUpdate");
+};
+function ComponentDummy() {
+}
+ComponentDummy.prototype = Component.prototype;
+function PureComponent(props, context, updater) {
+  this.props = props;
+  this.context = context;
+  this.refs = emptyObject;
+  this.updater = updater || ReactNoopUpdateQueue;
+}
+var pureComponentPrototype = PureComponent.prototype = new ComponentDummy();
+pureComponentPrototype.constructor = PureComponent;
+assign$1(pureComponentPrototype, Component.prototype);
+pureComponentPrototype.isPureReactComponent = true;
+var isArrayImpl$1 = Array.isArray, ReactSharedInternals$2 = { H: null, A: null, T: null, S: null, V: null }, hasOwnProperty$1 = Object.prototype.hasOwnProperty;
+function ReactElement(type, key, self2, source, owner, props) {
+  self2 = props.ref;
+  return {
+    $$typeof: REACT_ELEMENT_TYPE$1,
+    type,
+    key,
+    ref: void 0 !== self2 ? self2 : null,
+    props
+  };
+}
+function cloneAndReplaceKey(oldElement, newKey) {
+  return ReactElement(
+    oldElement.type,
+    newKey,
+    void 0,
+    void 0,
+    void 0,
+    oldElement.props
+  );
+}
+function isValidElement(object) {
+  return "object" === typeof object && null !== object && object.$$typeof === REACT_ELEMENT_TYPE$1;
+}
+function escape(key) {
+  var escaperLookup = { "=": "=0", ":": "=2" };
+  return "$" + key.replace(/[=:]/g, function(match) {
+    return escaperLookup[match];
+  });
+}
+var userProvidedKeyEscapeRegex = /\/+/g;
+function getElementKey(element, index2) {
+  return "object" === typeof element && null !== element && null != element.key ? escape("" + element.key) : index2.toString(36);
+}
+function noop$1$1() {
+}
+function resolveThenable(thenable) {
+  switch (thenable.status) {
+    case "fulfilled":
+      return thenable.value;
+    case "rejected":
+      throw thenable.reason;
+    default:
+      switch ("string" === typeof thenable.status ? thenable.then(noop$1$1, noop$1$1) : (thenable.status = "pending", thenable.then(
+        function(fulfilledValue) {
+          "pending" === thenable.status && (thenable.status = "fulfilled", thenable.value = fulfilledValue);
+        },
+        function(error) {
+          "pending" === thenable.status && (thenable.status = "rejected", thenable.reason = error);
+        }
+      )), thenable.status) {
+        case "fulfilled":
+          return thenable.value;
+        case "rejected":
+          throw thenable.reason;
+      }
+  }
+  throw thenable;
+}
+function mapIntoArray(children, array, escapedPrefix, nameSoFar, callback) {
+  var type = typeof children;
+  if ("undefined" === type || "boolean" === type) children = null;
+  var invokeCallback = false;
+  if (null === children) invokeCallback = true;
+  else
+    switch (type) {
+      case "bigint":
+      case "string":
+      case "number":
+        invokeCallback = true;
+        break;
+      case "object":
+        switch (children.$$typeof) {
+          case REACT_ELEMENT_TYPE$1:
+          case REACT_PORTAL_TYPE$2:
+            invokeCallback = true;
+            break;
+          case REACT_LAZY_TYPE$1:
+            return invokeCallback = children._init, mapIntoArray(
+              invokeCallback(children._payload),
+              array,
+              escapedPrefix,
+              nameSoFar,
+              callback
+            );
+        }
+    }
+  if (invokeCallback)
+    return callback = callback(children), invokeCallback = "" === nameSoFar ? "." + getElementKey(children, 0) : nameSoFar, isArrayImpl$1(callback) ? (escapedPrefix = "", null != invokeCallback && (escapedPrefix = invokeCallback.replace(userProvidedKeyEscapeRegex, "$&/") + "/"), mapIntoArray(callback, array, escapedPrefix, "", function(c2) {
+      return c2;
+    })) : null != callback && (isValidElement(callback) && (callback = cloneAndReplaceKey(
+      callback,
+      escapedPrefix + (null == callback.key || children && children.key === callback.key ? "" : ("" + callback.key).replace(
+        userProvidedKeyEscapeRegex,
+        "$&/"
+      ) + "/") + invokeCallback
+    )), array.push(callback)), 1;
+  invokeCallback = 0;
+  var nextNamePrefix = "" === nameSoFar ? "." : nameSoFar + ":";
+  if (isArrayImpl$1(children))
+    for (var i = 0; i < children.length; i++)
+      nameSoFar = children[i], type = nextNamePrefix + getElementKey(nameSoFar, i), invokeCallback += mapIntoArray(
+        nameSoFar,
+        array,
+        escapedPrefix,
+        type,
+        callback
+      );
+  else if (i = getIteratorFn$1(children), "function" === typeof i)
+    for (children = i.call(children), i = 0; !(nameSoFar = children.next()).done; )
+      nameSoFar = nameSoFar.value, type = nextNamePrefix + getElementKey(nameSoFar, i++), invokeCallback += mapIntoArray(
+        nameSoFar,
+        array,
+        escapedPrefix,
+        type,
+        callback
+      );
+  else if ("object" === type) {
+    if ("function" === typeof children.then)
+      return mapIntoArray(
+        resolveThenable(children),
+        array,
+        escapedPrefix,
+        nameSoFar,
+        callback
+      );
+    array = String(children);
+    throw Error(
+      "Objects are not valid as a React child (found: " + ("[object Object]" === array ? "object with keys {" + Object.keys(children).join(", ") + "}" : array) + "). If you meant to render a collection of children, use an array instead."
+    );
+  }
+  return invokeCallback;
+}
+function mapChildren(children, func, context) {
+  if (null == children) return children;
+  var result = [], count = 0;
+  mapIntoArray(children, result, "", "", function(child) {
+    return func.call(context, child, count++);
+  });
+  return result;
+}
+function lazyInitializer(payload) {
+  if (-1 === payload._status) {
+    var ctor = payload._result;
+    ctor = ctor();
+    ctor.then(
+      function(moduleObject) {
+        if (0 === payload._status || -1 === payload._status)
+          payload._status = 1, payload._result = moduleObject;
+      },
+      function(error) {
+        if (0 === payload._status || -1 === payload._status)
+          payload._status = 2, payload._result = error;
+      }
+    );
+    -1 === payload._status && (payload._status = 0, payload._result = ctor);
+  }
+  if (1 === payload._status) return payload._result.default;
+  throw payload._result;
+}
+var reportGlobalError$1 = "function" === typeof reportError ? reportError : function(error) {
+  if ("object" === typeof window && "function" === typeof window.ErrorEvent) {
+    var event = new window.ErrorEvent("error", {
+      bubbles: true,
+      cancelable: true,
+      message: "object" === typeof error && null !== error && "string" === typeof error.message ? String(error.message) : String(error),
+      error
+    });
+    if (!window.dispatchEvent(event)) return;
+  } else if ("object" === typeof process && "function" === typeof process.emit) {
+    process.emit("uncaughtException", error);
+    return;
+  }
+  console.error(error);
+};
+function noop$6() {
+}
+react_production.Children = {
+  map: mapChildren,
+  forEach: function(children, forEachFunc, forEachContext) {
+    mapChildren(
+      children,
+      function() {
+        forEachFunc.apply(this, arguments);
+      },
+      forEachContext
+    );
+  },
+  count: function(children) {
+    var n = 0;
+    mapChildren(children, function() {
+      n++;
+    });
+    return n;
+  },
+  toArray: function(children) {
+    return mapChildren(children, function(child) {
+      return child;
+    }) || [];
+  },
+  only: function(children) {
+    if (!isValidElement(children))
+      throw Error(
+        "React.Children.only expected to receive a single React element child."
+      );
+    return children;
+  }
+};
+react_production.Component = Component;
+react_production.Fragment = REACT_FRAGMENT_TYPE$1;
+react_production.Profiler = REACT_PROFILER_TYPE$1;
+react_production.PureComponent = PureComponent;
+react_production.StrictMode = REACT_STRICT_MODE_TYPE$1;
+react_production.Suspense = REACT_SUSPENSE_TYPE$1;
+react_production.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE = ReactSharedInternals$2;
+react_production.__COMPILER_RUNTIME = {
+  __proto__: null,
+  c: function(size) {
+    return ReactSharedInternals$2.H.useMemoCache(size);
+  }
+};
+react_production.cache = function(fn) {
+  return function() {
+    return fn.apply(null, arguments);
+  };
+};
+react_production.cloneElement = function(element, config, children) {
+  if (null === element || void 0 === element)
+    throw Error(
+      "The argument must be a React element, but you passed " + element + "."
+    );
+  var props = assign$1({}, element.props), key = element.key, owner = void 0;
+  if (null != config)
+    for (propName in void 0 !== config.ref && (owner = void 0), void 0 !== config.key && (key = "" + config.key), config)
+      !hasOwnProperty$1.call(config, propName) || "key" === propName || "__self" === propName || "__source" === propName || "ref" === propName && void 0 === config.ref || (props[propName] = config[propName]);
+  var propName = arguments.length - 2;
+  if (1 === propName) props.children = children;
+  else if (1 < propName) {
+    for (var childArray = Array(propName), i = 0; i < propName; i++)
+      childArray[i] = arguments[i + 2];
+    props.children = childArray;
+  }
+  return ReactElement(element.type, key, void 0, void 0, owner, props);
+};
+react_production.createContext = function(defaultValue) {
+  defaultValue = {
+    $$typeof: REACT_CONTEXT_TYPE$1,
+    _currentValue: defaultValue,
+    _currentValue2: defaultValue,
+    _threadCount: 0,
+    Provider: null,
+    Consumer: null
+  };
+  defaultValue.Provider = defaultValue;
+  defaultValue.Consumer = {
+    $$typeof: REACT_CONSUMER_TYPE$1,
+    _context: defaultValue
+  };
+  return defaultValue;
+};
+react_production.createElement = function(type, config, children) {
+  var propName, props = {}, key = null;
+  if (null != config)
+    for (propName in void 0 !== config.key && (key = "" + config.key), config)
+      hasOwnProperty$1.call(config, propName) && "key" !== propName && "__self" !== propName && "__source" !== propName && (props[propName] = config[propName]);
+  var childrenLength = arguments.length - 2;
+  if (1 === childrenLength) props.children = children;
+  else if (1 < childrenLength) {
+    for (var childArray = Array(childrenLength), i = 0; i < childrenLength; i++)
+      childArray[i] = arguments[i + 2];
+    props.children = childArray;
+  }
+  if (type && type.defaultProps)
+    for (propName in childrenLength = type.defaultProps, childrenLength)
+      void 0 === props[propName] && (props[propName] = childrenLength[propName]);
+  return ReactElement(type, key, void 0, void 0, null, props);
+};
+react_production.createRef = function() {
+  return { current: null };
+};
+react_production.forwardRef = function(render) {
+  return { $$typeof: REACT_FORWARD_REF_TYPE$1, render };
+};
+react_production.isValidElement = isValidElement;
+react_production.lazy = function(ctor) {
+  return {
+    $$typeof: REACT_LAZY_TYPE$1,
+    _payload: { _status: -1, _result: ctor },
+    _init: lazyInitializer
+  };
+};
+react_production.memo = function(type, compare2) {
+  return {
+    $$typeof: REACT_MEMO_TYPE$1,
+    type,
+    compare: void 0 === compare2 ? null : compare2
+  };
+};
+react_production.startTransition = function(scope) {
+  var prevTransition = ReactSharedInternals$2.T, currentTransition = {};
+  ReactSharedInternals$2.T = currentTransition;
+  try {
+    var returnValue = scope(), onStartTransitionFinish = ReactSharedInternals$2.S;
+    null !== onStartTransitionFinish && onStartTransitionFinish(currentTransition, returnValue);
+    "object" === typeof returnValue && null !== returnValue && "function" === typeof returnValue.then && returnValue.then(noop$6, reportGlobalError$1);
+  } catch (error) {
+    reportGlobalError$1(error);
+  } finally {
+    ReactSharedInternals$2.T = prevTransition;
+  }
+};
+react_production.unstable_useCacheRefresh = function() {
+  return ReactSharedInternals$2.H.useCacheRefresh();
+};
+react_production.use = function(usable) {
+  return ReactSharedInternals$2.H.use(usable);
+};
+react_production.useActionState = function(action, initialState, permalink) {
+  return ReactSharedInternals$2.H.useActionState(action, initialState, permalink);
+};
+react_production.useCallback = function(callback, deps) {
+  return ReactSharedInternals$2.H.useCallback(callback, deps);
+};
+react_production.useContext = function(Context) {
+  return ReactSharedInternals$2.H.useContext(Context);
+};
+react_production.useDebugValue = function() {
+};
+react_production.useDeferredValue = function(value, initialValue) {
+  return ReactSharedInternals$2.H.useDeferredValue(value, initialValue);
+};
+react_production.useEffect = function(create, createDeps, update) {
+  var dispatcher = ReactSharedInternals$2.H;
+  if ("function" === typeof update)
+    throw Error(
+      "useEffect CRUD overload is not enabled in this build of React."
+    );
+  return dispatcher.useEffect(create, createDeps);
+};
+react_production.useId = function() {
+  return ReactSharedInternals$2.H.useId();
+};
+react_production.useImperativeHandle = function(ref, create, deps) {
+  return ReactSharedInternals$2.H.useImperativeHandle(ref, create, deps);
+};
+react_production.useInsertionEffect = function(create, deps) {
+  return ReactSharedInternals$2.H.useInsertionEffect(create, deps);
+};
+react_production.useLayoutEffect = function(create, deps) {
+  return ReactSharedInternals$2.H.useLayoutEffect(create, deps);
+};
+react_production.useMemo = function(create, deps) {
+  return ReactSharedInternals$2.H.useMemo(create, deps);
+};
+react_production.useOptimistic = function(passthrough, reducer) {
+  return ReactSharedInternals$2.H.useOptimistic(passthrough, reducer);
+};
+react_production.useReducer = function(reducer, initialArg, init) {
+  return ReactSharedInternals$2.H.useReducer(reducer, initialArg, init);
+};
+react_production.useRef = function(initialValue) {
+  return ReactSharedInternals$2.H.useRef(initialValue);
+};
+react_production.useState = function(initialState) {
+  return ReactSharedInternals$2.H.useState(initialState);
+};
+react_production.useSyncExternalStore = function(subscribe2, getSnapshot, getServerSnapshot) {
+  return ReactSharedInternals$2.H.useSyncExternalStore(
+    subscribe2,
+    getSnapshot,
+    getServerSnapshot
+  );
+};
+react_production.useTransition = function() {
+  return ReactSharedInternals$2.H.useTransition();
+};
+react_production.version = "19.1.5";
+{
+  react.exports = react_production;
+}
+var reactExports = react.exports;
+const o$1 = /* @__PURE__ */ getDefaultExportFromCjs(reactExports);
+const React$4 = /* @__PURE__ */ _mergeNamespaces({
+  __proto__: null,
+  default: o$1
+}, [reactExports]);
+const warn = (i18n, code, msg, rest) => {
+  var _a3, _b3, _c2, _d2;
+  const args = [msg, {
+    code,
+    ...rest || {}
+  }];
+  if ((_b3 = (_a3 = i18n == null ? void 0 : i18n.services) == null ? void 0 : _a3.logger) == null ? void 0 : _b3.forward) {
+    return i18n.services.logger.forward(args, "warn", "react-i18next::", true);
+  }
+  if (isString(args[0])) args[0] = `react-i18next:: ${args[0]}`;
+  if ((_d2 = (_c2 = i18n == null ? void 0 : i18n.services) == null ? void 0 : _c2.logger) == null ? void 0 : _d2.warn) {
+    i18n.services.logger.warn(...args);
+  } else if (console == null ? void 0 : console.warn) {
+    console.warn(...args);
+  }
+};
+const alreadyWarned = {};
+const warnOnce = (i18n, code, msg, rest) => {
+  if (isString(msg) && alreadyWarned[msg]) return;
+  if (isString(msg)) alreadyWarned[msg] = /* @__PURE__ */ new Date();
+  warn(i18n, code, msg, rest);
+};
+const loadedClb = (i18n, cb) => () => {
+  if (i18n.isInitialized) {
+    cb();
+  } else {
+    const initialized = () => {
+      setTimeout(() => {
+        i18n.off("initialized", initialized);
+      }, 0);
+      cb();
+    };
+    i18n.on("initialized", initialized);
+  }
+};
+const loadNamespaces = (i18n, ns, cb) => {
+  i18n.loadNamespaces(ns, loadedClb(i18n, cb));
+};
+const loadLanguages = (i18n, lng, ns, cb) => {
+  if (isString(ns)) ns = [ns];
+  if (i18n.options.preload && i18n.options.preload.indexOf(lng) > -1) return loadNamespaces(i18n, ns, cb);
+  ns.forEach((n) => {
+    if (i18n.options.ns.indexOf(n) < 0) i18n.options.ns.push(n);
+  });
+  i18n.loadLanguages(lng, loadedClb(i18n, cb));
+};
+const hasLoadedNamespace = (ns, i18n, options = {}) => {
+  if (!i18n.languages || !i18n.languages.length) {
+    warnOnce(i18n, "NO_LANGUAGES", "i18n.languages were undefined or empty", {
+      languages: i18n.languages
+    });
+    return true;
+  }
+  return i18n.hasLoadedNamespace(ns, {
+    lng: options.lng,
+    precheck: (i18nInstance2, loadNotPending) => {
+      if (options.bindI18n && options.bindI18n.indexOf("languageChanging") > -1 && i18nInstance2.services.backendConnector.backend && i18nInstance2.isLanguageChangingTo && !loadNotPending(i18nInstance2.isLanguageChangingTo, ns)) return false;
+    }
+  });
+};
+const isString = (obj) => typeof obj === "string";
+const isObject$1 = (obj) => typeof obj === "object" && obj !== null;
+const matchHtmlEntity = /&(?:amp|#38|lt|#60|gt|#62|apos|#39|quot|#34|nbsp|#160|copy|#169|reg|#174|hellip|#8230|#x2F|#47);/g;
+const htmlEntities = {
+  "&amp;": "&",
+  "&#38;": "&",
+  "&lt;": "<",
+  "&#60;": "<",
+  "&gt;": ">",
+  "&#62;": ">",
+  "&apos;": "'",
+  "&#39;": "'",
+  "&quot;": '"',
+  "&#34;": '"',
+  "&nbsp;": " ",
+  "&#160;": " ",
+  "&copy;": "©",
+  "&#169;": "©",
+  "&reg;": "®",
+  "&#174;": "®",
+  "&hellip;": "…",
+  "&#8230;": "…",
+  "&#x2F;": "/",
+  "&#47;": "/"
+};
+const unescapeHtmlEntity = (m2) => htmlEntities[m2];
+const unescape = (text) => text.replace(matchHtmlEntity, unescapeHtmlEntity);
+let defaultOptions = {
+  bindI18n: "languageChanged",
+  bindI18nStore: "",
+  transEmptyNodeValue: "",
+  transSupportBasicHtmlNodes: true,
+  transWrapTextNodes: "",
+  transKeepBasicHtmlNodesFor: ["br", "strong", "i", "p"],
+  useSuspense: true,
+  unescape,
+  transDefaultProps: void 0
+};
+const setDefaults = (options = {}) => {
+  defaultOptions = {
+    ...defaultOptions,
+    ...options
+  };
+};
+const getDefaults = () => defaultOptions;
+let i18nInstance;
+const setI18n = (instance2) => {
+  i18nInstance = instance2;
+};
+const getI18n = () => i18nInstance;
+const initReactI18next = {
+  type: "3rdParty",
+  init(instance2) {
+    setDefaults(instance2.options.react);
+    setI18n(instance2);
+  }
+};
+const I18nContext = reactExports.createContext();
+class ReportNamespaces {
+  constructor() {
+    this.usedNamespaces = {};
+  }
+  addUsedNamespaces(namespaces) {
+    namespaces.forEach((ns) => {
+      if (!this.usedNamespaces[ns]) this.usedNamespaces[ns] = true;
+    });
+  }
+  getUsedNamespaces() {
+    return Object.keys(this.usedNamespaces);
+  }
+}
+var shim$2 = { exports: {} };
+var useSyncExternalStoreShim_production = {};
+/**
+ * @license React
+ * use-sync-external-store-shim.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+var React$3 = reactExports;
+function is$2(x2, y2) {
+  return x2 === y2 && (0 !== x2 || 1 / x2 === 1 / y2) || x2 !== x2 && y2 !== y2;
+}
+var objectIs$2 = "function" === typeof Object.is ? Object.is : is$2, useState = React$3.useState, useEffect$1 = React$3.useEffect, useLayoutEffect$1 = React$3.useLayoutEffect, useDebugValue$1 = React$3.useDebugValue;
+function useSyncExternalStore$2(subscribe2, getSnapshot) {
+  var value = getSnapshot(), _useState = useState({ inst: { value, getSnapshot } }), inst = _useState[0].inst, forceUpdate = _useState[1];
+  useLayoutEffect$1(
+    function() {
+      inst.value = value;
+      inst.getSnapshot = getSnapshot;
+      checkIfSnapshotChanged$1(inst) && forceUpdate({ inst });
+    },
+    [subscribe2, value, getSnapshot]
+  );
+  useEffect$1(
+    function() {
+      checkIfSnapshotChanged$1(inst) && forceUpdate({ inst });
+      return subscribe2(function() {
+        checkIfSnapshotChanged$1(inst) && forceUpdate({ inst });
+      });
+    },
+    [subscribe2]
+  );
+  useDebugValue$1(value);
+  return value;
+}
+function checkIfSnapshotChanged$1(inst) {
+  var latestGetSnapshot = inst.getSnapshot;
+  inst = inst.value;
+  try {
+    var nextValue = latestGetSnapshot();
+    return !objectIs$2(inst, nextValue);
+  } catch (error) {
+    return true;
+  }
+}
+function useSyncExternalStore$1(subscribe2, getSnapshot) {
+  return getSnapshot();
+}
+var shim$1 = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
+useSyncExternalStoreShim_production.useSyncExternalStore = void 0 !== React$3.useSyncExternalStore ? React$3.useSyncExternalStore : shim$1;
+{
+  shim$2.exports = useSyncExternalStoreShim_production;
+}
+var shimExports = shim$2.exports;
+const notReadyT = (k2, optsOrDefaultValue) => {
+  if (isString(optsOrDefaultValue)) return optsOrDefaultValue;
+  if (isObject$1(optsOrDefaultValue) && isString(optsOrDefaultValue.defaultValue)) return optsOrDefaultValue.defaultValue;
+  if (typeof k2 === "function") return "";
+  if (Array.isArray(k2)) {
+    const last2 = k2[k2.length - 1];
+    return typeof last2 === "function" ? "" : last2;
+  }
+  return k2;
+};
+const notReadySnapshot = {
+  t: notReadyT,
+  ready: false
+};
+const dummySubscribe = () => () => {
+};
+const useTranslation = (ns, props = {}) => {
+  var _a3, _b3, _c2;
+  const {
+    i18n: i18nFromProps
+  } = props;
+  const {
+    i18n: i18nFromContext,
+    defaultNS: defaultNSFromContext
+  } = reactExports.useContext(I18nContext) || {};
+  const i18n = i18nFromProps || i18nFromContext || getI18n();
+  if (i18n && !i18n.reportNamespaces) i18n.reportNamespaces = new ReportNamespaces();
+  if (!i18n) {
+    warnOnce(i18n, "NO_I18NEXT_INSTANCE", "useTranslation: You will need to pass in an i18next instance by using initReactI18next");
+  }
+  const i18nOptions = reactExports.useMemo(() => {
+    var _a4;
+    return {
+      ...getDefaults(),
+      ...(_a4 = i18n == null ? void 0 : i18n.options) == null ? void 0 : _a4.react,
+      ...props
+    };
+  }, [i18n, props]);
+  const {
+    useSuspense,
+    keyPrefix
+  } = i18nOptions;
+  const nsOrContext = defaultNSFromContext || ((_a3 = i18n == null ? void 0 : i18n.options) == null ? void 0 : _a3.defaultNS);
+  const unstableNamespaces = isString(nsOrContext) ? [nsOrContext] : nsOrContext || ["translation"];
+  const namespaces = reactExports.useMemo(() => unstableNamespaces, unstableNamespaces);
+  (_c2 = (_b3 = i18n == null ? void 0 : i18n.reportNamespaces) == null ? void 0 : _b3.addUsedNamespaces) == null ? void 0 : _c2.call(_b3, namespaces);
+  const revisionRef = reactExports.useRef(0);
+  const subscribe2 = reactExports.useCallback((callback) => {
+    if (!i18n) return dummySubscribe;
+    const {
+      bindI18n,
+      bindI18nStore
+    } = i18nOptions;
+    const wrappedCallback = () => {
+      revisionRef.current += 1;
+      callback();
+    };
+    if (bindI18n) i18n.on(bindI18n, wrappedCallback);
+    if (bindI18nStore) i18n.store.on(bindI18nStore, wrappedCallback);
+    return () => {
+      if (bindI18n) bindI18n.split(" ").forEach((e) => i18n.off(e, wrappedCallback));
+      if (bindI18nStore) bindI18nStore.split(" ").forEach((e) => i18n.store.off(e, wrappedCallback));
+    };
+  }, [i18n, i18nOptions]);
+  const snapshotRef = reactExports.useRef();
+  const getSnapshot = reactExports.useCallback(() => {
+    if (!i18n) {
+      return notReadySnapshot;
+    }
+    const calculatedReady = !!(i18n.isInitialized || i18n.initializedStoreOnce) && namespaces.every((n) => hasLoadedNamespace(n, i18n, i18nOptions));
+    const currentLng = props.lng || i18n.language;
+    const currentRevision = revisionRef.current;
+    const lastSnapshot = snapshotRef.current;
+    if (lastSnapshot && lastSnapshot.ready === calculatedReady && lastSnapshot.lng === currentLng && lastSnapshot.keyPrefix === keyPrefix && lastSnapshot.revision === currentRevision) {
+      return lastSnapshot;
+    }
+    const calculatedT = i18n.getFixedT(currentLng, i18nOptions.nsMode === "fallback" ? namespaces : namespaces[0], keyPrefix, {
+      scopeNs: namespaces
+    });
+    const newSnapshot = {
+      t: calculatedT,
+      ready: calculatedReady,
+      lng: currentLng,
+      keyPrefix,
+      revision: currentRevision
+    };
+    snapshotRef.current = newSnapshot;
+    return newSnapshot;
+  }, [i18n, namespaces, keyPrefix, i18nOptions, props.lng]);
+  const [loadCount, setLoadCount] = reactExports.useState(0);
+  const {
+    t,
+    ready
+  } = shimExports.useSyncExternalStore(subscribe2, getSnapshot, getSnapshot);
+  reactExports.useEffect(() => {
+    if (i18n && !ready && !useSuspense) {
+      const onLoaded = () => setLoadCount((c2) => c2 + 1);
+      if (props.lng) {
+        loadLanguages(i18n, props.lng, namespaces, onLoaded);
+      } else {
+        loadNamespaces(i18n, namespaces, onLoaded);
+      }
+    }
+  }, [i18n, props.lng, namespaces, ready, useSuspense, loadCount]);
+  const finalI18n = i18n || {};
+  const wrapperRef = reactExports.useRef(null);
+  const wrapperLangRef = reactExports.useRef();
+  const createI18nWrapper = (original) => {
+    const descriptors = Object.getOwnPropertyDescriptors(original);
+    if (descriptors.__original) delete descriptors.__original;
+    const wrapper = Object.create(Object.getPrototypeOf(original), descriptors);
+    if (!Object.prototype.hasOwnProperty.call(wrapper, "__original")) {
+      try {
+        Object.defineProperty(wrapper, "__original", {
+          value: original,
+          writable: false,
+          enumerable: false,
+          configurable: false
+        });
+      } catch (_2) {
+      }
+    }
+    return wrapper;
+  };
+  const ret = reactExports.useMemo(() => {
+    const original = finalI18n;
+    const lang = original == null ? void 0 : original.language;
+    let i18nWrapper = original;
+    if (original) {
+      if (wrapperRef.current && wrapperRef.current.__original === original) {
+        if (wrapperLangRef.current !== lang) {
+          i18nWrapper = createI18nWrapper(original);
+          wrapperRef.current = i18nWrapper;
+          wrapperLangRef.current = lang;
+        } else {
+          i18nWrapper = wrapperRef.current;
+        }
+      } else {
+        i18nWrapper = createI18nWrapper(original);
+        wrapperRef.current = i18nWrapper;
+        wrapperLangRef.current = lang;
+      }
+    }
+    const effectiveT = !ready && !useSuspense ? (...args) => {
+      warnOnce(i18n, "USE_T_BEFORE_READY", "useTranslation: t was called before ready. When using useSuspense: false, make sure to check the ready flag before using t.");
+      return t(...args);
+    } : t;
+    const arr = [effectiveT, i18nWrapper, ready];
+    arr.t = effectiveT;
+    arr.i18n = i18nWrapper;
+    arr.ready = ready;
+    return arr;
+  }, [t, finalI18n, ready, finalI18n.resolvedLanguage, finalI18n.language, finalI18n.languages]);
+  if (i18n && useSuspense && !ready) {
+    throw new Promise((resolve) => {
+      const onLoaded = () => resolve();
+      if (props.lng) {
+        loadLanguages(i18n, props.lng, namespaces, onLoaded);
+      } else {
+        loadNamespaces(i18n, namespaces, onLoaded);
+      }
+    });
+  }
+  return ret;
+};
+const nav$9 = {
+  home: "الرئيسية",
+  mint: "سك",
+  gallery: "معرض",
+  marketplace: "السوق",
+  rating: "التقييم",
+  settings: "الإعدادات"
+};
+const buttons$9 = {
+  login: "تسجيل الدخول",
+  logout: "تسجيل الخروج",
+  mintNFT: "سك NFT",
+  topUp: "إعادة شحن المجموعة",
+  createCollection: "إنشاء مجموعة",
+  copied: "تم النسخ!",
+  settings: "الإعدادات",
+  remove: "إزالة",
+  reload: "إعادة تحميل الصفحة",
+  close: "إغلاق",
+  save: "حفظ",
+  reset: "إعادة تعيين",
+  random: "عشوائي"
+};
+const labels$9 = {
+  mintMode: "وضع السك",
+  toCollection: "إلى المجموعة",
+  standalone: "مستقل",
+  nftName: "اسم NFT",
+  description: "الوصف",
+  descriptionOptional: "الوصف (اختياري)",
+  image: "اختر صورة",
+  collectionName: "اسم المجموعة",
+  recipient: "المستلم",
+  recipientOptional: "(اختياري)",
+  publicNFT: "عام",
+  privateNFT: "خاص",
+  visibility: "الرؤية",
+  visibilityPublic: "مرئي في قسم التقييم",
+  visibilityPrivate: "مرئي للمالك فقط",
+  principalId: "معرف Principal الخاص بك",
+  principalShare: "شارك هذا المعرف لاستقبال NFTs.",
+  canisterId: "معرف Canister",
+  canisterDesc: "الـ canister لهذه المجموعة على بلوكتشين ICP.",
+  recentAddresses: "العناوين الأخيرة"
+};
+const tabs$9 = {
+  myCollection: "مجموعتي",
+  standalone: "مستقل",
+  others: "من الآخرين"
+};
+const messages$9 = {
+  loading: "جارٍ التحميل...",
+  signingIn: "جارٍ تسجيل الدخول...",
+  minted: "تم السك!",
+  minting: "جارٍ السك...",
+  comingSoon: "قريبًا",
+  noNFTs: "لا يوجد سك حتى الآن",
+  noNFTsDesc: "ستظهر NFTs المسكوكة هنا تلقائيًا",
+  connectWallet: "Internet Identity",
+  mintedHere: "تم السك هنا",
+  sentElsewhere: "أُرسل إلى مكان آخر",
+  uploadImage: "رفع صورة",
+  uploadImageDrop: "أو اسحب الملف هنا",
+  uploadImageFormats: "PNG, JPG, GIF, WEBP",
+  historyTitle: "سجل السك",
+  dragToMove: "اسحب للتحريك",
+  imagePreviewAlt: "معاينة الصورة",
+  imageFormat: "التنسيق",
+  mintingOnChain: "السك على البلوكتشين...",
+  mintingError: "خطأ — حاول مجددًا",
+  ratingSubtitle: "عبّر عن شعورك تجاه كل عمل فني",
+  ratingAllDone: "تم تقييم جميع NFTs",
+  ratingEmpty: "لا توجد NFTs عامة للتقييم",
+  ratingEmptyDesc: "لم يتم سك أي NFT عام بعد",
+  scrollHint: "عجلة التمرير للتصفح",
+  ratingDesc: "تم حفظ التقييم",
+  marketplaceDesc: "اشترِ وبع NFTs في السوق اللامركزية.",
+  collectionBadge: "مجموعة",
+  ownerBadge: "المالك",
+  galleryTitle: "المعرض",
+  ratingTitle: "التقييم",
+  mintTitle: "سك NFT",
+  noCollectionNFTs: "لا توجد NFTs في المجموعة",
+  noCollectionNFTsDesc: "اسك NFT واختر 'إلى المجموعة' مع الاسم المختار.",
+  noStandaloneNFTs: "لا توجد NFTs مستقلة",
+  noStandaloneNFTsDesc: "اسك NFT واختر 'مستقل'.",
+  noOthersNFTs: "لا توجد NFTs عامة من الآخرين",
+  noOthersNFTsDesc: "لا توجد NFTs عامة من فنانين آخرين بعد.",
+  myCollectionSection: "مجموعتي",
+  standaloneSection: "الرموز المستقلة",
+  othersSection: "من فنانين آخرين",
+  selectMintMode: "اختر وضع السك أولاً",
+  imageRemove: "إزالة",
+  imagePreviewFullscreen: "عرض {{name}} بملء الشاشة"
+};
+const errors$9 = {
+  invalidPrincipal: "معرف Principal غير صالح.",
+  selectMode: "اختر وضع السك.",
+  enterNftName: "أدخل اسم NFT.",
+  selectImage: "اختر صورة.",
+  enterCollectionName: "أدخل اسم المجموعة.",
+  mintFailed: "فشل السك. حاول مجددًا.",
+  loadError: "خطأ في تحميل NFTs. أعد تحميل الصفحة.",
+  loadErrorShort: "خطأ في التحميل"
+};
+const emotions$9 = {
+  disgusting: "مقرف",
+  boring: "ممل",
+  weak: "ضعيف",
+  neutral: "لا يهمني",
+  interesting: "مثير",
+  likeIt: "يعجبني",
+  beautiful: "جميل"
+};
+const misc$9 = {
+  appName: "Neferty Space",
+  tagline: "بلوكتشين ICP",
+  copyright: "Built with love using"
+};
+const aria$9 = {
+  copyPrincipal: "نسخ معرف Principal",
+  designSettings: "إعدادات التصميم",
+  mainNav: "التنقل الرئيسي",
+  copyCanister: "نسخ معرف Canister",
+  gallerySections: "أقسام المعرض"
+};
+const rating$9 = {
+  sections: {
+    shapeArrangement: "الشكل والترتيب",
+    spacing: "التباعد والكثافة",
+    cards: "البطاقات",
+    depth3d: "ثلاثي الأبعاد والعمق",
+    animation: "الرسوم المتحركة",
+    display: "العرض",
+    profiles: "الملفات الشخصية"
+  },
+  labels: {
+    direction: "الاتجاه",
+    curveIntensity: "شدة الانحناء",
+    waveAmplitude: "سعة الموجة",
+    spacingX: "الكثافة X",
+    spacingY: "الكثافة Y",
+    verticalOffset: "الإزاحة الرأسية",
+    horizontalOffset: "الإزاحة الأفقية",
+    visibleCards: "عدد البطاقات",
+    activeCardScale: "حجم البطاقة النشطة",
+    cardRotation: "دوران البطاقة",
+    aspectRatio: "نسبة العرض إلى الارتفاع",
+    cardBorder: "حدود البطاقة",
+    borderColor: "لون الحدود",
+    perspective: "المنظور",
+    depthStep: "خطوة العمق",
+    tilt: "الميل",
+    blur: "التعتيم",
+    shadow: "الظل",
+    shrink: "الانكماش",
+    duration: "المدة",
+    scrollSpeed: "سرعة التمرير",
+    easing: "التخفيف",
+    hoverEffect: "تأثير التحويم",
+    opacity: "الشفافية",
+    labels: "التسميات",
+    labelSize: "حجم التسمية",
+    profileName: "اسم الملف الشخصي",
+    noProfiles: "لا توجد ملفات شخصية محفوظة",
+    quickPresets: "إعدادات سريعة",
+    resetSettings: "إعادة تعيين",
+    randomSettings: "عشوائي",
+    settings: "الإعدادات",
+    dragToMove: "اسحب للتحريك",
+    overlapLabel: "تداخل",
+    spreadLabel: "انتشار"
+  },
+  shapes: {
+    line: "خط",
+    "arc-up": "قوس علوي",
+    "arc-down": "قوس سفلي",
+    "arc-left": "قوس يساري",
+    "arc-right": "قوس يميني",
+    spiral: "حلزوني",
+    fan: "مروحة",
+    wave: "موجة",
+    grid: "شبكة",
+    steps: "درجات",
+    circle: "دائرة",
+    teardrop: "قطرة",
+    concentric: "متحدة المركز",
+    diamond: "ماسة",
+    cascade: "شلال"
+  }
+};
+const settings$9 = {
+  title: "الإعدادات",
+  cyclesManagement: "إدارة الدورات",
+  cyclesCard: {
+    title: "حالة المجموعة",
+    healthGreen: "المجموعة مزودة جيدًا",
+    healthYellow: "إمداد الدورات في مستوى متوسط",
+    healthRed: "تحذير! إمداد الدورات منخفض",
+    daysRemaining: "أيام التشغيل المتبقية",
+    imagesRemaining: "الصور المتبقية للسك",
+    topUpButton: "إعادة شحن المجموعة",
+    noCollection: "ليس لديك مجموعة بعد. ستُنشأ تلقائيًا عند سك أول NFT.",
+    days: "أيام",
+    images: "صور"
+  },
+  calculator: {
+    title: "حاسبة التكاليف",
+    imagesLabel: "عدد الصور",
+    icpLabel: "المبلغ بـ ICP",
+    icpRate: "سعر ICP الحالي",
+    artistShare: "للفنان (75%)",
+    platformShare: "للمنصة (25%)",
+    topUpAction: "إعادة شحن المجموعة — {{amount}} ICP",
+    estimatedDays: "المدة المقدرة: {{days}} يومًا"
+  }
+};
+const calculator$9 = {
+  imageCount: "عدد الصور",
+  icpAmount: "مبلغ ICP",
+  breakdown: "تفصيل",
+  forCanister: "لـ canister الخاص بك (75%)",
+  forPlatform: "دعم المنصة (25%)",
+  total: "الإجمالي",
+  estimatedDuration: "المدة المقدرة",
+  month: "شهر",
+  months2to4: "أشهر",
+  months5plus: "أشهر",
+  calcInfo: "الحساب بناءً على سعر ICP الحالي و20G cycles/صورة.",
+  rateLoading: "سعر ICP الحالي: جارٍ التحميل...",
+  rateFallback: "سعر ICP: ~${{price}} (تقدير)",
+  rateLive: "سعر ICP الحالي: ${{price}}",
+  topUp: "إعادة شحن المجموعة"
+};
+const history$6 = {
+  title: "سجل السك",
+  noMints: "لا يوجد سك حتى الآن",
+  noMintsDesc: "ستظهر NFTs المسكوكة هنا تلقائيًا",
+  mintedHere: "تم السك هنا",
+  sentElsewhere: "أُرسل إلى مكان آخر",
+  collection: "مجموعة",
+  address: "عنوان",
+  loadError: "خطأ في التحميل"
+};
+const arCommon = {
+  nav: nav$9,
+  buttons: buttons$9,
+  labels: labels$9,
+  tabs: tabs$9,
+  messages: messages$9,
+  errors: errors$9,
+  emotions: emotions$9,
+  misc: misc$9,
+  aria: aria$9,
+  rating: rating$9,
+  settings: settings$9,
+  calculator: calculator$9,
+  history: history$6
+};
+const nav$8 = {
+  home: "Startseite",
+  mint: "Prägen",
+  gallery: "Galerie",
+  marketplace: "Marktplatz",
+  rating: "Bewertung",
+  settings: "Einstellungen"
+};
+const buttons$8 = {
+  login: "Anmelden",
+  logout: "Abmelden",
+  mintNFT: "NFT Prägen",
+  topUp: "Sammlung aufladen",
+  createCollection: "Sammlung erstellen",
+  copied: "Kopiert!",
+  settings: "Einstellungen",
+  remove: "Entfernen",
+  reload: "Seite neu laden",
+  close: "Schließen",
+  save: "Speichern",
+  reset: "Zurücksetzen",
+  random: "Zufällig"
+};
+const labels$8 = {
+  mintMode: "Prägemodus",
+  toCollection: "In Sammlung",
+  standalone: "Eigenständig",
+  nftName: "NFT-Name",
+  description: "Beschreibung",
+  descriptionOptional: "Beschreibung (optional)",
+  image: "Bild auswählen",
+  collectionName: "Sammlungsname",
+  recipient: "Empfänger",
+  recipientOptional: "(optional)",
+  publicNFT: "Öffentlich",
+  privateNFT: "Privat",
+  visibility: "Sichtbarkeit",
+  visibilityPublic: "Sichtbar im Bewertungsbereich",
+  visibilityPrivate: "Nur für Besitzer sichtbar",
+  principalId: "Ihre Principal-ID",
+  principalShare: "Teilen Sie diese ID mit anderen, damit sie NFTs an Sie übertragen können.",
+  canisterId: "Canister-ID",
+  canisterDesc: "Der Canister dieser Sammlung auf der ICP-Blockchain.",
+  recentAddresses: "Letzte Adressen"
+};
+const tabs$8 = {
+  myCollection: "Meine Sammlung",
+  standalone: "Eigenständig",
+  others: "Von anderen"
+};
+const messages$8 = {
+  loading: "Wird geladen...",
+  signingIn: "Anmeldung...",
+  minted: "Geprägt!",
+  minting: "Prägen...",
+  comingSoon: "Demnächst",
+  noNFTs: "Noch keine Prägungen",
+  noNFTsDesc: "Geprägte NFTs erscheinen hier automatisch",
+  connectWallet: "Internet Identity",
+  mintedHere: "Hier geprägt",
+  sentElsewhere: "Woanders gesendet",
+  uploadImage: "Bild hochladen",
+  uploadImageDrop: "oder Datei hierher ziehen",
+  uploadImageFormats: "PNG, JPG, GIF, WEBP",
+  historyTitle: "Prägehistorie",
+  dragToMove: "Ziehen zum Verschieben",
+  imagePreviewAlt: "Bildvorschau",
+  imageFormat: "Format",
+  mintingOnChain: "Prägen auf Blockchain...",
+  mintingError: "Fehler — erneut versuchen",
+  ratingSubtitle: "Drücken Sie Ihr Gefühl zu jedem Kunstwerk aus",
+  ratingAllDone: "Alle NFTs bewertet",
+  ratingEmpty: "Keine öffentlichen NFTs zum Bewerten",
+  ratingEmptyDesc: "Noch keine öffentlichen NFTs geprägt",
+  scrollHint: "Mausrad zum Blättern",
+  ratingDesc: "Bewertung gespeichert",
+  marketplaceDesc: "Kaufen und verkaufen Sie NFTs auf dem dezentralen Marktplatz.",
+  collectionBadge: "Sammlung",
+  ownerBadge: "Eigentümer",
+  galleryTitle: "Galerie",
+  ratingTitle: "Bewertung",
+  mintTitle: "NFT Prägen",
+  noCollectionNFTs: "Keine NFTs in der Sammlung",
+  noCollectionNFTsDesc: "Prägen Sie ein NFT und wählen Sie 'In Sammlung'.",
+  noStandaloneNFTs: "Keine eigenständigen NFTs",
+  noStandaloneNFTsDesc: "Prägen Sie ein NFT und wählen Sie 'Eigenständig'.",
+  noOthersNFTs: "Keine öffentlichen NFTs von anderen",
+  noOthersNFTsDesc: "Noch keine öffentlichen NFTs von anderen Künstlern.",
+  myCollectionSection: "Meine Sammlung",
+  standaloneSection: "Eigenständige Token",
+  othersSection: "Von anderen Künstlern",
+  selectMintMode: "Zuerst Prägemodus auswählen",
+  imageRemove: "Entfernen",
+  imagePreviewFullscreen: "{{name}} im Vollbild anzeigen"
+};
+const errors$8 = {
+  invalidPrincipal: "Ungültige Principal-ID.",
+  selectMode: "Prägemodus auswählen.",
+  enterNftName: "NFT-Namen eingeben.",
+  selectImage: "Bild auswählen.",
+  enterCollectionName: "Sammlungsname eingeben.",
+  mintFailed: "Prägen fehlgeschlagen. Erneut versuchen.",
+  loadError: "Fehler beim Laden der NFTs. Seite neu laden.",
+  loadErrorShort: "Ladefehler"
+};
+const emotions$8 = {
+  disgusting: "Abscheulich",
+  boring: "Langweilig",
+  weak: "Schwach",
+  neutral: "Egal",
+  interesting: "Interessant",
+  likeIt: "Gefällt mir",
+  beautiful: "Wunderschön"
+};
+const misc$8 = {
+  appName: "Neferty Space",
+  tagline: "ICP Blockchain",
+  copyright: "Built with love using"
+};
+const aria$8 = {
+  copyPrincipal: "Principal-ID kopieren",
+  designSettings: "Design-Einstellungen",
+  mainNav: "Hauptnavigation",
+  copyCanister: "Canister-ID kopieren",
+  gallerySections: "Galeriebereiche"
+};
+const rating$8 = {
+  sections: {
+    shapeArrangement: "Form & Anordnung",
+    spacing: "Abstände & Dichte",
+    cards: "Karten",
+    depth3d: "3D & Tiefe",
+    animation: "Animation",
+    display: "Anzeige",
+    profiles: "Profile"
+  },
+  labels: {
+    direction: "Richtung",
+    curveIntensity: "Kurvenintensität",
+    waveAmplitude: "Wellenamplitude",
+    spacingX: "Dichte X",
+    spacingY: "Dichte Y",
+    verticalOffset: "Vertikaler Versatz",
+    horizontalOffset: "Horizontaler Versatz",
+    visibleCards: "Kartenanzahl",
+    activeCardScale: "Aktive Kartengröße",
+    cardRotation: "Kartenrotation",
+    aspectRatio: "Seitenverhältnis",
+    cardBorder: "Kartenrahmen",
+    borderColor: "Rahmenfarbe",
+    perspective: "Perspektive",
+    depthStep: "Tiefenschritt",
+    tilt: "Neigung",
+    blur: "Unschärfe",
+    shadow: "Schatten",
+    shrink: "Verkleinern",
+    duration: "Dauer",
+    scrollSpeed: "Scrollgeschwindigkeit",
+    easing: "Easing",
+    hoverEffect: "Hover-Effekt",
+    opacity: "Transparenz",
+    labels: "Beschriftungen",
+    labelSize: "Beschriftungsgröße",
+    profileName: "Profilname",
+    noProfiles: "Keine gespeicherten Profile",
+    quickPresets: "Schnellvoreinstellungen",
+    resetSettings: "Einstellungen zurücksetzen",
+    randomSettings: "Zufällige Einstellungen",
+    settings: "Einstellungen",
+    dragToMove: "Ziehen zum Verschieben",
+    overlapLabel: "Überlappung",
+    spreadLabel: "Verteilt"
+  },
+  shapes: {
+    line: "Linie",
+    "arc-up": "Bogen oben",
+    "arc-down": "Bogen unten",
+    "arc-left": "Bogen links",
+    "arc-right": "Bogen rechts",
+    spiral: "Spirale",
+    fan: "Fächer",
+    wave: "Welle",
+    grid: "Raster",
+    steps: "Stufen",
+    circle: "Kreis",
+    teardrop: "Tropfen",
+    concentric: "Konzentrisch",
+    diamond: "Diamant",
+    cascade: "Kaskade"
+  }
+};
+const settings$8 = {
+  title: "Einstellungen",
+  cyclesManagement: "Cycles-Verwaltung",
+  cyclesCard: {
+    title: "Sammlungsstatus",
+    healthGreen: "Sammlung ist gut versorgt",
+    healthYellow: "Cycle-Vorrat ist auf mittlerem Niveau",
+    healthRed: "Achtung! Cycle-Vorrat ist niedrig",
+    daysRemaining: "Verbleibende Betriebstage",
+    imagesRemaining: "Verbleibende prägbare Bilder",
+    topUpButton: "Sammlung aufladen",
+    noCollection: "Sie haben noch keine Sammlung. Sie wird automatisch beim ersten NFT-Prägen erstellt.",
+    days: "Tage",
+    images: "Bilder"
+  },
+  calculator: {
+    title: "Kostenkalkulator",
+    imagesLabel: "Anzahl der Bilder",
+    icpLabel: "Betrag in ICP",
+    icpRate: "Aktueller ICP-Kurs",
+    artistShare: "Für den Künstler (75%)",
+    platformShare: "Für die Plattform (25%)",
+    topUpAction: "Sammlung aufladen — {{amount}} ICP",
+    estimatedDays: "Geschätzte Laufzeit: {{days}} Tage"
+  }
+};
+const calculator$8 = {
+  imageCount: "Bildanzahl",
+  icpAmount: "ICP-Betrag",
+  breakdown: "Aufschlüsselung",
+  forCanister: "Für Ihren Canister (75%)",
+  forPlatform: "Plattformunterstützung (25%)",
+  total: "Gesamt",
+  estimatedDuration: "Geschätzte Laufzeit",
+  month: "Monat",
+  months2to4: "Monate",
+  months5plus: "Monate",
+  calcInfo: "Berechnung basierend auf aktuellem ICP-Kurs und 20 Mrd. Cycles/Bild.",
+  rateLoading: "Aktueller ICP-Kurs: wird geladen...",
+  rateFallback: "ICP-Kurs: ~${{price}} (Schätzung)",
+  rateLive: "Aktueller ICP-Kurs: ${{price}}",
+  topUp: "Sammlung aufladen"
+};
+const deCommon = {
+  nav: nav$8,
+  buttons: buttons$8,
+  labels: labels$8,
+  tabs: tabs$8,
+  messages: messages$8,
+  errors: errors$8,
+  emotions: emotions$8,
+  misc: misc$8,
+  aria: aria$8,
+  rating: rating$8,
+  settings: settings$8,
+  calculator: calculator$8
+};
+const nav$7 = {
+  home: "Home",
+  mint: "Mint",
+  gallery: "Gallery",
+  marketplace: "Marketplace",
+  rating: "Rating",
+  settings: "Settings"
+};
+const buttons$7 = {
+  login: "Sign In",
+  logout: "Sign Out",
+  mintNFT: "Mint NFT",
+  topUp: "Top Up Collection",
+  createCollection: "Create Collection",
+  copied: "Copied!",
+  settings: "Settings",
+  remove: "Remove",
+  reload: "Reload Page",
+  close: "Close",
+  save: "Save",
+  reset: "Reset",
+  random: "Random"
+};
+const labels$7 = {
+  mintMode: "Minting Mode",
+  toCollection: "To Collection",
+  standalone: "Standalone",
+  nftName: "NFT Name",
+  description: "Description",
+  descriptionOptional: "Description (optional)",
+  image: "Select Image",
+  collectionName: "Collection Name",
+  recipient: "Recipient",
+  recipientOptional: "(optional)",
+  publicNFT: "Public",
+  privateNFT: "Private",
+  visibility: "Visibility",
+  visibilityPublic: "Visible in Rating section",
+  visibilityPrivate: "Visible to owner only",
+  principalId: "Your Principal ID",
+  principalShare: "Share this ID with others so they can transfer NFTs to you.",
+  canisterId: "Canister ID",
+  canisterDesc: "This collection's canister on the ICP blockchain.",
+  recentAddresses: "Recent addresses"
+};
+const tabs$7 = {
+  myCollection: "My Collection",
+  standalone: "Standalone",
+  others: "From Others"
+};
+const messages$7 = {
+  loading: "Loading...",
+  signingIn: "Signing in...",
+  minted: "Minted!",
+  minting: "Minting...",
+  comingSoon: "Coming Soon",
+  noNFTs: "No mints yet",
+  noNFTsDesc: "Minted NFTs will appear here automatically",
+  connectWallet: "Internet Identity",
+  mintedHere: "Minted here",
+  sentElsewhere: "Sent elsewhere",
+  uploadImage: "Upload image",
+  uploadImageDrop: "or drag and drop file here",
+  uploadImageFormats: "PNG, JPG, GIF, WEBP",
+  historyTitle: "Minting History",
+  dragToMove: "Drag to move",
+  imagePreviewAlt: "Image preview",
+  imageFormat: "Format",
+  mintingOnChain: "Minting on blockchain...",
+  mintingError: "Error — try again",
+  ratingSubtitle: "Express your feeling about each artwork",
+  ratingAllDone: "All NFTs rated",
+  ratingEmpty: "No public NFTs to rate",
+  ratingEmptyDesc: "No public NFTs have been minted yet",
+  scrollHint: "scroll wheel to browse",
+  ratingDesc: "Rating saved",
+  marketplaceDesc: "Buy and sell NFTs on the decentralized marketplace.",
+  collectionBadge: "Collection",
+  ownerBadge: "Owner",
+  galleryTitle: "Gallery",
+  ratingTitle: "Rating",
+  mintTitle: "Mint NFT",
+  noCollectionNFTs: "No NFTs in collection",
+  noCollectionNFTsDesc: "Mint an NFT and choose 'To Collection' with a chosen name.",
+  noStandaloneNFTs: "No standalone NFTs",
+  noStandaloneNFTsDesc: "Mint an NFT and choose 'Standalone'.",
+  noOthersNFTs: "No public NFTs from others",
+  noOthersNFTsDesc: "There are no public NFTs from other artists yet.",
+  myCollectionSection: "My collection",
+  standaloneSection: "Standalone tokens",
+  othersSection: "From other artists",
+  selectMintMode: "Select minting mode first",
+  imageRemove: "Remove",
+  imagePreviewFullscreen: "View {{name}} fullscreen"
+};
+const errors$7 = {
+  invalidPrincipal: "Invalid Principal ID.",
+  selectMode: "Select minting mode.",
+  enterNftName: "Enter NFT name.",
+  selectImage: "Select an image.",
+  enterCollectionName: "Enter collection name.",
+  mintFailed: "Minting failed. Try again.",
+  loadError: "Error loading NFTs. Try reloading the page.",
+  loadErrorShort: "Loading error"
+};
+const emotions$7 = {
+  disgusting: "Disgusting",
+  boring: "Boring",
+  weak: "Weak",
+  neutral: "Neutral",
+  interesting: "Interesting",
+  likeIt: "Like It",
+  beautiful: "Beautiful"
+};
+const misc$7 = {
+  appName: "Neferty Space",
+  tagline: "ICP Blockchain",
+  copyright: "Built with love using"
+};
+const aria$7 = {
+  copyPrincipal: "Copy Principal ID",
+  designSettings: "Design settings",
+  mainNav: "Main navigation",
+  copyCanister: "Copy canister ID",
+  gallerySections: "Gallery sections"
+};
+const rating$7 = {
+  sections: {
+    shapeArrangement: "Shape & Arrangement",
+    spacing: "Spacing & Density",
+    cards: "Cards",
+    depth3d: "3D & Depth",
+    animation: "Animation",
+    display: "Display",
+    profiles: "Profiles"
+  },
+  labels: {
+    direction: "Direction",
+    curveIntensity: "Curve intensity",
+    waveAmplitude: "Wave amplitude",
+    spacingX: "Density X",
+    spacingY: "Density Y",
+    verticalOffset: "Vertical offset",
+    horizontalOffset: "Horizontal offset",
+    visibleCards: "Card count",
+    activeCardScale: "Active card size",
+    cardRotation: "Card rotation",
+    aspectRatio: "Aspect ratio",
+    cardBorder: "Card border",
+    borderColor: "Border color",
+    perspective: "Perspective",
+    depthStep: "Depth step",
+    tilt: "Tilt",
+    blur: "Blur",
+    shadow: "Shadow",
+    shrink: "Shrink",
+    duration: "Duration",
+    scrollSpeed: "Scroll speed",
+    easing: "Easing",
+    hoverEffect: "Hover effect",
+    opacity: "Opacity",
+    labels: "Labels",
+    labelSize: "Label size",
+    profileName: "Profile name",
+    noProfiles: "No saved profiles",
+    quickPresets: "Quick presets",
+    resetSettings: "Reset settings",
+    randomSettings: "Random settings",
+    settings: "Settings",
+    dragToMove: "Drag to move",
+    overlapLabel: "Overlap",
+    spreadLabel: "Spread"
+  },
+  shapes: {
+    line: "Line",
+    "arc-up": "Arc up",
+    "arc-down": "Arc down",
+    "arc-left": "Arc left",
+    "arc-right": "Arc right",
+    spiral: "Spiral",
+    fan: "Fan",
+    wave: "Wave",
+    grid: "Grid",
+    steps: "Steps",
+    circle: "Circle",
+    teardrop: "Teardrop",
+    concentric: "Concentric",
+    diamond: "Diamond",
+    cascade: "Cascade"
+  }
+};
+const settings$7 = {
+  title: "Settings",
+  cyclesManagement: "Cycles Management",
+  cyclesCard: {
+    title: "Collection Status",
+    healthGreen: "Collection is well supplied",
+    healthYellow: "Cycle supply is at medium level",
+    healthRed: "Warning! Cycle supply is low",
+    daysRemaining: "Remaining days of operation",
+    imagesRemaining: "Remaining images to mint",
+    topUpButton: "Top Up Collection",
+    noCollection: "You don't have a collection yet. It will be created automatically when you mint your first NFT.",
+    days: "days",
+    images: "images"
+  },
+  calculator: {
+    title: "Cost Calculator",
+    imagesLabel: "Number of images",
+    icpLabel: "Amount in ICP",
+    icpRate: "Current ICP rate",
+    artistShare: "For artist (75%)",
+    platformShare: "For platform (25%)",
+    topUpAction: "Top Up Collection — {{amount}} ICP",
+    estimatedDays: "Estimated duration: {{days}} days"
+  }
+};
+const calculator$7 = {
+  imageCount: "Image count",
+  icpAmount: "ICP amount",
+  breakdown: "Breakdown",
+  forCanister: "For your canister (75%)",
+  forPlatform: "Platform support (25%)",
+  total: "Total",
+  estimatedDuration: "Estimated duration",
+  month: "month",
+  months2to4: "months",
+  months5plus: "months",
+  calcInfo: "Calculation based on current ICP rate and 20B cycles/image.",
+  rateLoading: "Current ICP rate: loading...",
+  rateFallback: "ICP rate: ~${{price}} (estimate)",
+  rateLive: "Current ICP rate: ${{price}}",
+  topUp: "Top Up Collection"
+};
+const enCommon = {
+  nav: nav$7,
+  buttons: buttons$7,
+  labels: labels$7,
+  tabs: tabs$7,
+  messages: messages$7,
+  errors: errors$7,
+  emotions: emotions$7,
+  misc: misc$7,
+  aria: aria$7,
+  rating: rating$7,
+  settings: settings$7,
+  calculator: calculator$7
+};
+const nav$6 = {
+  home: "Inicio",
+  mint: "Acuñar",
+  gallery: "Galería",
+  marketplace: "Mercado",
+  rating: "Valoración",
+  settings: "Ajustes"
+};
+const buttons$6 = {
+  login: "Iniciar sesión",
+  logout: "Cerrar sesión",
+  mintNFT: "Acuñar NFT",
+  topUp: "Recargar colección",
+  createCollection: "Crear colección",
+  copied: "¡Copiado!",
+  settings: "Ajustes",
+  remove: "Eliminar",
+  reload: "Recargar página",
+  close: "Cerrar",
+  save: "Guardar",
+  reset: "Restablecer",
+  random: "Aleatorio"
+};
+const labels$6 = {
+  mintMode: "Modo de acuñación",
+  toCollection: "En colección",
+  standalone: "Independiente",
+  nftName: "Nombre del NFT",
+  description: "Descripción",
+  descriptionOptional: "Descripción (opcional)",
+  image: "Seleccionar imagen",
+  collectionName: "Nombre de colección",
+  recipient: "Destinatario",
+  recipientOptional: "(opcional)",
+  publicNFT: "Público",
+  privateNFT: "Privado",
+  visibility: "Visibilidad",
+  visibilityPublic: "Visible en la sección de Valoración",
+  visibilityPrivate: "Visible solo para el propietario",
+  principalId: "Su ID Principal",
+  principalShare: "Comparte este ID para recibir NFTs.",
+  canisterId: "ID de Canister",
+  canisterDesc: "El canister de esta colección en la blockchain ICP.",
+  recentAddresses: "Direcciones recientes"
+};
+const tabs$6 = {
+  myCollection: "Mi colección",
+  standalone: "Independientes",
+  others: "De otros"
+};
+const messages$6 = {
+  loading: "Cargando...",
+  signingIn: "Iniciando sesión...",
+  minted: "¡Acuñado!",
+  minting: "Acuñando...",
+  comingSoon: "Próximamente",
+  noNFTs: "Sin acuñaciones aún",
+  noNFTsDesc: "Los NFTs acuñados aparecerán aquí automáticamente",
+  connectWallet: "Internet Identity",
+  mintedHere: "Acuñado aquí",
+  sentElsewhere: "Enviado a otro lugar",
+  uploadImage: "Subir imagen",
+  uploadImageDrop: "o arrastre el archivo aquí",
+  uploadImageFormats: "PNG, JPG, GIF, WEBP",
+  historyTitle: "Historial de acuñación",
+  dragToMove: "Arrastrar para mover",
+  imagePreviewAlt: "Vista previa",
+  imageFormat: "Formato",
+  mintingOnChain: "Acuñando en blockchain...",
+  mintingError: "Error — inténtalo de nuevo",
+  ratingSubtitle: "Expresa tu sentimiento sobre cada obra de arte",
+  ratingAllDone: "Todos los NFTs valorados",
+  ratingEmpty: "No hay NFTs públicos para valorar",
+  ratingEmptyDesc: "Aún no se han acuñado NFTs públicos",
+  scrollHint: "rueda para navegar",
+  ratingDesc: "Valoración guardada",
+  marketplaceDesc: "Compra y vende NFTs en el mercado descentralizado.",
+  collectionBadge: "Colección",
+  ownerBadge: "Propietario",
+  galleryTitle: "Galería",
+  ratingTitle: "Valoración",
+  mintTitle: "Acuñar NFT",
+  noCollectionNFTs: "No hay NFTs en la colección",
+  noCollectionNFTsDesc: "Acuña un NFT y elige 'En colección' con el nombre elegido.",
+  noStandaloneNFTs: "No hay NFTs independientes",
+  noStandaloneNFTsDesc: "Acuña un NFT y elige 'Independiente'.",
+  noOthersNFTs: "No hay NFTs públicos de otros",
+  noOthersNFTsDesc: "Aún no hay NFTs públicos de otros artistas.",
+  myCollectionSection: "Mi colección",
+  standaloneSection: "Tokens independientes",
+  othersSection: "De otros artistas",
+  selectMintMode: "Primero selecciona el modo de acuñación",
+  imageRemove: "Eliminar",
+  imagePreviewFullscreen: "Ver {{name}} en pantalla completa"
+};
+const errors$6 = {
+  invalidPrincipal: "ID Principal inválido.",
+  selectMode: "Seleccione el modo de acuñación.",
+  enterNftName: "Ingrese el nombre del NFT.",
+  selectImage: "Seleccione una imagen.",
+  enterCollectionName: "Ingrese el nombre de la colección.",
+  mintFailed: "La acuñación falló. Inténtelo de nuevo.",
+  loadError: "Error al cargar NFTs. Recargue la página.",
+  loadErrorShort: "Error de carga"
+};
+const emotions$6 = {
+  disgusting: "Repugnante",
+  boring: "Aburrido",
+  weak: "Débil",
+  neutral: "Neutral",
+  interesting: "Interesante",
+  likeIt: "Me gusta",
+  beautiful: "Hermoso"
+};
+const misc$6 = {
+  appName: "Neferty Space",
+  tagline: "ICP Blockchain",
+  copyright: "Built with love using"
+};
+const aria$6 = {
+  copyPrincipal: "Copiar ID Principal",
+  designSettings: "Configuración de diseño",
+  mainNav: "Navegación principal",
+  copyCanister: "Copiar ID de canister",
+  gallerySections: "Secciones de la galería"
+};
+const rating$6 = {
+  sections: {
+    shapeArrangement: "Forma y disposición",
+    spacing: "Espaciado y densidad",
+    cards: "Tarjetas",
+    depth3d: "3D y profundidad",
+    animation: "Animación",
+    display: "Visualización",
+    profiles: "Perfiles"
+  },
+  labels: {
+    direction: "Dirección",
+    curveIntensity: "Intensidad de curva",
+    waveAmplitude: "Amplitud de onda",
+    spacingX: "Densidad X",
+    spacingY: "Densidad Y",
+    verticalOffset: "Desplazamiento vertical",
+    horizontalOffset: "Desplazamiento horizontal",
+    visibleCards: "Número de tarjetas",
+    activeCardScale: "Tamaño de tarjeta activa",
+    cardRotation: "Rotación de tarjetas",
+    aspectRatio: "Relación de aspecto",
+    cardBorder: "Borde de tarjeta",
+    borderColor: "Color de borde",
+    perspective: "Perspectiva",
+    depthStep: "Paso de profundidad",
+    tilt: "Inclinación",
+    blur: "Desenfoque",
+    shadow: "Sombra",
+    shrink: "Reducción",
+    duration: "Duración",
+    scrollSpeed: "Velocidad de desplazamiento",
+    easing: "Aceleración",
+    hoverEffect: "Efecto hover",
+    opacity: "Opacidad",
+    labels: "Etiquetas",
+    labelSize: "Tamaño de etiquetas",
+    profileName: "Nombre de perfil",
+    noProfiles: "Sin perfiles guardados",
+    quickPresets: "Presets rápidos",
+    resetSettings: "Restablecer",
+    randomSettings: "Aleatorio",
+    settings: "Ajustes",
+    dragToMove: "Arrastrar para mover",
+    overlapLabel: "Superposición",
+    spreadLabel: "Extender"
+  },
+  shapes: {
+    line: "Línea",
+    "arc-up": "Arco arriba",
+    "arc-down": "Arco abajo",
+    "arc-left": "Arco izquierda",
+    "arc-right": "Arco derecha",
+    spiral: "Espiral",
+    fan: "Abanico",
+    wave: "Onda",
+    grid: "Cuadrícula",
+    steps: "Escalones",
+    circle: "Círculo",
+    teardrop: "Gota",
+    concentric: "Concéntrico",
+    diamond: "Diamante",
+    cascade: "Cascada"
+  }
+};
+const settings$6 = {
+  title: "Ajustes",
+  cyclesManagement: "Gestión de ciclos",
+  cyclesCard: {
+    title: "Estado de la colección",
+    healthGreen: "La colección está bien abastecida",
+    healthYellow: "El suministro de ciclos está en nivel medio",
+    healthRed: "¡Atención! El suministro de ciclos es bajo",
+    daysRemaining: "Días de operación restantes",
+    imagesRemaining: "Imágenes restantes para acuñar",
+    topUpButton: "Recargar colección",
+    noCollection: "Aún no tienes una colección. Se creará automáticamente al acuñar tu primer NFT.",
+    days: "días",
+    images: "imágenes"
+  },
+  calculator: {
+    title: "Calculadora de costos",
+    imagesLabel: "Número de imágenes",
+    icpLabel: "Monto en ICP",
+    icpRate: "Tasa ICP actual",
+    artistShare: "Para el artista (75%)",
+    platformShare: "Para la plataforma (25%)",
+    topUpAction: "Recargar colección — {{amount}} ICP",
+    estimatedDays: "Duración estimada: {{days}} días"
+  }
+};
+const calculator$6 = {
+  imageCount: "Número de imágenes",
+  icpAmount: "Cantidad ICP",
+  breakdown: "Desglose",
+  forCanister: "Para tu canister (75%)",
+  forPlatform: "Soporte de plataforma (25%)",
+  total: "Total",
+  estimatedDuration: "Duración estimada",
+  month: "mes",
+  months2to4: "meses",
+  months5plus: "meses",
+  calcInfo: "Cálculo basado en la tasa ICP actual y 20G cycles/imagen.",
+  rateLoading: "Tasa ICP actual: cargando...",
+  rateFallback: "Tasa ICP: ~${{price}} (estimado)",
+  rateLive: "Tasa ICP actual: ${{price}}",
+  topUp: "Recargar colección"
+};
+const history$5 = {
+  title: "Historial de acuñación",
+  noMints: "Sin acuñaciones aún",
+  noMintsDesc: "Los NFTs acuñados aparecerán aquí automáticamente",
+  mintedHere: "Acuñado aquí",
+  sentElsewhere: "Enviado a otro lugar",
+  collection: "Colección",
+  address: "Dirección",
+  loadError: "Error de carga"
+};
+const esCommon = {
+  nav: nav$6,
+  buttons: buttons$6,
+  labels: labels$6,
+  tabs: tabs$6,
+  messages: messages$6,
+  errors: errors$6,
+  emotions: emotions$6,
+  misc: misc$6,
+  aria: aria$6,
+  rating: rating$6,
+  settings: settings$6,
+  calculator: calculator$6,
+  history: history$5
+};
+const nav$5 = {
+  home: "Accueil",
+  mint: "Frapper",
+  gallery: "Galerie",
+  marketplace: "Marché",
+  rating: "Évaluation",
+  settings: "Paramètres"
+};
+const buttons$5 = {
+  login: "Se connecter",
+  logout: "Se déconnecter",
+  mintNFT: "Frapper un NFT",
+  topUp: "Recharger la collection",
+  createCollection: "Créer une collection",
+  copied: "Copié !",
+  settings: "Paramètres",
+  remove: "Supprimer",
+  reload: "Recharger la page",
+  close: "Fermer",
+  save: "Enregistrer",
+  reset: "Réinitialiser",
+  random: "Aléatoire"
+};
+const labels$5 = {
+  mintMode: "Mode de frappe",
+  toCollection: "En collection",
+  standalone: "Autonome",
+  nftName: "Nom du NFT",
+  description: "Description",
+  descriptionOptional: "Description (optionnelle)",
+  image: "Sélectionner une image",
+  collectionName: "Nom de la collection",
+  recipient: "Destinataire",
+  recipientOptional: "(optionnel)",
+  publicNFT: "Public",
+  privateNFT: "Privé",
+  visibility: "Visibilité",
+  visibilityPublic: "Visible dans la section Évaluation",
+  visibilityPrivate: "Visible uniquement par le propriétaire",
+  principalId: "Votre ID Principal",
+  principalShare: "Partagez cet ID pour recevoir des NFTs.",
+  canisterId: "ID du Canister",
+  canisterDesc: "Le canister de cette collection sur la blockchain ICP.",
+  recentAddresses: "Adresses récentes"
+};
+const tabs$5 = {
+  myCollection: "Ma collection",
+  standalone: "Autonomes",
+  others: "Des autres"
+};
+const messages$5 = {
+  loading: "Chargement...",
+  signingIn: "Connexion...",
+  minted: "Frappé !",
+  minting: "Frappe...",
+  comingSoon: "Bientôt",
+  noNFTs: "Aucune frappe encore",
+  noNFTsDesc: "Les NFTs frappés apparaîtront ici automatiquement",
+  connectWallet: "Internet Identity",
+  mintedHere: "Frappé ici",
+  sentElsewhere: "Envoyé ailleurs",
+  uploadImage: "Télécharger une image",
+  uploadImageDrop: "ou glisser-déposer le fichier ici",
+  uploadImageFormats: "PNG, JPG, GIF, WEBP",
+  historyTitle: "Historique de frappe",
+  dragToMove: "Glisser pour déplacer",
+  imagePreviewAlt: "Aperçu de l'image",
+  imageFormat: "Format",
+  mintingOnChain: "Frappe sur la blockchain...",
+  mintingError: "Erreur — réessayer",
+  ratingSubtitle: "Exprimez votre ressenti sur chaque œuvre d'art",
+  ratingAllDone: "Tous les NFTs évalués",
+  ratingEmpty: "Aucun NFT public à évaluer",
+  ratingEmptyDesc: "Aucun NFT public n'a encore été frappé",
+  scrollHint: "molette pour naviguer",
+  ratingDesc: "Évaluation enregistrée",
+  marketplaceDesc: "Achetez et vendez des NFTs sur le marché décentralisé.",
+  collectionBadge: "Collection",
+  ownerBadge: "Propriétaire",
+  galleryTitle: "Galerie",
+  ratingTitle: "Évaluation",
+  mintTitle: "Frapper un NFT",
+  noCollectionNFTs: "Aucun NFT dans la collection",
+  noCollectionNFTsDesc: "Frappez un NFT et choisissez 'En collection' avec un nom.",
+  noStandaloneNFTs: "Aucun NFT autonome",
+  noStandaloneNFTsDesc: "Frappez un NFT et choisissez 'Autonome'.",
+  noOthersNFTs: "Aucun NFT public des autres",
+  noOthersNFTsDesc: "Il n'y a pas encore de NFTs publics d'autres artistes.",
+  myCollectionSection: "Ma collection",
+  standaloneSection: "Tokens autonomes",
+  othersSection: "D'autres artistes",
+  selectMintMode: "Sélectionnez d'abord le mode de frappe",
+  imageRemove: "Supprimer",
+  imagePreviewFullscreen: "Voir {{name}} en plein écran"
+};
+const errors$5 = {
+  invalidPrincipal: "ID Principal invalide.",
+  selectMode: "Sélectionnez le mode de frappe.",
+  enterNftName: "Entrez le nom du NFT.",
+  selectImage: "Sélectionnez une image.",
+  enterCollectionName: "Entrez le nom de la collection.",
+  mintFailed: "La frappe a échoué. Réessayez.",
+  loadError: "Erreur de chargement des NFTs. Rechargez la page.",
+  loadErrorShort: "Erreur de chargement"
+};
+const emotions$5 = {
+  disgusting: "Dégoûtant",
+  boring: "Ennuyeux",
+  weak: "Faible",
+  neutral: "Neutre",
+  interesting: "Intéressant",
+  likeIt: "J'aime",
+  beautiful: "Magnifique"
+};
+const misc$5 = {
+  appName: "Neferty Space",
+  tagline: "ICP Blockchain",
+  copyright: "Built with love using"
+};
+const aria$5 = {
+  copyPrincipal: "Copier l'ID Principal",
+  designSettings: "Paramètres de design",
+  mainNav: "Navigation principale",
+  copyCanister: "Copier l'ID du canister",
+  gallerySections: "Sections de la galerie"
+};
+const rating$5 = {
+  sections: {
+    shapeArrangement: "Forme et disposition",
+    spacing: "Espacement et densité",
+    cards: "Cartes",
+    depth3d: "3D et profondeur",
+    animation: "Animation",
+    display: "Affichage",
+    profiles: "Profils"
+  },
+  labels: {
+    direction: "Direction",
+    curveIntensity: "Intensité de courbe",
+    waveAmplitude: "Amplitude d'onde",
+    spacingX: "Densité X",
+    spacingY: "Densité Y",
+    verticalOffset: "Décalage vertical",
+    horizontalOffset: "Décalage horizontal",
+    visibleCards: "Nombre de cartes",
+    activeCardScale: "Taille de la carte active",
+    cardRotation: "Rotation des cartes",
+    aspectRatio: "Format",
+    cardBorder: "Bordure de carte",
+    borderColor: "Couleur de bordure",
+    perspective: "Perspective",
+    depthStep: "Pas de profondeur",
+    tilt: "Inclinaison",
+    blur: "Flou",
+    shadow: "Ombre",
+    shrink: "Rétrécissement",
+    duration: "Durée",
+    scrollSpeed: "Vitesse de défilement",
+    easing: "Accélération",
+    hoverEffect: "Effet survol",
+    opacity: "Opacité",
+    labels: "Étiquettes",
+    labelSize: "Taille des étiquettes",
+    profileName: "Nom du profil",
+    noProfiles: "Aucun profil enregistré",
+    quickPresets: "Préréglages rapides",
+    resetSettings: "Réinitialiser",
+    randomSettings: "Aléatoire",
+    settings: "Paramètres",
+    dragToMove: "Glisser pour déplacer",
+    overlapLabel: "Superposition",
+    spreadLabel: "Étaler"
+  },
+  shapes: {
+    line: "Ligne",
+    "arc-up": "Arc haut",
+    "arc-down": "Arc bas",
+    "arc-left": "Arc gauche",
+    "arc-right": "Arc droite",
+    spiral: "Spirale",
+    fan: "Éventail",
+    wave: "Vague",
+    grid: "Grille",
+    steps: "Escaliers",
+    circle: "Cercle",
+    teardrop: "Goutte",
+    concentric: "Concentrique",
+    diamond: "Diamant",
+    cascade: "Cascade"
+  }
+};
+const settings$5 = {
+  title: "Paramètres",
+  cyclesManagement: "Gestion des cycles",
+  cyclesCard: {
+    title: "État de la collection",
+    healthGreen: "La collection est bien approvisionnée",
+    healthYellow: "L'approvisionnement en cycles est à niveau moyen",
+    healthRed: "Attention ! L'approvisionnement en cycles est faible",
+    daysRemaining: "Jours de fonctionnement restants",
+    imagesRemaining: "Images restantes à frapper",
+    topUpButton: "Recharger la collection",
+    noCollection: "Vous n'avez pas encore de collection. Elle sera créée automatiquement lors de la première frappe.",
+    days: "jours",
+    images: "images"
+  },
+  calculator: {
+    title: "Calculateur de coûts",
+    imagesLabel: "Nombre d'images",
+    icpLabel: "Montant en ICP",
+    icpRate: "Taux ICP actuel",
+    artistShare: "Pour l'artiste (75%)",
+    platformShare: "Pour la plateforme (25%)",
+    topUpAction: "Recharger la collection — {{amount}} ICP",
+    estimatedDays: "Durée estimée : {{days}} jours"
+  }
+};
+const calculator$5 = {
+  imageCount: "Nombre d'images",
+  icpAmount: "Montant ICP",
+  breakdown: "Répartition",
+  forCanister: "Pour votre canister (75%)",
+  forPlatform: "Support plateforme (25%)",
+  total: "Total",
+  estimatedDuration: "Durée estimée",
+  month: "mois",
+  months2to4: "mois",
+  months5plus: "mois",
+  calcInfo: "Calcul basé sur le taux ICP actuel et 20G cycles/image.",
+  rateLoading: "Taux ICP actuel : chargement...",
+  rateFallback: "Taux ICP : ~${{price}} (estimation)",
+  rateLive: "Taux ICP actuel : ${{price}}",
+  topUp: "Recharger la collection"
+};
+const history$4 = {
+  title: "Historique de frappe",
+  noMints: "Pas encore de frappe",
+  noMintsDesc: "Les NFTs frappés apparaîtront ici automatiquement",
+  mintedHere: "Frappé ici",
+  sentElsewhere: "Envoyé ailleurs",
+  collection: "Collection",
+  address: "Adresse",
+  loadError: "Erreur de chargement"
+};
+const frCommon = {
+  nav: nav$5,
+  buttons: buttons$5,
+  labels: labels$5,
+  tabs: tabs$5,
+  messages: messages$5,
+  errors: errors$5,
+  emotions: emotions$5,
+  misc: misc$5,
+  aria: aria$5,
+  rating: rating$5,
+  settings: settings$5,
+  calculator: calculator$5,
+  history: history$4
+};
+const nav$4 = {
+  home: "ホーム",
+  mint: "ミント",
+  gallery: "ギャラリー",
+  marketplace: "マーケット",
+  rating: "評価",
+  settings: "設定"
+};
+const buttons$4 = {
+  login: "ログイン",
+  logout: "ログアウト",
+  mintNFT: "NFTをミント",
+  topUp: "コレクションを補充",
+  createCollection: "コレクションを作成",
+  copied: "コピーしました！",
+  settings: "設定",
+  remove: "削除",
+  reload: "ページを再読み込み",
+  close: "閉じる",
+  save: "保存",
+  reset: "リセット",
+  random: "ランダム"
+};
+const labels$4 = {
+  mintMode: "ミントモード",
+  toCollection: "コレクションへ",
+  standalone: "スタンドアロン",
+  nftName: "NFT名",
+  description: "説明",
+  descriptionOptional: "説明（任意）",
+  image: "画像を選択",
+  collectionName: "コレクション名",
+  recipient: "受取人",
+  recipientOptional: "（任意）",
+  publicNFT: "公開",
+  privateNFT: "非公開",
+  visibility: "公開設定",
+  visibilityPublic: "評価セクションに表示",
+  visibilityPrivate: "所有者のみ表示",
+  principalId: "あなたのPrincipal ID",
+  principalShare: "このIDを共有してNFTを受け取れます。",
+  canisterId: "Canister ID",
+  canisterDesc: "ICP ブロックチェーン上のこのコレクションのcanister。",
+  recentAddresses: "最近のアドレス"
+};
+const tabs$4 = {
+  myCollection: "マイコレクション",
+  standalone: "スタンドアロン",
+  others: "他の人から"
+};
+const messages$4 = {
+  loading: "読み込み中...",
+  signingIn: "サインイン中...",
+  minted: "ミント完了！",
+  minting: "ミント中...",
+  comingSoon: "近日公開",
+  noNFTs: "まだミントなし",
+  noNFTsDesc: "ミントされたNFTが自動的にここに表示されます",
+  connectWallet: "Internet Identity",
+  mintedHere: "ここでミント",
+  sentElsewhere: "他へ送信済み",
+  uploadImage: "画像をアップロード",
+  uploadImageDrop: "またはファイルをここにドラッグ",
+  uploadImageFormats: "PNG, JPG, GIF, WEBP",
+  historyTitle: "ミント履歴",
+  dragToMove: "ドラッグして移動",
+  imagePreviewAlt: "画像プレビュー",
+  imageFormat: "フォーマット",
+  mintingOnChain: "ブロックチェーンにミント中...",
+  mintingError: "エラー — 再試行してください",
+  ratingSubtitle: "各アートワークへの気持ちを表現してください",
+  ratingAllDone: "すべてのNFTを評価しました",
+  ratingEmpty: "評価する公開NFTがありません",
+  ratingEmptyDesc: "まだ公開NFTがミントされていません",
+  scrollHint: "ホイールで閲覧",
+  ratingDesc: "評価を保存しました",
+  marketplaceDesc: "分散型マーケットでNFTを売買できます。",
+  collectionBadge: "コレクション",
+  ownerBadge: "所有者",
+  galleryTitle: "ギャラリー",
+  ratingTitle: "評価",
+  mintTitle: "NFTをミント",
+  noCollectionNFTs: "コレクションにNFTがありません",
+  noCollectionNFTsDesc: "NFTをミントして'コレクションへ'を選択してください。",
+  noStandaloneNFTs: "スタンドアロンNFTがありません",
+  noStandaloneNFTsDesc: "NFTをミントして'スタンドアロン'を選択してください。",
+  noOthersNFTs: "他のユーザーの公開NFTがありません",
+  noOthersNFTsDesc: "まだ他のアーティストの公開NFTがありません。",
+  myCollectionSection: "マイコレクション",
+  standaloneSection: "スタンドアロントークン",
+  othersSection: "他のアーティストから",
+  selectMintMode: "まずミントモードを選択してください",
+  imageRemove: "削除",
+  imagePreviewFullscreen: "{{name}} をフルスクリーンで表示"
+};
+const errors$4 = {
+  invalidPrincipal: "無効なPrincipal IDです。",
+  selectMode: "ミントモードを選択してください。",
+  enterNftName: "NFT名を入力してください。",
+  selectImage: "画像を選択してください。",
+  enterCollectionName: "コレクション名を入力してください。",
+  mintFailed: "ミントに失敗しました。再試行してください。",
+  loadError: "NFTの読み込みエラー。ページを再読み込みしてください。",
+  loadErrorShort: "読み込みエラー"
+};
+const emotions$4 = {
+  disgusting: "最悪",
+  boring: "退屈",
+  weak: "弱い",
+  neutral: "どうでもいい",
+  interesting: "面白い",
+  likeIt: "好き",
+  beautiful: "美しい"
+};
+const misc$4 = {
+  appName: "Neferty Space",
+  tagline: "ICP ブロックチェーン",
+  copyright: "Built with love using"
+};
+const aria$4 = {
+  copyPrincipal: "Principal IDをコピー",
+  designSettings: "デザイン設定",
+  mainNav: "メインナビゲーション",
+  copyCanister: "Canister IDをコピー",
+  gallerySections: "ギャラリーセクション"
+};
+const rating$4 = {
+  sections: {
+    shapeArrangement: "形状と配置",
+    spacing: "間隔と密度",
+    cards: "カード",
+    depth3d: "3Dと深度",
+    animation: "アニメーション",
+    display: "表示",
+    profiles: "プロファイル"
+  },
+  labels: {
+    direction: "方向",
+    curveIntensity: "曲線強度",
+    waveAmplitude: "波幅",
+    spacingX: "密度X",
+    spacingY: "密度Y",
+    verticalOffset: "垂直オフセット",
+    horizontalOffset: "水平オフセット",
+    visibleCards: "カード数",
+    activeCardScale: "アクティブカードサイズ",
+    cardRotation: "カード回転",
+    aspectRatio: "アスペクト比",
+    cardBorder: "カード枠",
+    borderColor: "枠色",
+    perspective: "透視投影",
+    depthStep: "深度ステップ",
+    tilt: "傾き",
+    blur: "ぼかし",
+    shadow: "影",
+    shrink: "縮小",
+    duration: "持続時間",
+    scrollSpeed: "スクロール速度",
+    easing: "イージング",
+    hoverEffect: "ホバー効果",
+    opacity: "不透明度",
+    labels: "ラベル",
+    labelSize: "ラベルサイズ",
+    profileName: "プロファイル名",
+    noProfiles: "保存済みプロファイルなし",
+    quickPresets: "クイックプリセット",
+    resetSettings: "リセット",
+    randomSettings: "ランダム",
+    settings: "設定",
+    dragToMove: "ドラッグして移動",
+    overlapLabel: "重なり",
+    spreadLabel: "展開"
+  },
+  shapes: {
+    line: "直線",
+    "arc-up": "上弧",
+    "arc-down": "下弧",
+    "arc-left": "左弧",
+    "arc-right": "右弧",
+    spiral: "螺旋",
+    fan: "扇形",
+    wave: "波",
+    grid: "グリッド",
+    steps: "階段",
+    circle: "円",
+    teardrop: "涙滴",
+    concentric: "同心円",
+    diamond: "ダイヤモンド",
+    cascade: "カスケード"
+  }
+};
+const settings$4 = {
+  title: "設定",
+  cyclesManagement: "Cycles 管理",
+  cyclesCard: {
+    title: "コレクションの状態",
+    healthGreen: "コレクションは十分に供給されています",
+    healthYellow: "Cycles の供給は中程度です",
+    healthRed: "警告！Cycles の供給が不足しています",
+    daysRemaining: "残り稼働日数",
+    imagesRemaining: "ミント可能な残り画像数",
+    topUpButton: "コレクションを補充",
+    noCollection: "まだコレクションがありません。最初のNFTをミントすると自動的に作成されます。",
+    days: "日",
+    images: "枚"
+  },
+  calculator: {
+    title: "コスト計算機",
+    imagesLabel: "画像数",
+    icpLabel: "ICP 金額",
+    icpRate: "現在の ICP レート",
+    artistShare: "アーティスト分 (75%)",
+    platformShare: "プラットフォーム分 (25%)",
+    topUpAction: "コレクションを補充 — {{amount}} ICP",
+    estimatedDays: "推定持続時間: {{days}} 日"
+  }
+};
+const calculator$4 = {
+  imageCount: "画像数",
+  icpAmount: "ICP金額",
+  breakdown: "内訳",
+  forCanister: "あなたのcanister（75%）",
+  forPlatform: "プラットフォームサポート（25%）",
+  total: "合計",
+  estimatedDuration: "推定期間",
+  month: "ヶ月",
+  months2to4: "ヶ月",
+  months5plus: "ヶ月",
+  calcInfo: "現在のICP為替レートと1画像あたり20Gサイクルに基づく計算。",
+  rateLoading: "現在のICP為替レート：読み込み中...",
+  rateFallback: "ICP為替レート：~${{price}}（推定）",
+  rateLive: "現在のICP為替レート：${{price}}",
+  topUp: "コレクションを補充"
+};
+const history$3 = {
+  title: "ミント履歴",
+  noMints: "まだミントなし",
+  noMintsDesc: "ミントされたNFTが自動的にここに表示されます",
+  mintedHere: "ここでミント",
+  sentElsewhere: "他へ送信済み",
+  collection: "コレクション",
+  address: "アドレス",
+  loadError: "読み込みエラー"
+};
+const jaCommon = {
+  nav: nav$4,
+  buttons: buttons$4,
+  labels: labels$4,
+  tabs: tabs$4,
+  messages: messages$4,
+  errors: errors$4,
+  emotions: emotions$4,
+  misc: misc$4,
+  aria: aria$4,
+  rating: rating$4,
+  settings: settings$4,
+  calculator: calculator$4,
+  history: history$3
+};
+const nav$3 = {
+  home: "Início",
+  mint: "Cunhar",
+  gallery: "Galeria",
+  marketplace: "Mercado",
+  rating: "Avaliação",
+  settings: "Configurações"
+};
+const buttons$3 = {
+  login: "Entrar",
+  logout: "Sair",
+  mintNFT: "Cunhar NFT",
+  topUp: "Recarregar coleção",
+  createCollection: "Criar coleção",
+  copied: "Copiado!",
+  settings: "Configurações",
+  remove: "Remover",
+  reload: "Recarregar página",
+  close: "Fechar",
+  save: "Salvar",
+  reset: "Redefinir",
+  random: "Aleatório"
+};
+const labels$3 = {
+  mintMode: "Modo de cunhagem",
+  toCollection: "Para coleção",
+  standalone: "Independente",
+  nftName: "Nome do NFT",
+  description: "Descrição",
+  descriptionOptional: "Descrição (opcional)",
+  image: "Selecionar imagem",
+  collectionName: "Nome da coleção",
+  recipient: "Destinatário",
+  recipientOptional: "(opcional)",
+  publicNFT: "Público",
+  privateNFT: "Privado",
+  visibility: "Visibilidade",
+  visibilityPublic: "Visível na seção de Avaliação",
+  visibilityPrivate: "Visível apenas para o proprietário",
+  principalId: "Seu ID Principal",
+  principalShare: "Compartilhe este ID para receber NFTs.",
+  canisterId: "ID do Canister",
+  canisterDesc: "O canister desta coleção na blockchain ICP.",
+  recentAddresses: "Endereços recentes"
+};
+const tabs$3 = {
+  myCollection: "Minha coleção",
+  standalone: "Independentes",
+  others: "De outros"
+};
+const messages$3 = {
+  loading: "Carregando...",
+  signingIn: "Entrando...",
+  minted: "Cunhado!",
+  minting: "Cunhando...",
+  comingSoon: "Em breve",
+  noNFTs: "Ainda sem cunhagens",
+  noNFTsDesc: "Os NFTs cunhados aparecerão aqui automaticamente",
+  connectWallet: "Internet Identity",
+  mintedHere: "Cunhado aqui",
+  sentElsewhere: "Enviado para outro lugar",
+  uploadImage: "Carregar imagem",
+  uploadImageDrop: "ou arraste o arquivo aqui",
+  uploadImageFormats: "PNG, JPG, GIF, WEBP",
+  historyTitle: "Histórico de cunhagem",
+  dragToMove: "Arrastar para mover",
+  imagePreviewAlt: "Pré-visualização",
+  imageFormat: "Formato",
+  mintingOnChain: "Cunhando na blockchain...",
+  mintingError: "Erro — tente novamente",
+  ratingSubtitle: "Expresse seu sentimento sobre cada obra de arte",
+  ratingAllDone: "Todos os NFTs avaliados",
+  ratingEmpty: "Sem NFTs públicos para avaliar",
+  ratingEmptyDesc: "Nenhum NFT público foi cunhado ainda",
+  scrollHint: "roda do mouse para navegar",
+  ratingDesc: "Avaliação salva",
+  marketplaceDesc: "Compre e venda NFTs no mercado descentralizado.",
+  collectionBadge: "Coleção",
+  ownerBadge: "Proprietário",
+  galleryTitle: "Galeria",
+  ratingTitle: "Avaliação",
+  mintTitle: "Cunhar NFT",
+  noCollectionNFTs: "Sem NFTs na coleção",
+  noCollectionNFTsDesc: "Cunhe um NFT e escolha 'Para coleção' com um nome.",
+  noStandaloneNFTs: "Sem NFTs independentes",
+  noStandaloneNFTsDesc: "Cunhe um NFT e escolha 'Independente'.",
+  noOthersNFTs: "Sem NFTs públicos de outros",
+  noOthersNFTsDesc: "Ainda não há NFTs públicos de outros artistas.",
+  myCollectionSection: "Minha coleção",
+  standaloneSection: "Tokens independentes",
+  othersSection: "De outros artistas",
+  selectMintMode: "Selecione o modo de cunhagem primeiro",
+  imageRemove: "Remover",
+  imagePreviewFullscreen: "Ver {{name}} em tela cheia"
+};
+const errors$3 = {
+  invalidPrincipal: "ID Principal inválido.",
+  selectMode: "Selecione o modo de cunhagem.",
+  enterNftName: "Digite o nome do NFT.",
+  selectImage: "Selecione uma imagem.",
+  enterCollectionName: "Digite o nome da coleção.",
+  mintFailed: "A cunhagem falhou. Tente novamente.",
+  loadError: "Erro ao carregar NFTs. Recarregue a página.",
+  loadErrorShort: "Erro de carregamento"
+};
+const emotions$3 = {
+  disgusting: "Repugnante",
+  boring: "Entediante",
+  weak: "Fraco",
+  neutral: "Neutro",
+  interesting: "Interessante",
+  likeIt: "Gostei",
+  beautiful: "Lindo"
+};
+const misc$3 = {
+  appName: "Neferty Space",
+  tagline: "ICP Blockchain",
+  copyright: "Built with love using"
+};
+const aria$3 = {
+  copyPrincipal: "Copiar ID Principal",
+  designSettings: "Configurações de design",
+  mainNav: "Navegação principal",
+  copyCanister: "Copiar ID do canister",
+  gallerySections: "Seções da galeria"
+};
+const rating$3 = {
+  sections: {
+    shapeArrangement: "Forma e disposição",
+    spacing: "Espaçamento e densidade",
+    cards: "Cartões",
+    depth3d: "3D e profundidade",
+    animation: "Animação",
+    display: "Exibição",
+    profiles: "Perfis"
+  },
+  labels: {
+    direction: "Direção",
+    curveIntensity: "Intensidade da curva",
+    waveAmplitude: "Amplitude da onda",
+    spacingX: "Densidade X",
+    spacingY: "Densidade Y",
+    verticalOffset: "Deslocamento vertical",
+    horizontalOffset: "Deslocamento horizontal",
+    visibleCards: "Número de cartões",
+    activeCardScale: "Tamanho do cartão ativo",
+    cardRotation: "Rotação dos cartões",
+    aspectRatio: "Proporção",
+    cardBorder: "Borda do cartão",
+    borderColor: "Cor da borda",
+    perspective: "Perspectiva",
+    depthStep: "Passo de profundidade",
+    tilt: "Inclinação",
+    blur: "Desfoque",
+    shadow: "Sombra",
+    shrink: "Redução",
+    duration: "Duração",
+    scrollSpeed: "Velocidade de rolagem",
+    easing: "Suavização",
+    hoverEffect: "Efeito hover",
+    opacity: "Opacidade",
+    labels: "Rótulos",
+    labelSize: "Tamanho dos rótulos",
+    profileName: "Nome do perfil",
+    noProfiles: "Sem perfis salvos",
+    quickPresets: "Predefinições rápidas",
+    resetSettings: "Redefinir",
+    randomSettings: "Aleatório",
+    settings: "Configurações",
+    dragToMove: "Arrastar para mover",
+    overlapLabel: "Sobreposição",
+    spreadLabel: "Expandir"
+  },
+  shapes: {
+    line: "Linha",
+    "arc-up": "Arco cima",
+    "arc-down": "Arco baixo",
+    "arc-left": "Arco esquerda",
+    "arc-right": "Arco direita",
+    spiral: "Espiral",
+    fan: "Leque",
+    wave: "Onda",
+    grid: "Grade",
+    steps: "Degraus",
+    circle: "Círculo",
+    teardrop: "Gota",
+    concentric: "Concêntrico",
+    diamond: "Diamante",
+    cascade: "Cascata"
+  }
+};
+const settings$3 = {
+  title: "Configurações",
+  cyclesManagement: "Gestão de Cycles",
+  cyclesCard: {
+    title: "Status da coleção",
+    healthGreen: "A coleção está bem abastecida",
+    healthYellow: "O fornecimento de cycles está em nível médio",
+    healthRed: "Atenção! O fornecimento de cycles está baixo",
+    daysRemaining: "Dias de operação restantes",
+    imagesRemaining: "Imagens restantes para cunhar",
+    topUpButton: "Recarregar coleção",
+    noCollection: "Você ainda não tem uma coleção. Será criada automaticamente ao cunhar seu primeiro NFT.",
+    days: "dias",
+    images: "imagens"
+  },
+  calculator: {
+    title: "Calculadora de custos",
+    imagesLabel: "Número de imagens",
+    icpLabel: "Valor em ICP",
+    icpRate: "Taxa ICP atual",
+    artistShare: "Para o artista (75%)",
+    platformShare: "Para a plataforma (25%)",
+    topUpAction: "Recarregar coleção — {{amount}} ICP",
+    estimatedDays: "Duração estimada: {{days}} dias"
+  }
+};
+const calculator$3 = {
+  imageCount: "Número de imagens",
+  icpAmount: "Quantia ICP",
+  breakdown: "Detalhamento",
+  forCanister: "Para seu canister (75%)",
+  forPlatform: "Suporte da plataforma (25%)",
+  total: "Total",
+  estimatedDuration: "Duração estimada",
+  month: "mês",
+  months2to4: "meses",
+  months5plus: "meses",
+  calcInfo: "Cálculo baseado na taxa ICP atual e 20G cycles/imagem.",
+  rateLoading: "Taxa ICP atual: carregando...",
+  rateFallback: "Taxa ICP: ~${{price}} (estimativa)",
+  rateLive: "Taxa ICP atual: ${{price}}",
+  topUp: "Recarregar coleção"
+};
+const history$2 = {
+  title: "Histórico de cunhagem",
+  noMints: "Ainda sem cunhagens",
+  noMintsDesc: "Os NFTs cunhados aparecerão aqui automaticamente",
+  mintedHere: "Cunhado aqui",
+  sentElsewhere: "Enviado para outro lugar",
+  collection: "Coleção",
+  address: "Endereço",
+  loadError: "Erro de carregamento"
+};
+const ptCommon = {
+  nav: nav$3,
+  buttons: buttons$3,
+  labels: labels$3,
+  tabs: tabs$3,
+  messages: messages$3,
+  errors: errors$3,
+  emotions: emotions$3,
+  misc: misc$3,
+  aria: aria$3,
+  rating: rating$3,
+  settings: settings$3,
+  calculator: calculator$3,
+  history: history$2
+};
+const nav$2 = {
+  home: "Главная",
+  mint: "Чеканка",
+  gallery: "Галерея",
+  marketplace: "Маркет",
+  rating: "Оценка",
+  settings: "Настройки"
+};
+const buttons$2 = {
+  login: "Войти",
+  logout: "Выйти",
+  mintNFT: "Чеканить NFT",
+  topUp: "Пополнить коллекцию",
+  createCollection: "Создать коллекцию",
+  copied: "Скопировано!",
+  settings: "Настройки",
+  remove: "Удалить",
+  reload: "Обновить страницу",
+  close: "Закрыть",
+  save: "Сохранить",
+  reset: "Сбросить",
+  random: "Случайный"
+};
+const labels$2 = {
+  mintMode: "Режим чеканки",
+  toCollection: "В коллекцию",
+  standalone: "Отдельно",
+  nftName: "Название NFT",
+  description: "Описание",
+  descriptionOptional: "Описание (необязательно)",
+  image: "Выбрать изображение",
+  collectionName: "Название коллекции",
+  recipient: "Получатель",
+  recipientOptional: "(необязательно)",
+  publicNFT: "Публичный",
+  privateNFT: "Приватный",
+  visibility: "Видимость",
+  visibilityPublic: "Отображается в разделе Оценок",
+  visibilityPrivate: "Видно только владельцу",
+  principalId: "Ваш Principal ID",
+  principalShare: "Поделитесь этим ID, чтобы получить NFT.",
+  canisterId: "ID Canister",
+  canisterDesc: "Canister этой коллекции в блокчейне ICP.",
+  recentAddresses: "Недавние адреса"
+};
+const tabs$2 = {
+  myCollection: "Моя коллекция",
+  standalone: "Отдельные",
+  others: "От других"
+};
+const messages$2 = {
+  loading: "Загрузка...",
+  signingIn: "Вход...",
+  minted: "Отчеканено!",
+  minting: "Чеканка...",
+  comingSoon: "Скоро",
+  noNFTs: "Ещё нет чеканок",
+  noNFTsDesc: "Отчеканенные NFT появятся здесь автоматически",
+  connectWallet: "Internet Identity",
+  mintedHere: "Отчеканено здесь",
+  sentElsewhere: "Отправлено в другое место",
+  uploadImage: "Загрузить изображение",
+  uploadImageDrop: "или перетащите файл сюда",
+  uploadImageFormats: "PNG, JPG, GIF, WEBP",
+  historyTitle: "История чеканки",
+  dragToMove: "Перетащить для перемещения",
+  imagePreviewAlt: "Предпросмотр",
+  imageFormat: "Формат",
+  mintingOnChain: "Чеканка в блокчейне...",
+  mintingError: "Ошибка — попробуйте снова",
+  ratingSubtitle: "Выразите свои чувства о каждом произведении",
+  ratingAllDone: "Все NFT оценены",
+  ratingEmpty: "Нет публичных NFT для оценки",
+  ratingEmptyDesc: "Ещё не было отчеканено ни одного публичного NFT",
+  scrollHint: "колёсико для навигации",
+  ratingDesc: "Оценка сохранена",
+  marketplaceDesc: "Покупайте и продавайте NFT на децентрализованном рынке.",
+  collectionBadge: "Коллекция",
+  ownerBadge: "Владелец",
+  galleryTitle: "Галерея",
+  ratingTitle: "Оценка",
+  mintTitle: "Чеканить NFT",
+  noCollectionNFTs: "Нет NFT в коллекции",
+  noCollectionNFTsDesc: "Отчеканьте NFT и выберите 'В коллекцию' с названием.",
+  noStandaloneNFTs: "Нет отдельных NFT",
+  noStandaloneNFTsDesc: "Отчеканьте NFT и выберите 'Отдельно'.",
+  noOthersNFTs: "Нет публичных NFT от других",
+  noOthersNFTsDesc: "Пока нет публичных NFT от других художников.",
+  myCollectionSection: "Моя коллекция",
+  standaloneSection: "Отдельные токены",
+  othersSection: "От других художников",
+  selectMintMode: "Сначала выберите режим чеканки",
+  imageRemove: "Удалить",
+  imagePreviewFullscreen: "Просмотр {{name}} в полном экране"
+};
+const errors$2 = {
+  invalidPrincipal: "Неверный Principal ID.",
+  selectMode: "Выберите режим чеканки.",
+  enterNftName: "Введите название NFT.",
+  selectImage: "Выберите изображение.",
+  enterCollectionName: "Введите название коллекции.",
+  mintFailed: "Чеканка не удалась. Попробуйте снова.",
+  loadError: "Ошибка загрузки NFT. Обновите страницу.",
+  loadErrorShort: "Ошибка загрузки"
+};
+const emotions$2 = {
+  disgusting: "Отвратительно",
+  boring: "Скучно",
+  weak: "Слабо",
+  neutral: "Всё равно",
+  interesting: "Интересно",
+  likeIt: "Нравится",
+  beautiful: "Красиво"
+};
+const misc$2 = {
+  appName: "Neferty Space",
+  tagline: "ICP Blockchain",
+  copyright: "Built with love using"
+};
+const aria$2 = {
+  copyPrincipal: "Копировать Principal ID",
+  designSettings: "Настройки дизайна",
+  mainNav: "Главная навигация",
+  copyCanister: "Копировать ID Canister",
+  gallerySections: "Разделы галереи"
+};
+const rating$2 = {
+  sections: {
+    shapeArrangement: "Форма и расположение",
+    spacing: "Интервалы и плотность",
+    cards: "Карточки",
+    depth3d: "3D и глубина",
+    animation: "Анимация",
+    display: "Отображение",
+    profiles: "Профили"
+  },
+  labels: {
+    direction: "Направление",
+    curveIntensity: "Интенсивность кривой",
+    waveAmplitude: "Амплитуда волны",
+    spacingX: "Плотность X",
+    spacingY: "Плотность Y",
+    verticalOffset: "Вертикальное смещение",
+    horizontalOffset: "Горизонтальное смещение",
+    visibleCards: "Количество карточек",
+    activeCardScale: "Размер активной карточки",
+    cardRotation: "Поворот карточек",
+    aspectRatio: "Соотношение сторон",
+    cardBorder: "Рамка карточки",
+    borderColor: "Цвет рамки",
+    perspective: "Перспектива",
+    depthStep: "Шаг глубины",
+    tilt: "Наклон",
+    blur: "Размытие",
+    shadow: "Тень",
+    shrink: "Уменьшение",
+    duration: "Длительность",
+    scrollSpeed: "Скорость прокрутки",
+    easing: "Смягчение",
+    hoverEffect: "Эффект наведения",
+    opacity: "Прозрачность",
+    labels: "Подписи",
+    labelSize: "Размер подписей",
+    profileName: "Имя профиля",
+    noProfiles: "Нет сохранённых профилей",
+    quickPresets: "Быстрые пресеты",
+    resetSettings: "Сбросить",
+    randomSettings: "Случайный",
+    settings: "Настройки",
+    dragToMove: "Перетащить для перемещения",
+    overlapLabel: "Перекрытие",
+    spreadLabel: "Разворот"
+  },
+  shapes: {
+    line: "Линия",
+    "arc-up": "Дуга вверх",
+    "arc-down": "Дуга вниз",
+    "arc-left": "Дуга влево",
+    "arc-right": "Дуга вправо",
+    spiral: "Спираль",
+    fan: "Веер",
+    wave: "Волна",
+    grid: "Сетка",
+    steps: "Ступени",
+    circle: "Круг",
+    teardrop: "Капля",
+    concentric: "Концентрический",
+    diamond: "Ромб",
+    cascade: "Каскад"
+  }
+};
+const settings$2 = {
+  title: "Настройки",
+  cyclesManagement: "Управление Cycles",
+  cyclesCard: {
+    title: "Состояние коллекции",
+    healthGreen: "Коллекция хорошо обеспечена",
+    healthYellow: "Запас cycles на среднем уровне",
+    healthRed: "Внимание! Запас cycles низкий",
+    daysRemaining: "Оставшихся дней работы",
+    imagesRemaining: "Оставшихся изображений для чеканки",
+    topUpButton: "Пополнить коллекцию",
+    noCollection: "У вас ещё нет коллекции. Она будет создана автоматически при чеканке первого NFT.",
+    days: "дней",
+    images: "изображений"
+  },
+  calculator: {
+    title: "Калькулятор расходов",
+    imagesLabel: "Количество изображений",
+    icpLabel: "Сумма в ICP",
+    icpRate: "Текущий курс ICP",
+    artistShare: "Художнику (75%)",
+    platformShare: "Платформе (25%)",
+    topUpAction: "Пополнить коллекцию — {{amount}} ICP",
+    estimatedDays: "Расчётная продолжительность: {{days}} дней"
+  }
+};
+const calculator$2 = {
+  imageCount: "Количество изображений",
+  icpAmount: "Сумма ICP",
+  breakdown: "Разбивка",
+  forCanister: "Для вашего canister (75%)",
+  forPlatform: "Поддержка платформы (25%)",
+  total: "Итого",
+  estimatedDuration: "Ориентировочный срок",
+  month: "месяц",
+  months2to4: "месяца",
+  months5plus: "месяцев",
+  calcInfo: "Расчёт на основе текущего курса ICP и 20Г cycles/изображение.",
+  rateLoading: "Текущий курс ICP: загрузка...",
+  rateFallback: "Курс ICP: ~${{price}} (оценка)",
+  rateLive: "Текущий курс ICP: ${{price}}",
+  topUp: "Пополнить коллекцию"
+};
+const history$1 = {
+  title: "История чеканки",
+  noMints: "Ещё нет чеканок",
+  noMintsDesc: "Отчеканенные NFT появятся здесь автоматически",
+  mintedHere: "Отчеканено здесь",
+  sentElsewhere: "Отправлено в другое место",
+  collection: "Коллекция",
+  address: "Адрес",
+  loadError: "Ошибка загрузки"
+};
+const ruCommon = {
+  nav: nav$2,
+  buttons: buttons$2,
+  labels: labels$2,
+  tabs: tabs$2,
+  messages: messages$2,
+  errors: errors$2,
+  emotions: emotions$2,
+  misc: misc$2,
+  aria: aria$2,
+  rating: rating$2,
+  settings: settings$2,
+  calculator: calculator$2,
+  history: history$1
+};
+const nav$1 = {
+  home: "Domov",
+  mint: "Raziť",
+  gallery: "Galéria",
+  marketplace: "Trhovisko",
+  rating: "Hodnotenie",
+  settings: "Nastavenia"
+};
+const buttons$1 = {
+  login: "Prihlásiť sa",
+  logout: "Odhlásiť",
+  mintNFT: "Vyraziť NFT",
+  topUp: "Dobiť zbierku",
+  createCollection: "Vytvorť zbierku",
+  copied: "Skopírované!",
+  settings: "Nastavenia",
+  remove: "Odstrániť",
+  reload: "Obnoviť stránku",
+  close: "Zavrieť",
+  save: "Uložiť",
+  reset: "Resetovať",
+  random: "Náhodné"
+};
+const labels$1 = {
+  mintMode: "Spôsob razenia",
+  toCollection: "Do zbierky",
+  standalone: "Samostatne",
+  nftName: "Názov NFT",
+  description: "Popis",
+  descriptionOptional: "Popis (voliteľný)",
+  image: "Vyberte obrázok",
+  collectionName: "Názov zbierky",
+  recipient: "Príjemca",
+  recipientOptional: "(voliteľné)",
+  publicNFT: "Verejné",
+  privateNFT: "Súkromné",
+  visibility: "Viditeľnosť",
+  visibilityPublic: "Zobrazí sa v sekcii Hodnotenie",
+  visibilityPrivate: "Vidí len vlastník",
+  principalId: "Vaše Principal ID",
+  principalShare: "Zdieľajte toto ID s ostatnými, aby vám mohli previesť NFT.",
+  canisterId: "Canister ID",
+  canisterDesc: "Canister tejto kolekcie na ICP blockchaine.",
+  recentAddresses: "Nedávne adresy"
+};
+const tabs$1 = {
+  myCollection: "Moja zbierka",
+  standalone: "Samostatné",
+  others: "Od iných"
+};
+const messages$1 = {
+  loading: "Načítavam...",
+  signingIn: "Prihlasovanie...",
+  minted: "Vyrazené!",
+  minting: "Razenie...",
+  comingSoon: "Čoskoro",
+  noNFTs: "Zatiaľ žiadne razenia",
+  noNFTsDesc: "Vyrazené NFT sa tu objavia automaticky",
+  connectWallet: "Internet Identity",
+  mintedHere: "Vymintované sem",
+  sentElsewhere: "Odoslané inam",
+  uploadImage: "Nahrať obrázok",
+  uploadImageDrop: "alebo pretáhnite súbor sem",
+  uploadImageFormats: "PNG, JPG, GIF, WEBP",
+  historyTitle: "História razenia",
+  dragToMove: "Potiahnite pre presun",
+  imagePreviewAlt: "Náhľad obrázka",
+  imageFormat: "Formát",
+  mintingOnChain: "Razenie na blockchain...",
+  mintingError: "Chyba — skúste znova",
+  ratingSubtitle: "Vyjadrite pocit z každého umeleckého diela",
+  ratingAllDone: "Všetky NFT ohodnotené",
+  ratingEmpty: "Žiadne verejné NFT na hodnotenie",
+  ratingEmptyDesc: "Zatiaľ neboli vyrazené žiadne verejné NFT",
+  scrollHint: "kolečko na prechádzanie",
+  ratingDesc: "Hodnotenie uložené",
+  marketplaceDesc: "Nakupuj a predávaj NFT na decentralizovanom trhovisku.",
+  collectionBadge: "Zbierka",
+  ownerBadge: "Vlastník",
+  galleryTitle: "Galéria",
+  ratingTitle: "Hodnotenie",
+  mintTitle: "Raziť NFT",
+  noCollectionNFTs: "Žiadne NFT v zbierke",
+  noCollectionNFTsDesc: "Vyrazte NFT a zvoľte 'Do zbierky' so zvoleným názvom.",
+  noStandaloneNFTs: "Žiadne samostatné NFT",
+  noStandaloneNFTsDesc: "Vyrazte NFT a zvoľte 'Samostatne'.",
+  noOthersNFTs: "Žiadne verejné NFT od iných",
+  noOthersNFTsDesc: "Zatiaľ tu nie sú žiadne verejné NFT od iných umelcov.",
+  myCollectionSection: "Moja zbierka",
+  standaloneSection: "Samostatné tokeny",
+  othersSection: "Od iných umelcov",
+  selectMintMode: "Najprv vyberte spôsob razenia",
+  imageRemove: "Odstrániť",
+  imagePreviewFullscreen: "Zobraziť {{name}} na celú obrazovku"
+};
+const errors$1 = {
+  invalidPrincipal: "Neplatné Principal ID.",
+  selectMode: "Vyberte spôsob razenia.",
+  enterNftName: "Zadajte názov NFT.",
+  selectImage: "Vyberte obrázok.",
+  enterCollectionName: "Zadajte názov zbierky.",
+  mintFailed: "Razenie sa nepodarilo. Skúste znova.",
+  loadError: "Chyba pri načítávaní NFT. Skúste obnoviť stránku.",
+  loadErrorShort: "Chyba pri načítaní"
+};
+const emotions$1 = {
+  disgusting: "Odporné",
+  boring: "Nudné",
+  weak: "Slabé",
+  neutral: "Jedno mi to",
+  interesting: "Zaujímavé",
+  likeIt: "Páči sa mi",
+  beautiful: "Nádherné"
+};
+const misc$1 = {
+  appName: "Neferty Space",
+  tagline: "ICP Blockchain",
+  copyright: "Built with love using"
+};
+const aria$1 = {
+  copyPrincipal: "Kopírovať Principal ID",
+  designSettings: "Nastavenia dizajnu",
+  mainNav: "Hlavná navigácia",
+  copyCanister: "Kopírovať canister ID",
+  gallerySections: "Sekcie galérie"
+};
+const rating$1 = {
+  sections: {
+    shapeArrangement: "Tvar a zoradenie",
+    spacing: "Rozostupy a hustota",
+    cards: "Karty",
+    depth3d: "3D a hĺbka",
+    animation: "Animácia",
+    display: "Zobrazenie",
+    profiles: "Profily"
+  },
+  labels: {
+    direction: "Smer",
+    curveIntensity: "Intenzita krivky",
+    waveAmplitude: "Amplituda vlny",
+    spacingX: "Hustota X",
+    spacingY: "Hustota Y",
+    verticalOffset: "Posun hore/dole",
+    horizontalOffset: "Posun vľavo/vpravo",
+    visibleCards: "Počet kariet",
+    activeCardScale: "Veľkosť aktívnej",
+    cardRotation: "Rotácia kariet",
+    aspectRatio: "Pomer strán",
+    cardBorder: "Rám kariet",
+    borderColor: "Farba rámu",
+    perspective: "Perspektíva",
+    depthStep: "Hĺbkový krok",
+    tilt: "Náklon (tilt)",
+    blur: "Rozostrenie",
+    shadow: "Tieň",
+    shrink: "Zmenšenie",
+    duration: "Trvanie",
+    scrollSpeed: "Rýchlosť kolečka",
+    easing: "Easing",
+    hoverEffect: "Hover efekt",
+    opacity: "Priehľadnosť",
+    labels: "Nápisy",
+    labelSize: "Veľkosť nápisov",
+    profileName: "Názov profilu",
+    noProfiles: "Žiadne uložené profily",
+    quickPresets: "Rýchle prednastavené",
+    resetSettings: "Resetovať nastavenia",
+    randomSettings: "Náhodné nastavenia",
+    settings: "Nastavenia",
+    dragToMove: "Potiahnite pre presun",
+    overlapLabel: "Prehustenie",
+    spreadLabel: "Roztiahnuté"
+  },
+  shapes: {
+    line: "Priamka",
+    "arc-up": "Oblúk hore",
+    "arc-down": "Oblúk dole",
+    "arc-left": "Oblúk ľavo",
+    "arc-right": "Oblúk pravo",
+    spiral: "Špirála",
+    fan: "Vejár",
+    wave: "Vlna",
+    grid: "Mriežka",
+    steps: "Stupne",
+    circle: "Kruh",
+    teardrop: "Kvapka",
+    concentric: "Sústrečné",
+    diamond: "Diamant",
+    cascade: "Kaskáda"
+  }
+};
+const settings$1 = {
+  title: "Nastavenia",
+  cyclesManagement: "Správa cyklov",
+  cyclesCard: {
+    title: "Stav zbierky",
+    healthGreen: "Zbierka je dobre zásobená",
+    healthYellow: "Zásoby cyklov sú na strednej úrovni",
+    healthRed: "Pozor! Zásoby cyklov sú nízke",
+    daysRemaining: "Zostávajúce dni prevádzky",
+    imagesRemaining: "Zostatok obrázkov na razenie",
+    topUpButton: "Dobiť zbierku",
+    noCollection: "Zatiaľ nemáte zbierku. Razením prvého NFT sa automaticky vytvorí.",
+    days: "dní",
+    images: "obrázkov"
+  },
+  calculator: {
+    title: "Kalkulačka nákladov",
+    imagesLabel: "Počet obrázkov",
+    icpLabel: "Suma v ICP",
+    icpRate: "Aktuálny kurz ICP",
+    artistShare: "Pre umelca (75%)",
+    platformShare: "Pre platformu (25%)",
+    topUpAction: "Dobiť zbierku — {{amount}} ICP",
+    estimatedDays: "Odhadovaná výdrž: {{days}} dní"
+  }
+};
+const calculator$1 = {
+  imageCount: "Počet obrázkov",
+  icpAmount: "Suma ICP",
+  breakdown: "Rozdelenie",
+  forCanister: "Pre tvoj canister (75%)",
+  forPlatform: "Podpora platformy (25%)",
+  total: "Celkom",
+  estimatedDuration: "Odhadovaná výdrž",
+  month: "mesiac",
+  months2to4: "mesiace",
+  months5plus: "mesiacov",
+  calcInfo: "Výpočet vychádza z aktuálneho kurzu ICP a ceny 20 mld. cycles/obrázok.",
+  rateLoading: "Aktuálny kurz ICP: načítavam...",
+  rateFallback: "Kurz ICP: ~${{price}} (odhad)",
+  rateLive: "Aktuálny kurz ICP: ${{price}}",
+  topUp: "Dobiť zbierku"
+};
+const skCommon = {
+  nav: nav$1,
+  buttons: buttons$1,
+  labels: labels$1,
+  tabs: tabs$1,
+  messages: messages$1,
+  errors: errors$1,
+  emotions: emotions$1,
+  misc: misc$1,
+  aria: aria$1,
+  rating: rating$1,
+  settings: settings$1,
+  calculator: calculator$1
+};
+const nav = {
+  home: "首页",
+  mint: "铸造",
+  gallery: "画廊",
+  marketplace: "市场",
+  rating: "评级",
+  settings: "设置"
+};
+const buttons = {
+  login: "登录",
+  logout: "退出",
+  mintNFT: "铸造 NFT",
+  topUp: "充值收藏",
+  createCollection: "创建收藏",
+  copied: "已复制！",
+  settings: "设置",
+  remove: "删除",
+  reload: "刷新页面",
+  close: "关闭",
+  save: "保存",
+  reset: "重置",
+  random: "随机"
+};
+const labels = {
+  mintMode: "铸造模式",
+  toCollection: "加入收藏",
+  standalone: "独立",
+  nftName: "NFT 名称",
+  description: "描述",
+  descriptionOptional: "描述（可选）",
+  image: "选择图片",
+  collectionName: "收藏名称",
+  recipient: "收件人",
+  recipientOptional: "（可选）",
+  publicNFT: "公开",
+  privateNFT: "私有",
+  visibility: "可见性",
+  visibilityPublic: "在评级部分可见",
+  visibilityPrivate: "仅所有者可见",
+  principalId: "您的 Principal ID",
+  principalShare: "分享此 ID 以接收 NFT。",
+  canisterId: "Canister ID",
+  canisterDesc: "ICP 区块链上此收藏的 canister。",
+  recentAddresses: "最近的地址"
+};
+const tabs = {
+  myCollection: "我的收藏",
+  standalone: "独立",
+  others: "他人的"
+};
+const messages = {
+  loading: "加载中...",
+  signingIn: "登录中...",
+  minted: "已铸造！",
+  minting: "铸造中...",
+  comingSoon: "即将推出",
+  noNFTs: "暂无铸造记录",
+  noNFTsDesc: "铸造的 NFT 将自动显示在这里",
+  connectWallet: "Internet Identity",
+  mintedHere: "在此铸造",
+  sentElsewhere: "已发送到其他地方",
+  uploadImage: "上传图片",
+  uploadImageDrop: "或将文件拖放到此处",
+  uploadImageFormats: "PNG, JPG, GIF, WEBP",
+  historyTitle: "铸造历史",
+  dragToMove: "拖动移动",
+  imagePreviewAlt: "图片预览",
+  imageFormat: "格式",
+  mintingOnChain: "在区块链上铸造...",
+  mintingError: "错误 — 请重试",
+  ratingSubtitle: "表达您对每件艺术品的感受",
+  ratingAllDone: "所有 NFT 已评级",
+  ratingEmpty: "没有公开的 NFT 可评级",
+  ratingEmptyDesc: "尚未铸造任何公开的 NFT",
+  scrollHint: "滚轮浏览",
+  ratingDesc: "评级已保存",
+  marketplaceDesc: "在去中心化市场买卖 NFT。",
+  collectionBadge: "收藏",
+  ownerBadge: "拥有者",
+  galleryTitle: "画廊",
+  ratingTitle: "评级",
+  mintTitle: "铸造 NFT",
+  noCollectionNFTs: "收藏中没有 NFT",
+  noCollectionNFTsDesc: "铸造 NFT 并选择'加入收藏'及名称。",
+  noStandaloneNFTs: "没有独立 NFT",
+  noStandaloneNFTsDesc: "铸造 NFT 并选择'独立'。",
+  noOthersNFTs: "没有他人的公开 NFT",
+  noOthersNFTsDesc: "目前还没有其他艺术家的公开 NFT。",
+  myCollectionSection: "我的收藏",
+  standaloneSection: "独立代币",
+  othersSection: "其他艺术家",
+  selectMintMode: "请先选择铸造模式",
+  imageRemove: "删除",
+  imagePreviewFullscreen: "全屏查看 {{name}}"
+};
+const errors = {
+  invalidPrincipal: "无效的 Principal ID。",
+  selectMode: "选择铸造模式。",
+  enterNftName: "输入 NFT 名称。",
+  selectImage: "选择图片。",
+  enterCollectionName: "输入收藏名称。",
+  mintFailed: "铸造失败。请重试。",
+  loadError: "加载 NFT 时出错。请刷新页面。",
+  loadErrorShort: "加载错误"
+};
+const emotions = {
+  disgusting: "令人厌恶",
+  boring: "无聊",
+  weak: "差劲",
+  neutral: "无所谓",
+  interesting: "有趣",
+  likeIt: "喜欢",
+  beautiful: "美丽"
+};
+const misc = {
+  appName: "Neferty Space",
+  tagline: "ICP 区块链",
+  copyright: "Built with love using"
+};
+const aria = {
+  copyPrincipal: "复制 Principal ID",
+  designSettings: "设计设置",
+  mainNav: "主导航",
+  copyCanister: "复制 Canister ID",
+  gallerySections: "画廊部分"
+};
+const rating = {
+  sections: {
+    shapeArrangement: "形状和排列",
+    spacing: "间距和密度",
+    cards: "卡片",
+    depth3d: "3D和深度",
+    animation: "动画",
+    display: "显示",
+    profiles: "配置文件"
+  },
+  labels: {
+    direction: "方向",
+    curveIntensity: "曲线强度",
+    waveAmplitude: "波幅",
+    spacingX: "X 密度",
+    spacingY: "Y 密度",
+    verticalOffset: "垂直偏移",
+    horizontalOffset: "水平偏移",
+    visibleCards: "卡片数量",
+    activeCardScale: "活动卡片大小",
+    cardRotation: "卡片旋转",
+    aspectRatio: "宽高比",
+    cardBorder: "卡片边框",
+    borderColor: "边框颜色",
+    perspective: "透视",
+    depthStep: "深度步长",
+    tilt: "倾斜",
+    blur: "模糊",
+    shadow: "阴影",
+    shrink: "缩小",
+    duration: "持续时间",
+    scrollSpeed: "滚动速度",
+    easing: "缓动",
+    hoverEffect: "悬停效果",
+    opacity: "不透明度",
+    labels: "标签",
+    labelSize: "标签大小",
+    profileName: "配置文件名称",
+    noProfiles: "没有保存的配置文件",
+    quickPresets: "快速预设",
+    resetSettings: "重置",
+    randomSettings: "随机",
+    settings: "设置",
+    dragToMove: "拖动移动",
+    overlapLabel: "重叠",
+    spreadLabel: "展开"
+  },
+  shapes: {
+    line: "直线",
+    "arc-up": "上弧",
+    "arc-down": "下弧",
+    "arc-left": "左弧",
+    "arc-right": "右弧",
+    spiral: "螺旋",
+    fan: "扇形",
+    wave: "波浪",
+    grid: "网格",
+    steps: "阶梯",
+    circle: "圆形",
+    teardrop: "泪滴",
+    concentric: "同心",
+    diamond: "菱形",
+    cascade: "瀑布"
+  }
+};
+const settings = {
+  title: "设置",
+  cyclesManagement: "Cycles 管理",
+  cyclesCard: {
+    title: "收藏状态",
+    healthGreen: "收藏供应充足",
+    healthYellow: "Cycles 供应处于中等水平",
+    healthRed: "警告！Cycles 供应不足",
+    daysRemaining: "剩余运营天数",
+    imagesRemaining: "剩余可铸造图片数",
+    topUpButton: "充值收藏",
+    noCollection: "您还没有收藏。铸造第一个 NFT 时将自动创建。",
+    days: "天",
+    images: "张图片"
+  },
+  calculator: {
+    title: "费用计算器",
+    imagesLabel: "图片数量",
+    icpLabel: "ICP 金额",
+    icpRate: "当前 ICP 汇率",
+    artistShare: "艺术家份额 (75%)",
+    platformShare: "平台份额 (25%)",
+    topUpAction: "充值收藏 — {{amount}} ICP",
+    estimatedDays: "预计持续时间：{{days}} 天"
+  }
+};
+const calculator = {
+  imageCount: "图片数量",
+  icpAmount: "ICP 金额",
+  breakdown: "明细",
+  forCanister: "您的 canister（75%）",
+  forPlatform: "平台支持（25%）",
+  total: "总计",
+  estimatedDuration: "估计时长",
+  month: "个月",
+  months2to4: "个月",
+  months5plus: "个月",
+  calcInfo: "根据当前 ICP 汇率和每图 20G cycles 计算。",
+  rateLoading: "当前 ICP 汇率：加载中...",
+  rateFallback: "ICP 汇率：~${{price}}（估算）",
+  rateLive: "当前 ICP 汇率：${{price}}",
+  topUp: "充值收藏"
+};
+const history = {
+  title: "铸造历史",
+  noMints: "暂无铸造记录",
+  noMintsDesc: "铸造的 NFT 将自动显示在这里",
+  mintedHere: "在此铸造",
+  sentElsewhere: "已发送到其他地方",
+  collection: "收藏",
+  address: "地址",
+  loadError: "加载错误"
+};
+const zhCommon = {
+  nav,
+  buttons,
+  labels,
+  tabs,
+  messages,
+  errors,
+  emotions,
+  misc,
+  aria,
+  rating,
+  settings,
+  calculator,
+  history
+};
+const STORAGE_KEY$3 = "neferty_lang";
+const savedLang = typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEY$3) ?? "sk" : "sk";
+instance.use(initReactI18next).init({
+  lng: savedLang,
+  fallbackLng: "sk",
+  defaultNS: "common",
+  interpolation: { escapeValue: false },
+  resources: {
+    sk: { common: skCommon },
+    en: { common: enCommon },
+    de: { common: deCommon },
+    fr: { common: frCommon },
+    es: { common: esCommon },
+    zh: { common: zhCommon },
+    ja: { common: jaCommon },
+    ar: { common: arCommon },
+    pt: { common: ptCommon },
+    ru: { common: ruCommon }
+  }
+});
 var ReplicaRejectCode;
 (function(ReplicaRejectCode2) {
   ReplicaRejectCode2[ReplicaRejectCode2["SysFatal"] = 1] = "SysFatal";
@@ -476,15 +6107,15 @@ function abytes(b2, ...lengths) {
   if (lengths.length > 0 && !lengths.includes(b2.length))
     throw new Error("Uint8Array expected of length " + lengths + ", got length=" + b2.length);
 }
-function aexists(instance, checkFinished = true) {
-  if (instance.destroyed)
+function aexists(instance2, checkFinished = true) {
+  if (instance2.destroyed)
     throw new Error("Hash instance has been destroyed");
-  if (checkFinished && instance.finished)
+  if (checkFinished && instance2.finished)
     throw new Error("Hash#digest() has already been called");
 }
-function aoutput(out, instance) {
+function aoutput(out, instance2) {
   abytes(out);
-  const min = instance.outputLen;
+  const min = instance2.outputLen;
   if (out.length < min) {
     throw new Error("digestInto() expects output buffer of length at least " + min);
   }
@@ -2415,8 +8046,8 @@ class EmptyClass extends PrimitiveType {
   get typeName() {
     return IdlTypeName.EmptyClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.EmptyClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.EmptyClass;
   }
   accept(v2, d2) {
     return v2.visitEmpty(this, d2);
@@ -2444,8 +8075,8 @@ class UnknownClass extends Type {
   get typeName() {
     return IdlTypeName.UnknownClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.UnknownClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.UnknownClass;
   }
   checkType(_t) {
     throw new Error("Method not implemented for unknown.");
@@ -2495,8 +8126,8 @@ class BoolClass extends PrimitiveType {
   get typeName() {
     return IdlTypeName.BoolClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.BoolClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.BoolClass;
   }
   accept(v2, d2) {
     return v2.visitBool(this, d2);
@@ -2531,8 +8162,8 @@ class NullClass extends PrimitiveType {
   get typeName() {
     return IdlTypeName.NullClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.NullClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.NullClass;
   }
   accept(v2, d2) {
     return v2.visitNull(this, d2);
@@ -2560,8 +8191,8 @@ class ReservedClass extends PrimitiveType {
   get typeName() {
     return IdlTypeName.ReservedClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.ReservedClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.ReservedClass;
   }
   accept(v2, d2) {
     return v2.visitReserved(this, d2);
@@ -2589,8 +8220,8 @@ class TextClass extends PrimitiveType {
   get typeName() {
     return IdlTypeName.TextClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.TextClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.TextClass;
   }
   accept(v2, d2) {
     return v2.visitText(this, d2);
@@ -2626,8 +8257,8 @@ class IntClass extends PrimitiveType {
   get typeName() {
     return IdlTypeName.IntClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.IntClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.IntClass;
   }
   accept(v2, d2) {
     return v2.visitInt(this, d2);
@@ -2658,8 +8289,8 @@ class NatClass extends PrimitiveType {
   get typeName() {
     return IdlTypeName.NatClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.NatClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.NatClass;
   }
   accept(v2, d2) {
     return v2.visitNat(this, d2);
@@ -2690,8 +8321,8 @@ class FloatClass extends PrimitiveType {
   get typeName() {
     return IdlTypeName.FloatClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.FloatClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.FloatClass;
   }
   constructor(_bits) {
     super();
@@ -2743,8 +8374,8 @@ class FixedIntClass extends PrimitiveType {
   get typeName() {
     return IdlTypeName.FixedIntClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.FixedIntClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.FixedIntClass;
   }
   constructor(_bits) {
     super();
@@ -2796,8 +8427,8 @@ class FixedNatClass extends PrimitiveType {
   get typeName() {
     return IdlTypeName.FixedNatClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.FixedNatClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.FixedNatClass;
   }
   constructor(_bits) {
     super();
@@ -2848,8 +8479,8 @@ class VecClass extends ConstructType {
   get typeName() {
     return IdlTypeName.VecClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.VecClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.VecClass;
   }
   constructor(_type) {
     super();
@@ -3007,8 +8638,8 @@ class OptClass extends ConstructType {
   get typeName() {
     return IdlTypeName.OptClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.OptClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.OptClass;
   }
   constructor(_type) {
     super();
@@ -3110,8 +8741,8 @@ class RecordClass extends ConstructType {
   get typeName() {
     return IdlTypeName.RecordClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.RecordClass || instance.typeName === IdlTypeName.TupleClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.RecordClass || instance2.typeName === IdlTypeName.TupleClass;
   }
   constructor(fields = {}) {
     super();
@@ -3227,8 +8858,8 @@ class TupleClass extends RecordClass {
   get typeName() {
     return IdlTypeName.TupleClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.TupleClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.TupleClass;
   }
   constructor(_components) {
     const x2 = {};
@@ -3287,8 +8918,8 @@ class VariantClass extends ConstructType {
   get typeName() {
     return IdlTypeName.VariantClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.VariantClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.VariantClass;
   }
   constructor(fields = {}) {
     super();
@@ -3385,8 +9016,8 @@ const _RecClass = class _RecClass extends ConstructType {
   get typeName() {
     return IdlTypeName.RecClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.RecClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.RecClass;
   }
   accept(v2, d2) {
     if (!this._type) {
@@ -3455,8 +9086,8 @@ class PrincipalClass extends PrimitiveType {
   get typeName() {
     return IdlTypeName.PrincipalClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.PrincipalClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.PrincipalClass;
   }
   accept(v2, d2) {
     return v2.visitPrincipal(this, d2);
@@ -3489,8 +9120,8 @@ class FuncClass extends ConstructType {
   get typeName() {
     return IdlTypeName.FuncClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.FuncClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.FuncClass;
   }
   static argsToString(types, v2) {
     if (types.length !== v2.length) {
@@ -3579,8 +9210,8 @@ class ServiceClass extends ConstructType {
   get typeName() {
     return IdlTypeName.ServiceClass;
   }
-  static [Symbol.hasInstance](instance) {
-    return instance.typeName === IdlTypeName.ServiceClass;
+  static [Symbol.hasInstance](instance2) {
+    return instance2.typeName === IdlTypeName.ServiceClass;
   }
   constructor(fields) {
     super();
@@ -3953,12 +9584,12 @@ class Relations {
     this.rels = relations;
   }
   copy() {
-    const copy = /* @__PURE__ */ new Map();
+    const copy2 = /* @__PURE__ */ new Map();
     for (const [key, value] of this.rels.entries()) {
       const valCopy = new Map(value);
-      copy.set(key, valCopy);
+      copy2.set(key, valCopy);
     }
-    return new Relations(copy);
+    return new Relations(copy2);
   }
   /// Returns whether we know for sure that a relation holds or doesn't (`true` or `false`), or
   /// if we don't know yet (`undefined`)
@@ -4437,14 +10068,14 @@ const p = 2 * 1024, C = 100, v = new TextEncoder();
 function S(t) {
   return t << 5;
 }
-let o$1 = new Uint8Array(p), r = new DataView(o$1.buffer), s = 0, O = [];
+let o = new Uint8Array(p), r = new DataView(o.buffer), s = 0, O = [];
 function dt(t, n) {
   s = 0;
   const e = (n == null ? void 0 : n(t)) ?? t;
-  return it(m, e, n), o$1.slice(0, s);
+  return it(m, e, n), o.slice(0, s);
 }
 function _(t, n) {
-  if (s > o$1.length - C && (o$1 = R(o$1, o$1.length * 2), r = new DataView(o$1.buffer)), t === false || t === true || t === null || t === void 0) {
+  if (s > o.length - C && (o = R(o, o.length * 2), r = new DataView(o.buffer)), t === false || t === true || t === null || t === void 0) {
     et(t);
     return;
   }
@@ -4537,7 +10168,7 @@ function st(t) {
   throw new x(`Unrecognized simple value: ${t.toString()}`);
 }
 function k(t, n) {
-  I(t, n.length), s > o$1.length - n.length && (o$1 = R(o$1, o$1.length + n.length), r = new DataView(o$1.buffer)), o$1.set(n, s), s += n.length;
+  I(t, n.length), s > o.length - n.length && (o = R(o, o.length + n.length), r = new DataView(o.buffer)), o.set(n, s), s += n.length;
 }
 function T(t, n) {
   I(t, n);
@@ -6430,12 +12061,12 @@ function createBlsSig(blsPairing, PubCurve, SigCurve, SignatureCoder, isSigG1) {
     // https://ethresear.ch/t/fast-verification-of-multiple-bls-signatures/5407
     // e(G, S) = e(G, SUM(n)(Si)) = MUL(n)(e(G, Si))
     // TODO: maybe `{message: G2Hex, publicKey: G1Hex}[]` instead?
-    verifyBatch(signature, messages, publicKeys) {
-      aNonEmpty(messages);
-      if (publicKeys.length !== messages.length)
+    verifyBatch(signature, messages2, publicKeys) {
+      aNonEmpty(messages2);
+      if (publicKeys.length !== messages2.length)
         throw new Error("amount of public keys and messages should be equal");
       const sig = normSig(signature);
-      const nMessages = messages;
+      const nMessages = messages2;
       const nPublicKeys = publicKeys.map(normPub);
       const messagePubKeyMap = /* @__PURE__ */ new Map();
       for (let i = 0; i < nPublicKeys.length; i++) {
@@ -6560,8 +12191,8 @@ function bls(CURVE) {
     const agg = shortSignatures.aggregateSignatures(signatures);
     return signatures[0] instanceof G1.Point ? agg : ShortSignature.toBytes(agg);
   }
-  function verifyBatch(signature, messages, publicKeys, htfOpts) {
-    const Hm = messages.map((m2) => normP2Hash(m2, htfOpts));
+  function verifyBatch(signature, messages2, publicKeys, htfOpts) {
+    const Hm = messages2.map((m2) => normP2Hash(m2, htfOpts));
     return longSignatures.verifyBatch(signature, Hm, publicKeys);
   }
   G1.Point.BASE.precompute(4);
@@ -10908,7 +16539,7 @@ function systemSetTimeoutZero(callback) {
   setTimeout(callback, 0);
 }
 var isServer = typeof window === "undefined" || "Deno" in globalThis;
-function noop$6() {
+function noop$5() {
 }
 function functionalUpdate$1(updater, input) {
   return typeof updater === "function" ? updater(input) : updater;
@@ -11022,26 +16653,26 @@ function replaceEqualDeep$1(a2, b2, depth = 0) {
   const aSize = aItems.length;
   const bItems = array ? b2 : Object.keys(b2);
   const bSize = bItems.length;
-  const copy = array ? new Array(bSize) : {};
+  const copy2 = array ? new Array(bSize) : {};
   let equalItems = 0;
   for (let i = 0; i < bSize; i++) {
     const key = array ? i : bItems[i];
     const aItem = a2[key];
     const bItem = b2[key];
     if (aItem === bItem) {
-      copy[key] = aItem;
+      copy2[key] = aItem;
       if (array ? i < aSize : hasOwn$1.call(a2, key)) equalItems++;
       continue;
     }
     if (aItem === null || bItem === null || typeof aItem !== "object" || typeof bItem !== "object") {
-      copy[key] = bItem;
+      copy2[key] = bItem;
       continue;
     }
     const v2 = replaceEqualDeep$1(aItem, bItem, depth + 1);
-    copy[key] = v2;
+    copy2[key] = v2;
     if (v2 === aItem) equalItems++;
   }
-  return aSize === bSize && equalItems === aSize ? a2 : copy;
+  return aSize === bSize && equalItems === aSize ? a2 : copy2;
 }
 function shallowEqualObjects(a2, b2) {
   if (!b2 || Object.keys(a2).length !== Object.keys(b2).length) {
@@ -11531,7 +17162,7 @@ var Query = (_f = class extends Removable {
     var _a3, _b3;
     const promise = (_a3 = __privateGet(this, _retryer)) == null ? void 0 : _a3.promise;
     (_b3 = __privateGet(this, _retryer)) == null ? void 0 : _b3.cancel(options);
-    return promise ? promise.then(noop$6).catch(noop$6) : Promise.resolve();
+    return promise ? promise.then(noop$5).catch(noop$5) : Promise.resolve();
   }
   destroy() {
     super.destroy();
@@ -12381,7 +18012,7 @@ var MutationCache = (_h = class extends Subscribable {
     const pausedMutations = this.getAll().filter((x2) => x2.state.isPaused);
     return notifyManager.batch(
       () => Promise.all(
-        pausedMutations.map((mutation) => mutation.continue().catch(noop$6))
+        pausedMutations.map((mutation) => mutation.continue().catch(noop$5))
       )
     );
   }
@@ -12611,7 +18242,7 @@ var QueryClient = (_j = class {
     const promises = notifyManager.batch(
       () => __privateGet(this, _queryCache).findAll(filters).map((query) => query.cancel(defaultedCancelOptions))
     );
-    return Promise.all(promises).then(noop$6).catch(noop$6);
+    return Promise.all(promises).then(noop$5).catch(noop$5);
   }
   invalidateQueries(filters, options = {}) {
     return notifyManager.batch(() => {
@@ -12639,12 +18270,12 @@ var QueryClient = (_j = class {
       () => __privateGet(this, _queryCache).findAll(filters).filter((query) => !query.isDisabled() && !query.isStatic()).map((query) => {
         let promise = query.fetch(void 0, fetchOptions);
         if (!fetchOptions.throwOnError) {
-          promise = promise.catch(noop$6);
+          promise = promise.catch(noop$5);
         }
         return query.state.fetchStatus === "paused" ? Promise.resolve() : promise;
       })
     );
-    return Promise.all(promises).then(noop$6);
+    return Promise.all(promises).then(noop$5);
   }
   fetchQuery(options) {
     const defaultedOptions = this.defaultQueryOptions(options);
@@ -12657,14 +18288,14 @@ var QueryClient = (_j = class {
     ) ? query.fetch(defaultedOptions) : Promise.resolve(query.state.data);
   }
   prefetchQuery(options) {
-    return this.fetchQuery(options).then(noop$6).catch(noop$6);
+    return this.fetchQuery(options).then(noop$5).catch(noop$5);
   }
   fetchInfiniteQuery(options) {
     options.behavior = infiniteQueryBehavior(options.pages);
     return this.fetchQuery(options);
   }
   prefetchInfiniteQuery(options) {
-    return this.fetchInfiniteQuery(options).then(noop$6).catch(noop$6);
+    return this.fetchInfiniteQuery(options).then(noop$5).catch(noop$5);
   }
   ensureInfiniteQueryData(options) {
     options.behavior = infiniteQueryBehavior(options.pages);
@@ -12766,450 +18397,6 @@ var QueryClient = (_j = class {
     __privateGet(this, _mutationCache2).clear();
   }
 }, _queryCache = new WeakMap(), _mutationCache2 = new WeakMap(), _defaultOptions2 = new WeakMap(), _queryDefaults = new WeakMap(), _mutationDefaults = new WeakMap(), _mountCount = new WeakMap(), _unsubscribeFocus = new WeakMap(), _unsubscribeOnline = new WeakMap(), _j);
-var react = { exports: {} };
-var react_production = {};
-/**
- * @license React
- * react.production.js
- *
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-var REACT_ELEMENT_TYPE$1 = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE$2 = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE$1 = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE$1 = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE$1 = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE$1 = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE$1 = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE$1 = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE$1 = Symbol.for("react.suspense"), REACT_MEMO_TYPE$1 = Symbol.for("react.memo"), REACT_LAZY_TYPE$1 = Symbol.for("react.lazy"), MAYBE_ITERATOR_SYMBOL$1 = Symbol.iterator;
-function getIteratorFn$1(maybeIterable) {
-  if (null === maybeIterable || "object" !== typeof maybeIterable) return null;
-  maybeIterable = MAYBE_ITERATOR_SYMBOL$1 && maybeIterable[MAYBE_ITERATOR_SYMBOL$1] || maybeIterable["@@iterator"];
-  return "function" === typeof maybeIterable ? maybeIterable : null;
-}
-var ReactNoopUpdateQueue = {
-  isMounted: function() {
-    return false;
-  },
-  enqueueForceUpdate: function() {
-  },
-  enqueueReplaceState: function() {
-  },
-  enqueueSetState: function() {
-  }
-}, assign$1 = Object.assign, emptyObject = {};
-function Component(props, context, updater) {
-  this.props = props;
-  this.context = context;
-  this.refs = emptyObject;
-  this.updater = updater || ReactNoopUpdateQueue;
-}
-Component.prototype.isReactComponent = {};
-Component.prototype.setState = function(partialState, callback) {
-  if ("object" !== typeof partialState && "function" !== typeof partialState && null != partialState)
-    throw Error(
-      "takes an object of state variables to update or a function which returns an object of state variables."
-    );
-  this.updater.enqueueSetState(this, partialState, callback, "setState");
-};
-Component.prototype.forceUpdate = function(callback) {
-  this.updater.enqueueForceUpdate(this, callback, "forceUpdate");
-};
-function ComponentDummy() {
-}
-ComponentDummy.prototype = Component.prototype;
-function PureComponent(props, context, updater) {
-  this.props = props;
-  this.context = context;
-  this.refs = emptyObject;
-  this.updater = updater || ReactNoopUpdateQueue;
-}
-var pureComponentPrototype = PureComponent.prototype = new ComponentDummy();
-pureComponentPrototype.constructor = PureComponent;
-assign$1(pureComponentPrototype, Component.prototype);
-pureComponentPrototype.isPureReactComponent = true;
-var isArrayImpl$1 = Array.isArray, ReactSharedInternals$2 = { H: null, A: null, T: null, S: null, V: null }, hasOwnProperty$1 = Object.prototype.hasOwnProperty;
-function ReactElement(type, key, self2, source, owner, props) {
-  self2 = props.ref;
-  return {
-    $$typeof: REACT_ELEMENT_TYPE$1,
-    type,
-    key,
-    ref: void 0 !== self2 ? self2 : null,
-    props
-  };
-}
-function cloneAndReplaceKey(oldElement, newKey) {
-  return ReactElement(
-    oldElement.type,
-    newKey,
-    void 0,
-    void 0,
-    void 0,
-    oldElement.props
-  );
-}
-function isValidElement(object) {
-  return "object" === typeof object && null !== object && object.$$typeof === REACT_ELEMENT_TYPE$1;
-}
-function escape(key) {
-  var escaperLookup = { "=": "=0", ":": "=2" };
-  return "$" + key.replace(/[=:]/g, function(match) {
-    return escaperLookup[match];
-  });
-}
-var userProvidedKeyEscapeRegex = /\/+/g;
-function getElementKey(element, index2) {
-  return "object" === typeof element && null !== element && null != element.key ? escape("" + element.key) : index2.toString(36);
-}
-function noop$1$1() {
-}
-function resolveThenable(thenable) {
-  switch (thenable.status) {
-    case "fulfilled":
-      return thenable.value;
-    case "rejected":
-      throw thenable.reason;
-    default:
-      switch ("string" === typeof thenable.status ? thenable.then(noop$1$1, noop$1$1) : (thenable.status = "pending", thenable.then(
-        function(fulfilledValue) {
-          "pending" === thenable.status && (thenable.status = "fulfilled", thenable.value = fulfilledValue);
-        },
-        function(error) {
-          "pending" === thenable.status && (thenable.status = "rejected", thenable.reason = error);
-        }
-      )), thenable.status) {
-        case "fulfilled":
-          return thenable.value;
-        case "rejected":
-          throw thenable.reason;
-      }
-  }
-  throw thenable;
-}
-function mapIntoArray(children, array, escapedPrefix, nameSoFar, callback) {
-  var type = typeof children;
-  if ("undefined" === type || "boolean" === type) children = null;
-  var invokeCallback = false;
-  if (null === children) invokeCallback = true;
-  else
-    switch (type) {
-      case "bigint":
-      case "string":
-      case "number":
-        invokeCallback = true;
-        break;
-      case "object":
-        switch (children.$$typeof) {
-          case REACT_ELEMENT_TYPE$1:
-          case REACT_PORTAL_TYPE$2:
-            invokeCallback = true;
-            break;
-          case REACT_LAZY_TYPE$1:
-            return invokeCallback = children._init, mapIntoArray(
-              invokeCallback(children._payload),
-              array,
-              escapedPrefix,
-              nameSoFar,
-              callback
-            );
-        }
-    }
-  if (invokeCallback)
-    return callback = callback(children), invokeCallback = "" === nameSoFar ? "." + getElementKey(children, 0) : nameSoFar, isArrayImpl$1(callback) ? (escapedPrefix = "", null != invokeCallback && (escapedPrefix = invokeCallback.replace(userProvidedKeyEscapeRegex, "$&/") + "/"), mapIntoArray(callback, array, escapedPrefix, "", function(c2) {
-      return c2;
-    })) : null != callback && (isValidElement(callback) && (callback = cloneAndReplaceKey(
-      callback,
-      escapedPrefix + (null == callback.key || children && children.key === callback.key ? "" : ("" + callback.key).replace(
-        userProvidedKeyEscapeRegex,
-        "$&/"
-      ) + "/") + invokeCallback
-    )), array.push(callback)), 1;
-  invokeCallback = 0;
-  var nextNamePrefix = "" === nameSoFar ? "." : nameSoFar + ":";
-  if (isArrayImpl$1(children))
-    for (var i = 0; i < children.length; i++)
-      nameSoFar = children[i], type = nextNamePrefix + getElementKey(nameSoFar, i), invokeCallback += mapIntoArray(
-        nameSoFar,
-        array,
-        escapedPrefix,
-        type,
-        callback
-      );
-  else if (i = getIteratorFn$1(children), "function" === typeof i)
-    for (children = i.call(children), i = 0; !(nameSoFar = children.next()).done; )
-      nameSoFar = nameSoFar.value, type = nextNamePrefix + getElementKey(nameSoFar, i++), invokeCallback += mapIntoArray(
-        nameSoFar,
-        array,
-        escapedPrefix,
-        type,
-        callback
-      );
-  else if ("object" === type) {
-    if ("function" === typeof children.then)
-      return mapIntoArray(
-        resolveThenable(children),
-        array,
-        escapedPrefix,
-        nameSoFar,
-        callback
-      );
-    array = String(children);
-    throw Error(
-      "Objects are not valid as a React child (found: " + ("[object Object]" === array ? "object with keys {" + Object.keys(children).join(", ") + "}" : array) + "). If you meant to render a collection of children, use an array instead."
-    );
-  }
-  return invokeCallback;
-}
-function mapChildren(children, func, context) {
-  if (null == children) return children;
-  var result = [], count = 0;
-  mapIntoArray(children, result, "", "", function(child) {
-    return func.call(context, child, count++);
-  });
-  return result;
-}
-function lazyInitializer(payload) {
-  if (-1 === payload._status) {
-    var ctor = payload._result;
-    ctor = ctor();
-    ctor.then(
-      function(moduleObject) {
-        if (0 === payload._status || -1 === payload._status)
-          payload._status = 1, payload._result = moduleObject;
-      },
-      function(error) {
-        if (0 === payload._status || -1 === payload._status)
-          payload._status = 2, payload._result = error;
-      }
-    );
-    -1 === payload._status && (payload._status = 0, payload._result = ctor);
-  }
-  if (1 === payload._status) return payload._result.default;
-  throw payload._result;
-}
-var reportGlobalError$1 = "function" === typeof reportError ? reportError : function(error) {
-  if ("object" === typeof window && "function" === typeof window.ErrorEvent) {
-    var event = new window.ErrorEvent("error", {
-      bubbles: true,
-      cancelable: true,
-      message: "object" === typeof error && null !== error && "string" === typeof error.message ? String(error.message) : String(error),
-      error
-    });
-    if (!window.dispatchEvent(event)) return;
-  } else if ("object" === typeof process && "function" === typeof process.emit) {
-    process.emit("uncaughtException", error);
-    return;
-  }
-  console.error(error);
-};
-function noop$5() {
-}
-react_production.Children = {
-  map: mapChildren,
-  forEach: function(children, forEachFunc, forEachContext) {
-    mapChildren(
-      children,
-      function() {
-        forEachFunc.apply(this, arguments);
-      },
-      forEachContext
-    );
-  },
-  count: function(children) {
-    var n = 0;
-    mapChildren(children, function() {
-      n++;
-    });
-    return n;
-  },
-  toArray: function(children) {
-    return mapChildren(children, function(child) {
-      return child;
-    }) || [];
-  },
-  only: function(children) {
-    if (!isValidElement(children))
-      throw Error(
-        "React.Children.only expected to receive a single React element child."
-      );
-    return children;
-  }
-};
-react_production.Component = Component;
-react_production.Fragment = REACT_FRAGMENT_TYPE$1;
-react_production.Profiler = REACT_PROFILER_TYPE$1;
-react_production.PureComponent = PureComponent;
-react_production.StrictMode = REACT_STRICT_MODE_TYPE$1;
-react_production.Suspense = REACT_SUSPENSE_TYPE$1;
-react_production.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE = ReactSharedInternals$2;
-react_production.__COMPILER_RUNTIME = {
-  __proto__: null,
-  c: function(size) {
-    return ReactSharedInternals$2.H.useMemoCache(size);
-  }
-};
-react_production.cache = function(fn) {
-  return function() {
-    return fn.apply(null, arguments);
-  };
-};
-react_production.cloneElement = function(element, config, children) {
-  if (null === element || void 0 === element)
-    throw Error(
-      "The argument must be a React element, but you passed " + element + "."
-    );
-  var props = assign$1({}, element.props), key = element.key, owner = void 0;
-  if (null != config)
-    for (propName in void 0 !== config.ref && (owner = void 0), void 0 !== config.key && (key = "" + config.key), config)
-      !hasOwnProperty$1.call(config, propName) || "key" === propName || "__self" === propName || "__source" === propName || "ref" === propName && void 0 === config.ref || (props[propName] = config[propName]);
-  var propName = arguments.length - 2;
-  if (1 === propName) props.children = children;
-  else if (1 < propName) {
-    for (var childArray = Array(propName), i = 0; i < propName; i++)
-      childArray[i] = arguments[i + 2];
-    props.children = childArray;
-  }
-  return ReactElement(element.type, key, void 0, void 0, owner, props);
-};
-react_production.createContext = function(defaultValue) {
-  defaultValue = {
-    $$typeof: REACT_CONTEXT_TYPE$1,
-    _currentValue: defaultValue,
-    _currentValue2: defaultValue,
-    _threadCount: 0,
-    Provider: null,
-    Consumer: null
-  };
-  defaultValue.Provider = defaultValue;
-  defaultValue.Consumer = {
-    $$typeof: REACT_CONSUMER_TYPE$1,
-    _context: defaultValue
-  };
-  return defaultValue;
-};
-react_production.createElement = function(type, config, children) {
-  var propName, props = {}, key = null;
-  if (null != config)
-    for (propName in void 0 !== config.key && (key = "" + config.key), config)
-      hasOwnProperty$1.call(config, propName) && "key" !== propName && "__self" !== propName && "__source" !== propName && (props[propName] = config[propName]);
-  var childrenLength = arguments.length - 2;
-  if (1 === childrenLength) props.children = children;
-  else if (1 < childrenLength) {
-    for (var childArray = Array(childrenLength), i = 0; i < childrenLength; i++)
-      childArray[i] = arguments[i + 2];
-    props.children = childArray;
-  }
-  if (type && type.defaultProps)
-    for (propName in childrenLength = type.defaultProps, childrenLength)
-      void 0 === props[propName] && (props[propName] = childrenLength[propName]);
-  return ReactElement(type, key, void 0, void 0, null, props);
-};
-react_production.createRef = function() {
-  return { current: null };
-};
-react_production.forwardRef = function(render) {
-  return { $$typeof: REACT_FORWARD_REF_TYPE$1, render };
-};
-react_production.isValidElement = isValidElement;
-react_production.lazy = function(ctor) {
-  return {
-    $$typeof: REACT_LAZY_TYPE$1,
-    _payload: { _status: -1, _result: ctor },
-    _init: lazyInitializer
-  };
-};
-react_production.memo = function(type, compare2) {
-  return {
-    $$typeof: REACT_MEMO_TYPE$1,
-    type,
-    compare: void 0 === compare2 ? null : compare2
-  };
-};
-react_production.startTransition = function(scope) {
-  var prevTransition = ReactSharedInternals$2.T, currentTransition = {};
-  ReactSharedInternals$2.T = currentTransition;
-  try {
-    var returnValue = scope(), onStartTransitionFinish = ReactSharedInternals$2.S;
-    null !== onStartTransitionFinish && onStartTransitionFinish(currentTransition, returnValue);
-    "object" === typeof returnValue && null !== returnValue && "function" === typeof returnValue.then && returnValue.then(noop$5, reportGlobalError$1);
-  } catch (error) {
-    reportGlobalError$1(error);
-  } finally {
-    ReactSharedInternals$2.T = prevTransition;
-  }
-};
-react_production.unstable_useCacheRefresh = function() {
-  return ReactSharedInternals$2.H.useCacheRefresh();
-};
-react_production.use = function(usable) {
-  return ReactSharedInternals$2.H.use(usable);
-};
-react_production.useActionState = function(action, initialState, permalink) {
-  return ReactSharedInternals$2.H.useActionState(action, initialState, permalink);
-};
-react_production.useCallback = function(callback, deps) {
-  return ReactSharedInternals$2.H.useCallback(callback, deps);
-};
-react_production.useContext = function(Context) {
-  return ReactSharedInternals$2.H.useContext(Context);
-};
-react_production.useDebugValue = function() {
-};
-react_production.useDeferredValue = function(value, initialValue) {
-  return ReactSharedInternals$2.H.useDeferredValue(value, initialValue);
-};
-react_production.useEffect = function(create, createDeps, update) {
-  var dispatcher = ReactSharedInternals$2.H;
-  if ("function" === typeof update)
-    throw Error(
-      "useEffect CRUD overload is not enabled in this build of React."
-    );
-  return dispatcher.useEffect(create, createDeps);
-};
-react_production.useId = function() {
-  return ReactSharedInternals$2.H.useId();
-};
-react_production.useImperativeHandle = function(ref, create, deps) {
-  return ReactSharedInternals$2.H.useImperativeHandle(ref, create, deps);
-};
-react_production.useInsertionEffect = function(create, deps) {
-  return ReactSharedInternals$2.H.useInsertionEffect(create, deps);
-};
-react_production.useLayoutEffect = function(create, deps) {
-  return ReactSharedInternals$2.H.useLayoutEffect(create, deps);
-};
-react_production.useMemo = function(create, deps) {
-  return ReactSharedInternals$2.H.useMemo(create, deps);
-};
-react_production.useOptimistic = function(passthrough, reducer) {
-  return ReactSharedInternals$2.H.useOptimistic(passthrough, reducer);
-};
-react_production.useReducer = function(reducer, initialArg, init) {
-  return ReactSharedInternals$2.H.useReducer(reducer, initialArg, init);
-};
-react_production.useRef = function(initialValue) {
-  return ReactSharedInternals$2.H.useRef(initialValue);
-};
-react_production.useState = function(initialState) {
-  return ReactSharedInternals$2.H.useState(initialState);
-};
-react_production.useSyncExternalStore = function(subscribe2, getSnapshot, getServerSnapshot) {
-  return ReactSharedInternals$2.H.useSyncExternalStore(
-    subscribe2,
-    getSnapshot,
-    getServerSnapshot
-  );
-};
-react_production.useTransition = function() {
-  return ReactSharedInternals$2.H.useTransition();
-};
-react_production.version = "19.1.5";
-{
-  react.exports = react_production;
-}
-var reactExports = react.exports;
-const o = /* @__PURE__ */ getDefaultExportFromCjs(reactExports);
-const React$4 = /* @__PURE__ */ _mergeNamespaces({
-  __proto__: null,
-  default: o
-}, [reactExports]);
 var QueryClientContext = reactExports.createContext(
   void 0
 );
@@ -14961,7 +20148,7 @@ var reactDom_production = {};
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-var React$3 = reactExports;
+var React$2 = reactExports;
 function formatProdErrorMessage$1(code) {
   var url = "https://react.dev/errors/" + code;
   if (1 < arguments.length) {
@@ -15000,7 +20187,7 @@ function createPortal$1(children, containerInfo, implementation) {
     implementation
   };
 }
-var ReactSharedInternals$1 = React$3.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
+var ReactSharedInternals$1 = React$2.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;
 function getCrossOriginStringAs(as, input) {
   if ("font" === as) return "";
   if ("string" === typeof input)
@@ -15127,7 +20314,7 @@ const vt = /* @__PURE__ */ getDefaultExportFromCjs(reactDomExports);
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
-var Scheduler = schedulerExports, React$2 = reactExports, ReactDOM$1 = reactDomExports;
+var Scheduler = schedulerExports, React$1 = reactExports, ReactDOM$1 = reactDomExports;
 function formatProdErrorMessage(code) {
   var url = "https://react.dev/errors/" + code;
   if (1 < arguments.length) {
@@ -15295,7 +20482,7 @@ function getComponentNameFromType(type) {
     }
   return null;
 }
-var isArrayImpl = Array.isArray, ReactSharedInternals = React$2.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, ReactDOMSharedInternals = ReactDOM$1.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, sharedNotPendingObject = {
+var isArrayImpl = Array.isArray, ReactSharedInternals = React$1.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, ReactDOMSharedInternals = ReactDOM$1.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, sharedNotPendingObject = {
   pending: false,
   data: null,
   method: null,
@@ -15875,11 +21062,11 @@ function trackValueOnNode(node) {
     valueField
   ), currentValue = "" + node[valueField];
   if (!node.hasOwnProperty(valueField) && "undefined" !== typeof descriptor && "function" === typeof descriptor.get && "function" === typeof descriptor.set) {
-    var get = descriptor.get, set = descriptor.set;
+    var get2 = descriptor.get, set = descriptor.set;
     Object.defineProperty(node, valueField, {
       configurable: true,
       get: function() {
-        return get.call(this);
+        return get2.call(this);
       },
       set: function(value) {
         currentValue = "" + value;
@@ -16625,19 +21812,19 @@ function getTargetInstForInputOrChangeEvent(domEventName, targetInst) {
   if ("input" === domEventName || "change" === domEventName)
     return getInstIfValueChanged(targetInst);
 }
-function is$2(x2, y2) {
+function is$1(x2, y2) {
   return x2 === y2 && (0 !== x2 || 1 / x2 === 1 / y2) || x2 !== x2 && y2 !== y2;
 }
-var objectIs$2 = "function" === typeof Object.is ? Object.is : is$2;
+var objectIs$1 = "function" === typeof Object.is ? Object.is : is$1;
 function shallowEqual(objA, objB) {
-  if (objectIs$2(objA, objB)) return true;
+  if (objectIs$1(objA, objB)) return true;
   if ("object" !== typeof objA || null === objA || "object" !== typeof objB || null === objB)
     return false;
   var keysA = Object.keys(objA), keysB = Object.keys(objB);
   if (keysA.length !== keysB.length) return false;
   for (keysB = 0; keysB < keysA.length; keysB++) {
     var currentKey = keysA[keysB];
-    if (!hasOwnProperty.call(objB, currentKey) || !objectIs$2(objA[currentKey], objB[currentKey]))
+    if (!hasOwnProperty.call(objB, currentKey) || !objectIs$1(objA[currentKey], objB[currentKey]))
       return false;
   }
   return true;
@@ -16993,40 +22180,40 @@ function throwOnHydrationMismatch(fiber) {
   throw HydrationMismatchException;
 }
 function prepareToHydrateHostInstance(fiber) {
-  var instance = fiber.stateNode, type = fiber.type, props = fiber.memoizedProps;
-  instance[internalInstanceKey] = fiber;
-  instance[internalPropsKey] = props;
+  var instance2 = fiber.stateNode, type = fiber.type, props = fiber.memoizedProps;
+  instance2[internalInstanceKey] = fiber;
+  instance2[internalPropsKey] = props;
   switch (type) {
     case "dialog":
-      listenToNonDelegatedEvent("cancel", instance);
-      listenToNonDelegatedEvent("close", instance);
+      listenToNonDelegatedEvent("cancel", instance2);
+      listenToNonDelegatedEvent("close", instance2);
       break;
     case "iframe":
     case "object":
     case "embed":
-      listenToNonDelegatedEvent("load", instance);
+      listenToNonDelegatedEvent("load", instance2);
       break;
     case "video":
     case "audio":
       for (type = 0; type < mediaEventTypes.length; type++)
-        listenToNonDelegatedEvent(mediaEventTypes[type], instance);
+        listenToNonDelegatedEvent(mediaEventTypes[type], instance2);
       break;
     case "source":
-      listenToNonDelegatedEvent("error", instance);
+      listenToNonDelegatedEvent("error", instance2);
       break;
     case "img":
     case "image":
     case "link":
-      listenToNonDelegatedEvent("error", instance);
-      listenToNonDelegatedEvent("load", instance);
+      listenToNonDelegatedEvent("error", instance2);
+      listenToNonDelegatedEvent("load", instance2);
       break;
     case "details":
-      listenToNonDelegatedEvent("toggle", instance);
+      listenToNonDelegatedEvent("toggle", instance2);
       break;
     case "input":
-      listenToNonDelegatedEvent("invalid", instance);
+      listenToNonDelegatedEvent("invalid", instance2);
       initInput(
-        instance,
+        instance2,
         props.value,
         props.defaultValue,
         props.checked,
@@ -17035,17 +22222,17 @@ function prepareToHydrateHostInstance(fiber) {
         props.name,
         true
       );
-      track(instance);
+      track(instance2);
       break;
     case "select":
-      listenToNonDelegatedEvent("invalid", instance);
+      listenToNonDelegatedEvent("invalid", instance2);
       break;
     case "textarea":
-      listenToNonDelegatedEvent("invalid", instance), initTextarea(instance, props.value, props.defaultValue, props.children), track(instance);
+      listenToNonDelegatedEvent("invalid", instance2), initTextarea(instance2, props.value, props.defaultValue, props.children), track(instance2);
   }
   type = props.children;
-  "string" !== typeof type && "number" !== typeof type && "bigint" !== typeof type || instance.textContent === "" + type || true === props.suppressHydrationWarning || checkForUnmatchedText(instance.textContent, type) ? (null != props.popover && (listenToNonDelegatedEvent("beforetoggle", instance), listenToNonDelegatedEvent("toggle", instance)), null != props.onScroll && listenToNonDelegatedEvent("scroll", instance), null != props.onScrollEnd && listenToNonDelegatedEvent("scrollend", instance), null != props.onClick && (instance.onclick = noop$1), instance = true) : instance = false;
-  instance || throwOnHydrationMismatch(fiber);
+  "string" !== typeof type && "number" !== typeof type && "bigint" !== typeof type || instance2.textContent === "" + type || true === props.suppressHydrationWarning || checkForUnmatchedText(instance2.textContent, type) ? (null != props.popover && (listenToNonDelegatedEvent("beforetoggle", instance2), listenToNonDelegatedEvent("toggle", instance2)), null != props.onScroll && listenToNonDelegatedEvent("scroll", instance2), null != props.onScrollEnd && listenToNonDelegatedEvent("scrollend", instance2), null != props.onClick && (instance2.onclick = noop$1), instance2 = true) : instance2 = false;
+  instance2 || throwOnHydrationMismatch(fiber);
 }
 function popToNextHostParent(fiber) {
   for (hydrationParentFiber = fiber.return; hydrationParentFiber; )
@@ -17195,7 +22382,7 @@ function propagateParentContextChanges(current, workInProgress2, renderLanes2, f
       currentParent = currentParent.memoizedProps;
       if (null !== currentParent) {
         var context = parent.type;
-        objectIs$2(parent.pendingProps.value, currentParent.value) || (null !== current ? current.push(context) : current = [context]);
+        objectIs$1(parent.pendingProps.value, currentParent.value) || (null !== current ? current.push(context) : current = [context]);
       }
     } else if (parent === hostTransitionProviderCursor.current) {
       currentParent = parent.alternate;
@@ -17214,7 +22401,7 @@ function propagateParentContextChanges(current, workInProgress2, renderLanes2, f
 }
 function checkIfContextChanged(currentDependencies) {
   for (currentDependencies = currentDependencies.firstContext; null !== currentDependencies; ) {
-    if (!objectIs$2(
+    if (!objectIs$1(
       currentDependencies.context._currentValue,
       currentDependencies.memoizedValue
     ))
@@ -17533,12 +22720,12 @@ function processUpdateQueue(workInProgress$jscomp$0, props, instance$jscomp$0, r
         a: {
           var workInProgress2 = workInProgress$jscomp$0, update = pendingQueue;
           updateLane = props;
-          var instance = instance$jscomp$0;
+          var instance2 = instance$jscomp$0;
           switch (update.tag) {
             case 1:
               workInProgress2 = update.payload;
               if ("function" === typeof workInProgress2) {
-                newState = workInProgress2.call(instance, newState, updateLane);
+                newState = workInProgress2.call(instance2, newState, updateLane);
                 break a;
               }
               newState = workInProgress2;
@@ -17547,7 +22734,7 @@ function processUpdateQueue(workInProgress$jscomp$0, props, instance$jscomp$0, r
               workInProgress2.flags = workInProgress2.flags & -65537 | 128;
             case 0:
               workInProgress2 = update.payload;
-              updateLane = "function" === typeof workInProgress2 ? workInProgress2.call(instance, newState, updateLane) : workInProgress2;
+              updateLane = "function" === typeof workInProgress2 ? workInProgress2.call(instance2, newState, updateLane) : workInProgress2;
               if (null === updateLane || void 0 === updateLane) break a;
               newState = assign({}, newState, updateLane);
               break a;
@@ -17616,7 +22803,7 @@ function throwInvalidHookError() {
 function areHookInputsEqual(nextDeps, prevDeps) {
   if (null === prevDeps) return false;
   for (var i = 0; i < prevDeps.length && i < nextDeps.length; i++)
-    if (!objectIs$2(nextDeps[i], prevDeps[i])) return false;
+    if (!objectIs$1(nextDeps[i], prevDeps[i])) return false;
   return true;
 }
 function renderWithHooks(current, workInProgress2, Component2, props, secondArg, nextRenderLanes) {
@@ -17848,7 +23035,7 @@ function updateReducerImpl(hook, current, reducer) {
       update = update.next;
     } while (null !== update && update !== current);
     null === newBaseQueueLast ? baseFirst = pendingQueue : newBaseQueueLast.next = newBaseQueueFirst;
-    if (!objectIs$2(pendingQueue, hook.memoizedState) && (didReceiveUpdate = true, didReadFromEntangledAsyncAction$32 && (reducer = currentEntangledActionThenable, null !== reducer)))
+    if (!objectIs$1(pendingQueue, hook.memoizedState) && (didReceiveUpdate = true, didReadFromEntangledAsyncAction$32 && (reducer = currentEntangledActionThenable, null !== reducer)))
       throw reducer;
     hook.memoizedState = pendingQueue;
     hook.baseState = baseFirst;
@@ -17869,7 +23056,7 @@ function rerenderReducer(reducer) {
     do
       newState = reducer(newState, update.action), update = update.next;
     while (update !== lastRenderPhaseUpdate);
-    objectIs$2(newState, hook.memoizedState) || (didReceiveUpdate = true);
+    objectIs$1(newState, hook.memoizedState) || (didReceiveUpdate = true);
     hook.memoizedState = newState;
     null === hook.baseQueue && (hook.baseState = newState);
     queue.lastRenderedState = newState;
@@ -17882,7 +23069,7 @@ function updateSyncExternalStore(subscribe2, getSnapshot, getServerSnapshot) {
     if (void 0 === getServerSnapshot) throw Error(formatProdErrorMessage(407));
     getServerSnapshot = getServerSnapshot();
   } else getServerSnapshot = getSnapshot();
-  var snapshotChanged = !objectIs$2(
+  var snapshotChanged = !objectIs$1(
     (currentHook || hook).memoizedState,
     getServerSnapshot
   );
@@ -17918,19 +23105,19 @@ function pushStoreConsistencyCheck(fiber, getSnapshot, renderedSnapshot) {
 function updateStoreInstance(fiber, inst, nextSnapshot, getSnapshot) {
   inst.value = nextSnapshot;
   inst.getSnapshot = getSnapshot;
-  checkIfSnapshotChanged$1(inst) && forceStoreRerender(fiber);
+  checkIfSnapshotChanged(inst) && forceStoreRerender(fiber);
 }
 function subscribeToStore(fiber, inst, subscribe2) {
   return subscribe2(function() {
-    checkIfSnapshotChanged$1(inst) && forceStoreRerender(fiber);
+    checkIfSnapshotChanged(inst) && forceStoreRerender(fiber);
   });
 }
-function checkIfSnapshotChanged$1(inst) {
+function checkIfSnapshotChanged(inst) {
   var latestGetSnapshot = inst.getSnapshot;
   inst = inst.value;
   try {
     var nextValue = latestGetSnapshot();
-    return !objectIs$2(inst, nextValue);
+    return !objectIs$1(inst, nextValue);
   } catch (error) {
     return true;
   }
@@ -18281,9 +23468,9 @@ function mountDeferredValueImpl(hook, value, initialValue) {
   return initialValue;
 }
 function updateDeferredValueImpl(hook, prevValue, value, initialValue) {
-  if (objectIs$2(value, prevValue)) return value;
+  if (objectIs$1(value, prevValue)) return value;
   if (null !== currentTreeHiddenStackCursor.current)
-    return hook = mountDeferredValueImpl(hook, value, initialValue), objectIs$2(hook, prevValue) || (didReceiveUpdate = true), hook;
+    return hook = mountDeferredValueImpl(hook, value, initialValue), objectIs$1(hook, prevValue) || (didReceiveUpdate = true), hook;
   if (0 === (renderLanes & 42))
     return didReceiveUpdate = true, hook.memoizedState = value;
   hook = requestDeferredLane();
@@ -18443,7 +23630,7 @@ function dispatchSetStateInternal(fiber, queue, action, lane) {
         var currentState = queue.lastRenderedState, eagerState = alternate(currentState, action);
         update.hasEagerState = true;
         update.eagerState = eagerState;
-        if (objectIs$2(eagerState, currentState))
+        if (objectIs$1(eagerState, currentState))
           return enqueueUpdate$1(fiber, queue, update, 0), null === workInProgressRoot && finishQueueingConcurrentUpdates(), false;
       } catch (error) {
       } finally {
@@ -19334,11 +24521,11 @@ function checkShouldComponentUpdate(workInProgress2, ctor, oldProps, newProps, o
   workInProgress2 = workInProgress2.stateNode;
   return "function" === typeof workInProgress2.shouldComponentUpdate ? workInProgress2.shouldComponentUpdate(newProps, newState, nextContext) : ctor.prototype && ctor.prototype.isPureReactComponent ? !shallowEqual(oldProps, newProps) || !shallowEqual(oldState, newState) : true;
 }
-function callComponentWillReceiveProps(workInProgress2, instance, newProps, nextContext) {
-  workInProgress2 = instance.state;
-  "function" === typeof instance.componentWillReceiveProps && instance.componentWillReceiveProps(newProps, nextContext);
-  "function" === typeof instance.UNSAFE_componentWillReceiveProps && instance.UNSAFE_componentWillReceiveProps(newProps, nextContext);
-  instance.state !== workInProgress2 && classComponentUpdater.enqueueReplaceState(instance, instance.state, null);
+function callComponentWillReceiveProps(workInProgress2, instance2, newProps, nextContext) {
+  workInProgress2 = instance2.state;
+  "function" === typeof instance2.componentWillReceiveProps && instance2.componentWillReceiveProps(newProps, nextContext);
+  "function" === typeof instance2.UNSAFE_componentWillReceiveProps && instance2.UNSAFE_componentWillReceiveProps(newProps, nextContext);
+  instance2.state !== workInProgress2 && classComponentUpdater.enqueueReplaceState(instance2, instance2.state, null);
 }
 function resolveClassComponentProps(Component2, baseProps) {
   var newProps = baseProps;
@@ -20999,22 +26186,22 @@ function commitHookEffectListUnmount(flags, finishedWork, nearestMountedAncestor
 function commitClassCallbacks(finishedWork) {
   var updateQueue = finishedWork.updateQueue;
   if (null !== updateQueue) {
-    var instance = finishedWork.stateNode;
+    var instance2 = finishedWork.stateNode;
     try {
-      commitCallbacks(updateQueue, instance);
+      commitCallbacks(updateQueue, instance2);
     } catch (error) {
       captureCommitPhaseError(finishedWork, finishedWork.return, error);
     }
   }
 }
-function safelyCallComponentWillUnmount(current, nearestMountedAncestor, instance) {
-  instance.props = resolveClassComponentProps(
+function safelyCallComponentWillUnmount(current, nearestMountedAncestor, instance2) {
+  instance2.props = resolveClassComponentProps(
     current.type,
     current.memoizedProps
   );
-  instance.state = current.memoizedState;
+  instance2.state = current.memoizedState;
   try {
-    instance.componentWillUnmount();
+    instance2.componentWillUnmount();
   } catch (error) {
     captureCommitPhaseError(current, nearestMountedAncestor, error);
   }
@@ -21061,17 +26248,17 @@ function safelyDetachRef(current, nearestMountedAncestor) {
     else ref.current = null;
 }
 function commitHostMount(finishedWork) {
-  var type = finishedWork.type, props = finishedWork.memoizedProps, instance = finishedWork.stateNode;
+  var type = finishedWork.type, props = finishedWork.memoizedProps, instance2 = finishedWork.stateNode;
   try {
     a: switch (type) {
       case "button":
       case "input":
       case "select":
       case "textarea":
-        props.autoFocus && instance.focus();
+        props.autoFocus && instance2.focus();
         break a;
       case "img":
-        props.src ? instance.src = props.src : props.srcSet && (instance.srcset = props.srcSet);
+        props.src ? instance2.src = props.src : props.srcSet && (instance2.srcset = props.srcSet);
     }
   } catch (error) {
     captureCommitPhaseError(finishedWork, finishedWork.return, error);
@@ -21908,11 +27095,11 @@ function recursivelyTraverseDisappearLayoutEffects(parentFiber) {
         break;
       case 1:
         safelyDetachRef(finishedWork, finishedWork.return);
-        var instance = finishedWork.stateNode;
-        "function" === typeof instance.componentWillUnmount && safelyCallComponentWillUnmount(
+        var instance2 = finishedWork.stateNode;
+        "function" === typeof instance2.componentWillUnmount && safelyCallComponentWillUnmount(
           finishedWork,
           finishedWork.return,
-          instance
+          instance2
         );
         recursivelyTraverseDisappearLayoutEffects(finishedWork);
         break;
@@ -21967,12 +27154,12 @@ function recursivelyTraverseReappearLayoutEffects(finishedRoot$jscomp$0, parentF
         current = finishedWork;
         finishedRoot = current.updateQueue;
         if (null !== finishedRoot) {
-          var instance = current.stateNode;
+          var instance2 = current.stateNode;
           try {
             var hiddenCallbacks = finishedRoot.shared.hiddenCallbacks;
             if (null !== hiddenCallbacks)
               for (finishedRoot.shared.hiddenCallbacks = null, finishedRoot = 0; finishedRoot < hiddenCallbacks.length; finishedRoot++)
-                callCallback(hiddenCallbacks[finishedRoot], instance);
+                callCallback(hiddenCallbacks[finishedRoot], instance2);
           } catch (error) {
             captureCommitPhaseError(current, current.return, error);
           }
@@ -22179,8 +27366,8 @@ function recursivelyTraverseReconnectPassiveEffects(finishedRoot$jscomp$0, paren
       case 23:
         break;
       case 22:
-        var instance = finishedWork.stateNode;
-        null !== finishedWork.memoizedState ? instance._visibility & 2 ? recursivelyTraverseReconnectPassiveEffects(
+        var instance2 = finishedWork.stateNode;
+        null !== finishedWork.memoizedState ? instance2._visibility & 2 ? recursivelyTraverseReconnectPassiveEffects(
           finishedRoot,
           finishedWork,
           committedLanes,
@@ -22189,7 +27376,7 @@ function recursivelyTraverseReconnectPassiveEffects(finishedRoot$jscomp$0, paren
         ) : recursivelyTraverseAtomicPassiveEffects(
           finishedRoot,
           finishedWork
-        ) : (instance._visibility |= 2, recursivelyTraverseReconnectPassiveEffects(
+        ) : (instance2._visibility |= 2, recursivelyTraverseReconnectPassiveEffects(
           finishedRoot,
           finishedWork,
           committedLanes,
@@ -22320,8 +27507,8 @@ function commitPassiveUnmountOnFiber(finishedWork) {
       recursivelyTraversePassiveUnmountEffects(finishedWork);
       break;
     case 22:
-      var instance = finishedWork.stateNode;
-      null !== finishedWork.memoizedState && instance._visibility & 2 && (null === finishedWork.return || 13 !== finishedWork.return.tag) ? (instance._visibility &= -3, recursivelyTraverseDisconnectPassiveEffects(finishedWork)) : recursivelyTraversePassiveUnmountEffects(finishedWork);
+      var instance2 = finishedWork.stateNode;
+      null !== finishedWork.memoizedState && instance2._visibility & 2 && (null === finishedWork.return || 13 !== finishedWork.return.tag) ? (instance2._visibility &= -3, recursivelyTraverseDisconnectPassiveEffects(finishedWork)) : recursivelyTraversePassiveUnmountEffects(finishedWork);
       break;
     default:
       recursivelyTraversePassiveUnmountEffects(finishedWork);
@@ -22620,7 +27807,7 @@ function isRenderConsistentWithExternalStores(finishedWork) {
         var check = tag[i], getSnapshot = check.getSnapshot;
         check = check.value;
         try {
-          if (!objectIs$2(getSnapshot(), check)) return false;
+          if (!objectIs$1(getSnapshot(), check)) return false;
         } catch (error) {
           return false;
         }
@@ -23253,17 +28440,17 @@ function captureCommitPhaseError(sourceFiber, nearestMountedAncestor, error) {
         );
         break;
       } else if (1 === nearestMountedAncestor.tag) {
-        var instance = nearestMountedAncestor.stateNode;
-        if ("function" === typeof nearestMountedAncestor.type.getDerivedStateFromError || "function" === typeof instance.componentDidCatch && (null === legacyErrorBoundariesThatAlreadyFailed || !legacyErrorBoundariesThatAlreadyFailed.has(instance))) {
+        var instance2 = nearestMountedAncestor.stateNode;
+        if ("function" === typeof nearestMountedAncestor.type.getDerivedStateFromError || "function" === typeof instance2.componentDidCatch && (null === legacyErrorBoundariesThatAlreadyFailed || !legacyErrorBoundariesThatAlreadyFailed.has(instance2))) {
           sourceFiber = createCapturedValueAtFiber(error, sourceFiber);
           error = createClassErrorUpdate(2);
-          instance = enqueueUpdate(nearestMountedAncestor, error, 2);
-          null !== instance && (initializeClassErrorUpdate(
+          instance2 = enqueueUpdate(nearestMountedAncestor, error, 2);
+          null !== instance2 && (initializeClassErrorUpdate(
             error,
-            instance,
+            instance2,
             nearestMountedAncestor,
             sourceFiber
-          ), markRootUpdated$1(instance, 2), ensureRootIsScheduled(instance));
+          ), markRootUpdated$1(instance2, 2), ensureRootIsScheduled(instance2));
           break;
         }
       }
@@ -23582,9 +28769,9 @@ function processDispatchQueue(dispatchQueue, eventSystemFlags) {
       var previousInstance = void 0;
       if (eventSystemFlags)
         for (var i$jscomp$0 = _dispatchQueue$i.length - 1; 0 <= i$jscomp$0; i$jscomp$0--) {
-          var _dispatchListeners$i = _dispatchQueue$i[i$jscomp$0], instance = _dispatchListeners$i.instance, currentTarget = _dispatchListeners$i.currentTarget;
+          var _dispatchListeners$i = _dispatchQueue$i[i$jscomp$0], instance2 = _dispatchListeners$i.instance, currentTarget = _dispatchListeners$i.currentTarget;
           _dispatchListeners$i = _dispatchListeners$i.listener;
-          if (instance !== previousInstance && event.isPropagationStopped())
+          if (instance2 !== previousInstance && event.isPropagationStopped())
             break a;
           previousInstance = _dispatchListeners$i;
           event.currentTarget = currentTarget;
@@ -23594,15 +28781,15 @@ function processDispatchQueue(dispatchQueue, eventSystemFlags) {
             reportGlobalError(error);
           }
           event.currentTarget = null;
-          previousInstance = instance;
+          previousInstance = instance2;
         }
       else
         for (i$jscomp$0 = 0; i$jscomp$0 < _dispatchQueue$i.length; i$jscomp$0++) {
           _dispatchListeners$i = _dispatchQueue$i[i$jscomp$0];
-          instance = _dispatchListeners$i.instance;
+          instance2 = _dispatchListeners$i.instance;
           currentTarget = _dispatchListeners$i.currentTarget;
           _dispatchListeners$i = _dispatchListeners$i.listener;
-          if (instance !== previousInstance && event.isPropagationStopped())
+          if (instance2 !== previousInstance && event.isPropagationStopped())
             break a;
           previousInstance = _dispatchListeners$i;
           event.currentTarget = currentTarget;
@@ -23612,7 +28799,7 @@ function processDispatchQueue(dispatchQueue, eventSystemFlags) {
             reportGlobalError(error);
           }
           event.currentTarget = null;
-          previousInstance = instance;
+          previousInstance = instance2;
         }
     }
   }
@@ -23788,15 +28975,15 @@ function dispatchEventForPluginEventSystem(domEventName, eventSystemFlags, nativ
         }
         var inCapturePhase = 0 !== (eventSystemFlags & 4), accumulateTargetOnly = !inCapturePhase && ("scroll" === domEventName || "scrollend" === domEventName), reactEventName = inCapturePhase ? null !== reactName ? reactName + "Capture" : null : reactName;
         inCapturePhase = [];
-        for (var instance = targetInst, lastHostComponent; null !== instance; ) {
-          var _instance = instance;
+        for (var instance2 = targetInst, lastHostComponent; null !== instance2; ) {
+          var _instance = instance2;
           lastHostComponent = _instance.stateNode;
           _instance = _instance.tag;
-          5 !== _instance && 26 !== _instance && 27 !== _instance || null === lastHostComponent || null === reactEventName || (_instance = getListener(instance, reactEventName), null != _instance && inCapturePhase.push(
-            createDispatchListener(instance, _instance, lastHostComponent)
+          5 !== _instance && 26 !== _instance && 27 !== _instance || null === lastHostComponent || null === reactEventName || (_instance = getListener(instance2, reactEventName), null != _instance && inCapturePhase.push(
+            createDispatchListener(instance2, _instance, lastHostComponent)
           ));
           if (accumulateTargetOnly) break;
-          instance = instance.return;
+          instance2 = instance2.return;
         }
         0 < inCapturePhase.length && (reactName = new SyntheticEventCtor(
           reactName,
@@ -23823,14 +29010,14 @@ function dispatchEventForPluginEventSystem(domEventName, eventSystemFlags, nativ
             inCapturePhase = SyntheticMouseEvent;
             _instance = "onMouseLeave";
             reactEventName = "onMouseEnter";
-            instance = "mouse";
+            instance2 = "mouse";
             if ("pointerout" === domEventName || "pointerover" === domEventName)
-              inCapturePhase = SyntheticPointerEvent, _instance = "onPointerLeave", reactEventName = "onPointerEnter", instance = "pointer";
+              inCapturePhase = SyntheticPointerEvent, _instance = "onPointerLeave", reactEventName = "onPointerEnter", instance2 = "pointer";
             accumulateTargetOnly = null == SyntheticEventCtor ? reactName : getNodeFromInstance(SyntheticEventCtor);
             lastHostComponent = null == reactEventType ? reactName : getNodeFromInstance(reactEventType);
             reactName = new inCapturePhase(
               _instance,
-              instance + "leave",
+              instance2 + "leave",
               SyntheticEventCtor,
               nativeEvent,
               nativeEventTarget
@@ -23840,7 +29027,7 @@ function dispatchEventForPluginEventSystem(domEventName, eventSystemFlags, nativ
             _instance = null;
             getClosestInstanceFromNode(nativeEventTarget) === targetInst && (inCapturePhase = new inCapturePhase(
               reactEventName,
-              instance + "enter",
+              instance2 + "enter",
               reactEventType,
               nativeEvent,
               nativeEventTarget
@@ -23850,17 +29037,17 @@ function dispatchEventForPluginEventSystem(domEventName, eventSystemFlags, nativ
               b: {
                 inCapturePhase = SyntheticEventCtor;
                 reactEventName = reactEventType;
-                instance = 0;
+                instance2 = 0;
                 for (lastHostComponent = inCapturePhase; lastHostComponent; lastHostComponent = getParent(lastHostComponent))
-                  instance++;
+                  instance2++;
                 lastHostComponent = 0;
                 for (_instance = reactEventName; _instance; _instance = getParent(_instance))
                   lastHostComponent++;
-                for (; 0 < instance - lastHostComponent; )
-                  inCapturePhase = getParent(inCapturePhase), instance--;
-                for (; 0 < lastHostComponent - instance; )
+                for (; 0 < instance2 - lastHostComponent; )
+                  inCapturePhase = getParent(inCapturePhase), instance2--;
+                for (; 0 < lastHostComponent - instance2; )
                   reactEventName = getParent(reactEventName), lastHostComponent--;
-                for (; instance--; ) {
+                for (; instance2--; ) {
                   if (inCapturePhase === reactEventName || null !== reactEventName && inCapturePhase === reactEventName.alternate)
                     break b;
                   inCapturePhase = getParent(inCapturePhase);
@@ -23983,9 +29170,9 @@ function dispatchEventForPluginEventSystem(domEventName, eventSystemFlags, nativ
     processDispatchQueue(dispatchQueue, eventSystemFlags);
   });
 }
-function createDispatchListener(instance, listener, currentTarget) {
+function createDispatchListener(instance2, listener, currentTarget) {
   return {
-    instance,
+    instance: instance2,
     listener,
     currentTarget
   };
@@ -24904,62 +30091,62 @@ function clearContainerSparingly(container) {
     container.removeChild(node);
   }
 }
-function canHydrateInstance(instance, type, props, inRootOrSingleton) {
-  for (; 1 === instance.nodeType; ) {
+function canHydrateInstance(instance2, type, props, inRootOrSingleton) {
+  for (; 1 === instance2.nodeType; ) {
     var anyProps = props;
-    if (instance.nodeName.toLowerCase() !== type.toLowerCase()) {
-      if (!inRootOrSingleton && ("INPUT" !== instance.nodeName || "hidden" !== instance.type))
+    if (instance2.nodeName.toLowerCase() !== type.toLowerCase()) {
+      if (!inRootOrSingleton && ("INPUT" !== instance2.nodeName || "hidden" !== instance2.type))
         break;
     } else if (!inRootOrSingleton)
-      if ("input" === type && "hidden" === instance.type) {
+      if ("input" === type && "hidden" === instance2.type) {
         var name = null == anyProps.name ? null : "" + anyProps.name;
-        if ("hidden" === anyProps.type && instance.getAttribute("name") === name)
-          return instance;
-      } else return instance;
-    else if (!instance[internalHoistableMarker])
+        if ("hidden" === anyProps.type && instance2.getAttribute("name") === name)
+          return instance2;
+      } else return instance2;
+    else if (!instance2[internalHoistableMarker])
       switch (type) {
         case "meta":
-          if (!instance.hasAttribute("itemprop")) break;
-          return instance;
+          if (!instance2.hasAttribute("itemprop")) break;
+          return instance2;
         case "link":
-          name = instance.getAttribute("rel");
-          if ("stylesheet" === name && instance.hasAttribute("data-precedence"))
+          name = instance2.getAttribute("rel");
+          if ("stylesheet" === name && instance2.hasAttribute("data-precedence"))
             break;
-          else if (name !== anyProps.rel || instance.getAttribute("href") !== (null == anyProps.href || "" === anyProps.href ? null : anyProps.href) || instance.getAttribute("crossorigin") !== (null == anyProps.crossOrigin ? null : anyProps.crossOrigin) || instance.getAttribute("title") !== (null == anyProps.title ? null : anyProps.title))
+          else if (name !== anyProps.rel || instance2.getAttribute("href") !== (null == anyProps.href || "" === anyProps.href ? null : anyProps.href) || instance2.getAttribute("crossorigin") !== (null == anyProps.crossOrigin ? null : anyProps.crossOrigin) || instance2.getAttribute("title") !== (null == anyProps.title ? null : anyProps.title))
             break;
-          return instance;
+          return instance2;
         case "style":
-          if (instance.hasAttribute("data-precedence")) break;
-          return instance;
+          if (instance2.hasAttribute("data-precedence")) break;
+          return instance2;
         case "script":
-          name = instance.getAttribute("src");
-          if ((name !== (null == anyProps.src ? null : anyProps.src) || instance.getAttribute("type") !== (null == anyProps.type ? null : anyProps.type) || instance.getAttribute("crossorigin") !== (null == anyProps.crossOrigin ? null : anyProps.crossOrigin)) && name && instance.hasAttribute("async") && !instance.hasAttribute("itemprop"))
+          name = instance2.getAttribute("src");
+          if ((name !== (null == anyProps.src ? null : anyProps.src) || instance2.getAttribute("type") !== (null == anyProps.type ? null : anyProps.type) || instance2.getAttribute("crossorigin") !== (null == anyProps.crossOrigin ? null : anyProps.crossOrigin)) && name && instance2.hasAttribute("async") && !instance2.hasAttribute("itemprop"))
             break;
-          return instance;
+          return instance2;
         default:
-          return instance;
+          return instance2;
       }
-    instance = getNextHydratable(instance.nextSibling);
-    if (null === instance) break;
+    instance2 = getNextHydratable(instance2.nextSibling);
+    if (null === instance2) break;
   }
   return null;
 }
-function canHydrateTextInstance(instance, text, inRootOrSingleton) {
+function canHydrateTextInstance(instance2, text, inRootOrSingleton) {
   if ("" === text) return null;
-  for (; 3 !== instance.nodeType; ) {
-    if ((1 !== instance.nodeType || "INPUT" !== instance.nodeName || "hidden" !== instance.type) && !inRootOrSingleton)
+  for (; 3 !== instance2.nodeType; ) {
+    if ((1 !== instance2.nodeType || "INPUT" !== instance2.nodeName || "hidden" !== instance2.type) && !inRootOrSingleton)
       return null;
-    instance = getNextHydratable(instance.nextSibling);
-    if (null === instance) return null;
+    instance2 = getNextHydratable(instance2.nextSibling);
+    if (null === instance2) return null;
   }
-  return instance;
+  return instance2;
 }
-function isSuspenseInstanceFallback(instance) {
-  return "$!" === instance.data || "$?" === instance.data && "complete" === instance.ownerDocument.readyState;
+function isSuspenseInstanceFallback(instance2) {
+  return "$!" === instance2.data || "$?" === instance2.data && "complete" === instance2.ownerDocument.readyState;
 }
-function registerSuspenseInstanceRetry(instance, callback) {
-  var ownerDocument = instance.ownerDocument;
-  if ("$?" !== instance.data || "complete" === ownerDocument.readyState)
+function registerSuspenseInstanceRetry(instance2, callback) {
+  var ownerDocument = instance2.ownerDocument;
+  if ("$?" !== instance2.data || "complete" === ownerDocument.readyState)
     callback();
   else {
     var listener = function() {
@@ -24967,7 +30154,7 @@ function registerSuspenseInstanceRetry(instance, callback) {
       ownerDocument.removeEventListener("DOMContentLoaded", listener);
     };
     ownerDocument.addEventListener("DOMContentLoaded", listener);
-    instance._reactRetry = listener;
+    instance2._reactRetry = listener;
   }
 }
 function getNextHydratable(node) {
@@ -25017,10 +30204,10 @@ function resolveSingletonInstance(type, props, rootContainerInstance) {
       throw Error(formatProdErrorMessage(451));
   }
 }
-function releaseSingletonInstance(instance) {
-  for (var attributes = instance.attributes; attributes.length; )
-    instance.removeAttributeNode(attributes[0]);
-  detachDeletedInstance(instance);
+function releaseSingletonInstance(instance2) {
+  for (var attributes = instance2.attributes; attributes.length; )
+    instance2.removeAttributeNode(attributes[0]);
+  detachDeletedInstance(instance2);
 }
 var preloadPropsMap = /* @__PURE__ */ new Map(), preconnectsSet = /* @__PURE__ */ new Set();
 function getHoistableRoot(container) {
@@ -25289,24 +30476,24 @@ function acquireResource(hoistableRoot, resource, props) {
   if (null === resource.instance)
     switch (resource.type) {
       case "style":
-        var instance = hoistableRoot.querySelector(
+        var instance2 = hoistableRoot.querySelector(
           'style[data-href~="' + escapeSelectorAttributeValueInsideDoubleQuotes(props.href) + '"]'
         );
-        if (instance)
-          return resource.instance = instance, markNodeAsHoistable(instance), instance;
+        if (instance2)
+          return resource.instance = instance2, markNodeAsHoistable(instance2), instance2;
         var styleProps = assign({}, props, {
           "data-href": props.href,
           "data-precedence": props.precedence,
           href: null,
           precedence: null
         });
-        instance = (hoistableRoot.ownerDocument || hoistableRoot).createElement(
+        instance2 = (hoistableRoot.ownerDocument || hoistableRoot).createElement(
           "style"
         );
-        markNodeAsHoistable(instance);
-        setInitialProperties(instance, "style", styleProps);
-        insertStylesheet(instance, props.precedence, hoistableRoot);
-        return resource.instance = instance;
+        markNodeAsHoistable(instance2);
+        setInitialProperties(instance2, "style", styleProps);
+        insertStylesheet(instance2, props.precedence, hoistableRoot);
+        return resource.instance = instance2;
       case "stylesheet":
         styleProps = getStyleKey(props.href);
         var instance$250 = hoistableRoot.querySelector(
@@ -25314,8 +30501,8 @@ function acquireResource(hoistableRoot, resource, props) {
         );
         if (instance$250)
           return resource.state.loading |= 4, resource.instance = instance$250, markNodeAsHoistable(instance$250), instance$250;
-        instance = stylesheetPropsFromRawProps(props);
-        (styleProps = preloadPropsMap.get(styleProps)) && adoptPreloadPropsForStylesheet(instance, styleProps);
+        instance2 = stylesheetPropsFromRawProps(props);
+        (styleProps = preloadPropsMap.get(styleProps)) && adoptPreloadPropsForStylesheet(instance2, styleProps);
         instance$250 = (hoistableRoot.ownerDocument || hoistableRoot).createElement("link");
         markNodeAsHoistable(instance$250);
         var linkInstance = instance$250;
@@ -25323,7 +30510,7 @@ function acquireResource(hoistableRoot, resource, props) {
           linkInstance.onload = resolve;
           linkInstance.onerror = reject;
         });
-        setInitialProperties(instance$250, "link", instance);
+        setInitialProperties(instance$250, "link", instance2);
         resource.state.loading |= 4;
         insertStylesheet(instance$250, props.precedence, hoistableRoot);
         return resource.instance = instance$250;
@@ -25333,13 +30520,13 @@ function acquireResource(hoistableRoot, resource, props) {
           getScriptSelectorFromKey(instance$250)
         ))
           return resource.instance = styleProps, markNodeAsHoistable(styleProps), styleProps;
-        instance = props;
+        instance2 = props;
         if (styleProps = preloadPropsMap.get(instance$250))
-          instance = assign({}, props), adoptPreloadPropsForScript(instance, styleProps);
+          instance2 = assign({}, props), adoptPreloadPropsForScript(instance2, styleProps);
         hoistableRoot = hoistableRoot.ownerDocument || hoistableRoot;
         styleProps = hoistableRoot.createElement("script");
         markNodeAsHoistable(styleProps);
-        setInitialProperties(styleProps, "link", instance);
+        setInitialProperties(styleProps, "link", instance2);
         hoistableRoot.head.appendChild(styleProps);
         return resource.instance = styleProps;
       case "void":
@@ -25348,10 +30535,10 @@ function acquireResource(hoistableRoot, resource, props) {
         throw Error(formatProdErrorMessage(443, resource.type));
     }
   else
-    "stylesheet" === resource.type && 0 === (resource.state.loading & 4) && (instance = resource.instance, resource.state.loading |= 4, insertStylesheet(instance, props.precedence, hoistableRoot));
+    "stylesheet" === resource.type && 0 === (resource.state.loading & 4) && (instance2 = resource.instance, resource.state.loading |= 4, insertStylesheet(instance2, props.precedence, hoistableRoot));
   return resource.instance;
 }
-function insertStylesheet(instance, precedence, root2) {
+function insertStylesheet(instance2, precedence, root2) {
   for (var nodes = root2.querySelectorAll(
     'link[rel="stylesheet"][data-precedence],style[data-precedence]'
   ), last2 = nodes.length ? nodes[nodes.length - 1] : null, prior = last2, i = 0; i < nodes.length; i++) {
@@ -25359,7 +30546,7 @@ function insertStylesheet(instance, precedence, root2) {
     if (node.dataset.precedence === precedence) prior = node;
     else if (prior !== last2) break;
   }
-  prior ? prior.parentNode.insertBefore(instance, prior.nextSibling) : (precedence = 9 === root2.nodeType ? root2.head : root2, precedence.insertBefore(instance, precedence.firstChild));
+  prior ? prior.parentNode.insertBefore(instance2, prior.nextSibling) : (precedence = 9 === root2.nodeType ? root2.head : root2, precedence.insertBefore(instance2, precedence.firstChild));
 }
 function adoptPreloadPropsForStylesheet(stylesheetProps, preloadProps) {
   null == stylesheetProps.crossOrigin && (stylesheetProps.crossOrigin = preloadProps.crossOrigin);
@@ -25393,10 +30580,10 @@ function getHydratableHoistableCache(type, keyAttribute, ownerDocument) {
   }
   return cache;
 }
-function mountHoistable(hoistableRoot, type, instance) {
+function mountHoistable(hoistableRoot, type, instance2) {
   hoistableRoot = hoistableRoot.ownerDocument || hoistableRoot;
   hoistableRoot.head.insertBefore(
-    instance,
+    instance2,
     "title" === type ? hoistableRoot.querySelector("head > title") : null
   );
 }
@@ -25436,29 +30623,29 @@ function suspendResource(hoistableRoot, resource, props) {
   var state = suspendedState;
   if ("stylesheet" === resource.type && ("string" !== typeof props.media || false !== matchMedia(props.media).matches) && 0 === (resource.state.loading & 4)) {
     if (null === resource.instance) {
-      var key = getStyleKey(props.href), instance = hoistableRoot.querySelector(
+      var key = getStyleKey(props.href), instance2 = hoistableRoot.querySelector(
         getStylesheetSelectorFromKey(key)
       );
-      if (instance) {
-        hoistableRoot = instance._p;
+      if (instance2) {
+        hoistableRoot = instance2._p;
         null !== hoistableRoot && "object" === typeof hoistableRoot && "function" === typeof hoistableRoot.then && (state.count++, state = onUnsuspend.bind(state), hoistableRoot.then(state, state));
         resource.state.loading |= 4;
-        resource.instance = instance;
-        markNodeAsHoistable(instance);
+        resource.instance = instance2;
+        markNodeAsHoistable(instance2);
         return;
       }
-      instance = hoistableRoot.ownerDocument || hoistableRoot;
+      instance2 = hoistableRoot.ownerDocument || hoistableRoot;
       props = stylesheetPropsFromRawProps(props);
       (key = preloadPropsMap.get(key)) && adoptPreloadPropsForStylesheet(props, key);
-      instance = instance.createElement("link");
-      markNodeAsHoistable(instance);
-      var linkInstance = instance;
+      instance2 = instance2.createElement("link");
+      markNodeAsHoistable(instance2);
+      var linkInstance = instance2;
       linkInstance._p = new Promise(function(resolve, reject) {
         linkInstance.onload = resolve;
         linkInstance.onerror = reject;
       });
-      setInitialProperties(instance, "link", props);
-      resource.instance = instance;
+      setInitialProperties(instance2, "link", props);
+      resource.instance = instance2;
     }
     null === state.stylesheets && (state.stylesheets = /* @__PURE__ */ new Map());
     state.stylesheets.set(resource, hoistableRoot);
@@ -26081,7 +31268,7 @@ ReactDOMHydrationRoot.prototype.unstable_scheduleHydration = function(target) {
     0 === i && attemptExplicitHydrationTarget(target);
   }
 };
-var isomorphicReactPackageVersion$jscomp$inline_1785 = React$2.version;
+var isomorphicReactPackageVersion$jscomp$inline_1785 = React$1.version;
 if ("19.1.5" !== isomorphicReactPackageVersion$jscomp$inline_1785)
   throw Error(
     formatProdErrorMessage(
@@ -26256,7 +31443,7 @@ const __vitePreload = function preload2(baseModule, deps, importerUrl) {
     return baseModule().catch(handlePreloadError);
   });
 };
-const STORAGE_KEY$1 = "nft-rating-display";
+const STORAGE_KEY$2 = "nft-rating-display";
 const PROFILES_KEY = "nft-rating-profiles";
 const DEFAULT_RATING_SETTINGS = {
   visibleCards: 4,
@@ -26465,7 +31652,7 @@ const RATING_DISPLAY_PRESETS = [
 ];
 function loadFromStorage$1() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY$1);
+    const raw = localStorage.getItem(STORAGE_KEY$2);
     if (!raw) return DEFAULT_RATING_SETTINGS;
     return { ...DEFAULT_RATING_SETTINGS, ...JSON.parse(raw) };
   } catch {
@@ -26474,7 +31661,7 @@ function loadFromStorage$1() {
 }
 const RatingDisplayContext = reactExports.createContext(null);
 function useRatingDisplayState() {
-  const [settings, setSettings] = reactExports.useState(loadFromStorage$1);
+  const [settings2, setSettings] = reactExports.useState(loadFromStorage$1);
   const [savedProfiles, setSavedProfiles] = reactExports.useState(() => {
     try {
       const raw = localStorage.getItem(PROFILES_KEY);
@@ -26492,7 +31679,7 @@ function useRatingDisplayState() {
       setSettings((prev) => {
         const next = { ...prev, ...patch };
         try {
-          localStorage.setItem(STORAGE_KEY$1, JSON.stringify(next));
+          localStorage.setItem(STORAGE_KEY$2, JSON.stringify(next));
         } catch {
         }
         return next;
@@ -26511,7 +31698,7 @@ function useRatingDisplayState() {
     setSettings(next);
     setActiveProfileName(null);
     try {
-      localStorage.setItem(STORAGE_KEY$1, JSON.stringify(next));
+      localStorage.setItem(STORAGE_KEY$2, JSON.stringify(next));
     } catch {
     }
   }, []);
@@ -26520,7 +31707,7 @@ function useRatingDisplayState() {
     setActiveProfileName(null);
     try {
       localStorage.setItem(
-        STORAGE_KEY$1,
+        STORAGE_KEY$2,
         JSON.stringify(DEFAULT_RATING_SETTINGS)
       );
     } catch {
@@ -26532,7 +31719,7 @@ function useRatingDisplayState() {
       setSavedProfiles((prev) => {
         const trimmed = name.trim();
         const filtered = prev.filter((p2) => p2.name !== trimmed);
-        const next = [...filtered, { name: trimmed, settings }].slice(-10);
+        const next = [...filtered, { name: trimmed, settings: settings2 }].slice(-10);
         try {
           localStorage.setItem(PROFILES_KEY, JSON.stringify(next));
         } catch {
@@ -26541,7 +31728,7 @@ function useRatingDisplayState() {
       });
       setActiveProfileName(name.trim());
     },
-    [settings]
+    [settings2]
   );
   const loadProfile = reactExports.useCallback((name) => {
     setSavedProfiles((prev) => {
@@ -26551,7 +31738,7 @@ function useRatingDisplayState() {
       setSettings(next);
       setActiveProfileName(name);
       try {
-        localStorage.setItem(STORAGE_KEY$1, JSON.stringify(next));
+        localStorage.setItem(STORAGE_KEY$2, JSON.stringify(next));
       } catch {
       }
       return prev;
@@ -26570,7 +31757,7 @@ function useRatingDisplayState() {
   }, []);
   return reactExports.useMemo(
     () => ({
-      settings,
+      settings: settings2,
       updateSettings,
       applyPreset,
       resetToDefault,
@@ -26581,7 +31768,7 @@ function useRatingDisplayState() {
       deleteProfile
     }),
     [
-      settings,
+      settings2,
       updateSettings,
       applyPreset,
       resetToDefault,
@@ -26601,7 +31788,7 @@ function useRatingDisplay() {
     );
   return ctx;
 }
-const STORAGE_KEY = "nft-theme-settings";
+const STORAGE_KEY$1 = "nft-theme-settings";
 const SAVED_DESIGNS_KEY = "nft-saved-designs";
 const PRESETS = [
   {
@@ -26675,7 +31862,7 @@ const DEFAULT_SETTINGS = {
 };
 function loadFromStorage() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY$1);
     if (!raw) return DEFAULT_SETTINGS;
     return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
   } catch {
@@ -26730,8 +31917,8 @@ function shiftHex(hex, hueDelta) {
   const { h: h2, s: s2, l } = hexToHsl(hex);
   return hslToHex((h2 + hueDelta + 360) % 360, s2, l);
 }
-function buildGradient(settings) {
-  const { color1, color2, color3, shift, hueShift, useThirdColor } = settings;
+function buildGradient(settings2) {
+  const { color1, color2, color3, shift, hueShift, useThirdColor } = settings2;
   const angle = Math.round(shift / 100 * 360);
   const c1 = shiftHex(color1, hueShift);
   const c2 = shiftHex(color2, hueShift);
@@ -26741,16 +31928,16 @@ function buildGradient(settings) {
   const c3 = shiftHex(color3, hueShift);
   return `linear-gradient(${angle}deg, ${c1}, ${c2}, ${c3})`;
 }
-function applyToRoot(settings) {
+function applyToRoot(settings2) {
   const root2 = document.documentElement;
-  const c1 = shiftHex(settings.color1, settings.hueShift);
-  const c2 = shiftHex(settings.color2, settings.hueShift);
-  const c3 = shiftHex(settings.color3, settings.hueShift);
+  const c1 = shiftHex(settings2.color1, settings2.hueShift);
+  const c2 = shiftHex(settings2.color2, settings2.hueShift);
+  const c3 = shiftHex(settings2.color3, settings2.hueShift);
   root2.style.setProperty("--theme-color-1", c1);
   root2.style.setProperty("--theme-color-2", c2);
-  root2.style.setProperty("--theme-color-3", settings.useThirdColor ? c3 : c2);
-  root2.style.setProperty("--theme-shift", `${settings.shift}`);
-  root2.style.setProperty("--theme-gradient", buildGradient(settings));
+  root2.style.setProperty("--theme-color-3", settings2.useThirdColor ? c3 : c2);
+  root2.style.setProperty("--theme-shift", `${settings2.shift}`);
+  root2.style.setProperty("--theme-gradient", buildGradient(settings2));
   const toRgb = (hex) => {
     const r2 = Number.parseInt(hex.slice(1, 3), 16);
     const g2 = Number.parseInt(hex.slice(3, 5), 16);
@@ -26761,7 +31948,7 @@ function applyToRoot(settings) {
   root2.style.setProperty("--theme-color-2-rgb", toRgb(c2));
   root2.style.setProperty(
     "--theme-color-3-rgb",
-    toRgb(settings.useThirdColor ? c3 : c2)
+    toRgb(settings2.useThirdColor ? c3 : c2)
   );
   const r1 = Number.parseInt(c1.slice(1, 3), 16);
   const g1 = Number.parseInt(c1.slice(3, 5), 16);
@@ -26784,16 +31971,16 @@ function applyToRoot(settings) {
 }
 const ThemeContext = reactExports.createContext(null);
 function useThemeState() {
-  const [settings, setSettings] = reactExports.useState(loadFromStorage);
+  const [settings2, setSettings] = reactExports.useState(loadFromStorage);
   const [savedDesigns, setSavedDesigns] = reactExports.useState(loadSavedDesigns);
   const [isOpen, setIsOpen] = reactExports.useState(false);
   reactExports.useEffect(() => {
-    applyToRoot(settings);
+    applyToRoot(settings2);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      localStorage.setItem(STORAGE_KEY$1, JSON.stringify(settings2));
     } catch {
     }
-  }, [settings]);
+  }, [settings2]);
   const update = reactExports.useCallback((patch) => {
     setSettings((prev) => ({ ...prev, ...patch }));
   }, []);
@@ -26826,7 +32013,7 @@ function useThemeState() {
   }, []);
   return reactExports.useMemo(
     () => ({
-      settings,
+      settings: settings2,
       update,
       applyPreset,
       presets: PRESETS,
@@ -26837,7 +32024,7 @@ function useThemeState() {
       deleteSavedDesign
     }),
     [
-      settings,
+      settings2,
       update,
       applyPreset,
       isOpen,
@@ -27010,26 +32197,13 @@ const __iconNode$5 = [
   [
     "path",
     {
-      d: "M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z",
-      key: "zw3jo"
+      d: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z",
+      key: "1qme2f"
     }
   ],
-  [
-    "path",
-    {
-      d: "M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12",
-      key: "1wduqc"
-    }
-  ],
-  [
-    "path",
-    {
-      d: "M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17",
-      key: "kqbvx6"
-    }
-  ]
+  ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
 ];
-const Layers = createLucideIcon("layers", __iconNode$5);
+const Settings = createLucideIcon("settings", __iconNode$5);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -27037,16 +32211,17 @@ const Layers = createLucideIcon("layers", __iconNode$5);
  * See the LICENSE file in the root directory of this source tree.
  */
 const __iconNode$4 = [
-  [
-    "path",
-    {
-      d: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z",
-      key: "1qme2f"
-    }
-  ],
-  ["circle", { cx: "12", cy: "12", r: "3", key: "1v7zrd" }]
+  ["line", { x1: "4", x2: "4", y1: "21", y2: "14", key: "1p332r" }],
+  ["line", { x1: "4", x2: "4", y1: "10", y2: "3", key: "gb41h5" }],
+  ["line", { x1: "12", x2: "12", y1: "21", y2: "12", key: "hf2csr" }],
+  ["line", { x1: "12", x2: "12", y1: "8", y2: "3", key: "1kfi7u" }],
+  ["line", { x1: "20", x2: "20", y1: "21", y2: "16", key: "1lhrwl" }],
+  ["line", { x1: "20", x2: "20", y1: "12", y2: "3", key: "16vvfq" }],
+  ["line", { x1: "2", x2: "6", y1: "14", y2: "14", key: "1uebub" }],
+  ["line", { x1: "10", x2: "14", y1: "8", y2: "8", key: "1yglbp" }],
+  ["line", { x1: "18", x2: "22", y1: "16", y2: "16", key: "1jxqpz" }]
 ];
-const Settings = createLucideIcon("settings", __iconNode$4);
+const SlidersVertical = createLucideIcon("sliders-vertical", __iconNode$4);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -27430,20 +32605,20 @@ function FrameColorSwatch({
   );
 }
 function RatingSettingsTab() {
-  const { settings, updateSettings, applyPreset, resetToDefault } = useRatingDisplay();
+  const { settings: settings2, updateSettings, applyPreset, resetToDefault } = useRatingDisplay();
   function handleSliderChange(field, rawValue) {
     let value = rawValue;
     if (field === "cardScale") value = rawValue / 100;
     if (field === "animationDuration") value = rawValue / 100;
     updateSettings({ [field]: value, preset: "custom" });
   }
-  const scaleInt = Math.round(settings.cardScale * 100);
-  const durationInt = Math.round(settings.animationDuration * 100);
+  const scaleInt = Math.round(settings2.cardScale * 100);
+  const durationInt = Math.round(settings2.animationDuration * 100);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col gap-4", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs(SectionCard, { children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(SectionLabel, { children: "Prednastavenia" }),
       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "grid grid-cols-2 gap-2", children: RATING_DISPLAY_PRESETS.map((preset) => {
-        const isActive = settings.preset === preset.name;
+        const isActive = settings2.preset === preset.name;
         return /* @__PURE__ */ jsxRuntimeExports.jsxs(
           "button",
           {
@@ -27471,7 +32646,7 @@ function RatingSettingsTab() {
         FrameColorSwatch,
         {
           color: c2,
-          active: settings.activeFrameColor === c2,
+          active: settings2.activeFrameColor === c2,
           onClick: () => updateSettings({ activeFrameColor: c2, preset: "custom" })
         },
         c2
@@ -27483,7 +32658,7 @@ function RatingSettingsTab() {
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex flex-col gap-2", children: [
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex justify-between items-center", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-display text-[10px] font-bold uppercase tracking-[0.12em] text-white/50", children: "Viditeľné karty" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-display text-xs text-white/70 tabular-nums", children: settings.visibleCards })
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-display text-xs text-white/70 tabular-nums", children: settings2.visibleCards })
           ] }),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
             "input",
@@ -27492,14 +32667,14 @@ function RatingSettingsTab() {
               min: 2,
               max: 50,
               step: 1,
-              value: settings.visibleCards,
+              value: settings2.visibleCards,
               "data-ocid": "rating_settings.visible_cards_slider",
               onChange: (e) => updateSettings({
                 visibleCards: Number(e.target.value),
                 preset: "custom"
               }),
               className: "w-full cursor-pointer",
-              style: { accentColor: settings.activeFrameColor }
+              style: { accentColor: settings2.activeFrameColor }
             }
           )
         ] }),
@@ -27523,7 +32698,7 @@ function RatingSettingsTab() {
               "data-ocid": "rating_settings.card_scale_slider",
               onChange: (e) => handleSliderChange("cardScale", Number(e.target.value)),
               className: "w-full cursor-pointer",
-              style: { accentColor: settings.activeFrameColor }
+              style: { accentColor: settings2.activeFrameColor }
             }
           )
         ] }),
@@ -27532,7 +32707,7 @@ function RatingSettingsTab() {
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex justify-between items-center", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-display text-[10px] font-bold uppercase tracking-[0.12em] text-white/50", children: "Hĺbka" }),
             /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "font-display text-xs text-white/70 tabular-nums", children: [
-              settings.depthStep,
+              settings2.depthStep,
               "px"
             ] })
           ] }),
@@ -27543,14 +32718,14 @@ function RatingSettingsTab() {
               min: 50,
               max: 200,
               step: 5,
-              value: settings.depthStep,
+              value: settings2.depthStep,
               "data-ocid": "rating_settings.depth_slider",
               onChange: (e) => updateSettings({
                 depthStep: Number(e.target.value),
                 preset: "custom"
               }),
               className: "w-full cursor-pointer",
-              style: { accentColor: settings.activeFrameColor }
+              style: { accentColor: settings2.activeFrameColor }
             }
           )
         ] }),
@@ -27559,7 +32734,7 @@ function RatingSettingsTab() {
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex justify-between items-center", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-display text-[10px] font-bold uppercase tracking-[0.12em] text-white/50", children: "Posun do strany" }),
             /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "font-display text-xs text-white/70 tabular-nums", children: [
-              settings.sideStep,
+              settings2.sideStep,
               "px"
             ] })
           ] }),
@@ -27570,14 +32745,14 @@ function RatingSettingsTab() {
               min: 20,
               max: 200,
               step: 5,
-              value: settings.sideStep,
+              value: settings2.sideStep,
               "data-ocid": "rating_settings.side_step_slider",
               onChange: (e) => updateSettings({
                 sideStep: Number(e.target.value),
                 preset: "custom"
               }),
               className: "w-full cursor-pointer",
-              style: { accentColor: settings.activeFrameColor }
+              style: { accentColor: settings2.activeFrameColor }
             }
           )
         ] }),
@@ -27586,7 +32761,7 @@ function RatingSettingsTab() {
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex justify-between items-center", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-display text-[10px] font-bold uppercase tracking-[0.12em] text-white/50", children: "Zvislý posun" }),
             /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "font-display text-xs text-white/70 tabular-nums", children: [
-              settings.verticalStep,
+              settings2.verticalStep,
               "px"
             ] })
           ] }),
@@ -27597,14 +32772,14 @@ function RatingSettingsTab() {
               min: 10,
               max: 50,
               step: 2,
-              value: settings.verticalStep,
+              value: settings2.verticalStep,
               "data-ocid": "rating_settings.vertical_step_slider",
               onChange: (e) => updateSettings({
                 verticalStep: Number(e.target.value),
                 preset: "custom"
               }),
               className: "w-full cursor-pointer",
-              style: { accentColor: settings.activeFrameColor }
+              style: { accentColor: settings2.activeFrameColor }
             }
           )
         ] }),
@@ -27613,7 +32788,7 @@ function RatingSettingsTab() {
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex justify-between items-center", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-display text-[10px] font-bold uppercase tracking-[0.12em] text-white/50", children: "Rýchlosť animácie" }),
             /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "font-display text-xs text-white/70 tabular-nums", children: [
-              settings.animationDuration.toFixed(2),
+              settings2.animationDuration.toFixed(2),
               "s"
             ] })
           ] }),
@@ -27628,7 +32803,7 @@ function RatingSettingsTab() {
               "data-ocid": "rating_settings.animation_slider",
               onChange: (e) => handleSliderChange("animationDuration", Number(e.target.value)),
               className: "w-full cursor-pointer",
-              style: { accentColor: settings.activeFrameColor }
+              style: { accentColor: settings2.activeFrameColor }
             }
           )
         ] })
@@ -27655,7 +32830,7 @@ function ThemeSettingsPanel({
   setIsOpen
 }) {
   const {
-    settings,
+    settings: settings2,
     update,
     applyPreset,
     presets,
@@ -27665,10 +32840,10 @@ function ThemeSettingsPanel({
   } = useTheme();
   const [activeTab, setActiveTab] = reactExports.useState("dizajn");
   if (!isOpen) return null;
-  const activeGradient = buildGradient(settings);
-  const c1shifted = shiftHex(settings.color1, settings.hueShift);
-  const isActivePreset = (ps) => settings.color1 === ps.settings.color1 && settings.color2 === ps.settings.color2;
-  const isActiveSaved = (d2) => settings.color1 === d2.color1 && settings.color2 === d2.color2 && settings.color3 === d2.color3 && settings.hueShift === d2.hueShift;
+  const activeGradient = buildGradient(settings2);
+  const c1shifted = shiftHex(settings2.color1, settings2.hueShift);
+  const isActivePreset = (ps) => settings2.color1 === ps.settings.color1 && settings2.color2 === ps.settings.color2;
+  const isActiveSaved = (d2) => settings2.color1 === d2.color1 && settings2.color2 === d2.color2 && settings2.color3 === d2.color3 && settings2.hueShift === d2.hueShift;
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       "div",
@@ -27722,7 +32897,7 @@ function ThemeSettingsPanel({
                 border: "1px solid rgba(255,255,255,0.10)"
               },
               children: ["dizajn", "hodnotenie"].map((tab) => {
-                const labels = { dizajn: "Dizajn", hodnotenie: "Hodnotenie" };
+                const labels2 = { dizajn: "Dizajn", hodnotenie: "Hodnotenie" };
                 const isActive = activeTab === tab;
                 return /* @__PURE__ */ jsxRuntimeExports.jsx(
                   "button",
@@ -27737,7 +32912,7 @@ function ThemeSettingsPanel({
                       boxShadow: isActive ? "0 2px 12px rgba(0,0,0,0.28)" : "none",
                       border: isActive ? "1px solid rgba(255,255,255,0.18)" : "1px solid transparent"
                     },
-                    children: labels[tab]
+                    children: labels2[tab]
                   },
                   tab
                 );
@@ -27751,7 +32926,7 @@ function ThemeSettingsPanel({
                 /* @__PURE__ */ jsxRuntimeExports.jsx(
                   Swatch,
                   {
-                    color: shiftHex(settings.color1, settings.hueShift),
+                    color: shiftHex(settings2.color1, settings2.hueShift),
                     label: "Farba 1",
                     onChange: (c2) => update({ color1: c2, hueShift: 0 })
                   }
@@ -27759,15 +32934,15 @@ function ThemeSettingsPanel({
                 /* @__PURE__ */ jsxRuntimeExports.jsx(
                   Swatch,
                   {
-                    color: shiftHex(settings.color2, settings.hueShift),
+                    color: shiftHex(settings2.color2, settings2.hueShift),
                     label: "Farba 2",
                     onChange: (c2) => update({ color2: c2, hueShift: 0 })
                   }
                 ),
-                settings.useThirdColor ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                settings2.useThirdColor ? /* @__PURE__ */ jsxRuntimeExports.jsx(
                   Swatch,
                   {
-                    color: shiftHex(settings.color3, settings.hueShift),
+                    color: shiftHex(settings2.color3, settings2.hueShift),
                     label: "Farba 3",
                     onChange: (c2) => update({ color3: c2, hueShift: 0 }),
                     onRemove: () => update({ useThirdColor: false })
@@ -27814,7 +32989,7 @@ function ThemeSettingsPanel({
                 SliderRow,
                 {
                   label: "🎨 Odtieň farieb",
-                  value: settings.hueShift,
+                  value: settings2.hueShift,
                   min: 0,
                   max: 360,
                   ocid: "theme.hue_shift_slider",
@@ -27826,7 +33001,7 @@ function ThemeSettingsPanel({
                 SliderRow,
                 {
                   label: "Posun gradientu",
-                  value: settings.shift,
+                  value: settings2.shift,
                   min: 0,
                   max: 100,
                   ocid: "theme.shift_slider",
@@ -28460,13 +33635,13 @@ function createBrowserHistory(opts) {
     if (!next) {
       return;
     }
-    history._ignoreSubscribers = true;
+    history2._ignoreSubscribers = true;
     (next.isPush ? win.history.pushState : win.history.replaceState)(
       next.state,
       "",
       next.href
     );
-    history._ignoreSubscribers = false;
+    history2._ignoreSubscribers = false;
     next = void 0;
     scheduled = void 0;
     rollbackLocation = void 0;
@@ -28488,7 +33663,7 @@ function createBrowserHistory(opts) {
   };
   const onPushPop = (type) => {
     currentLocation = parseLocation();
-    history.notify({ type });
+    history2.notify({ type });
   };
   const onPushPopEvent = async () => {
     if (ignoreNextPop) {
@@ -28522,14 +33697,14 @@ function createBrowserHistory(opts) {
           if (isBlocked) {
             ignoreNextPop = true;
             win.history.go(1);
-            history.notify(notify);
+            history2.notify(notify);
             return;
           }
         }
       }
     }
     currentLocation = parseLocation();
-    history.notify(notify);
+    history2.notify(notify);
   };
   const onBeforeUnload = (e) => {
     if (ignoreNextBeforeUnload) {
@@ -28557,7 +33732,7 @@ function createBrowserHistory(opts) {
     }
     return;
   };
-  const history = createHistory({
+  const history2 = createHistory({
     getLocation,
     getLength: () => win.history.length,
     pushState: (href, state) => queueHistoryAction("push", href, state),
@@ -28599,15 +33774,15 @@ function createBrowserHistory(opts) {
   win.addEventListener(popStateEvent, onPushPopEvent);
   win.history.pushState = function(...args) {
     const res = originalPushState.apply(win.history, args);
-    if (!history._ignoreSubscribers) onPushPop("PUSH");
+    if (!history2._ignoreSubscribers) onPushPop("PUSH");
     return res;
   };
   win.history.replaceState = function(...args) {
     const res = originalReplaceState.apply(win.history, args);
-    if (!history._ignoreSubscribers) onPushPop("REPLACE");
+    if (!history2._ignoreSubscribers) onPushPop("REPLACE");
     return res;
   };
-  return history;
+  return history2;
 }
 function createMemoryHistory(opts = {
   initialEntries: ["/"]
@@ -28690,26 +33865,26 @@ function replaceEqualDeep(prev, _next) {
   if (!nextItems) return next;
   const prevSize = prevItems.length;
   const nextSize = nextItems.length;
-  const copy = array ? new Array(nextSize) : {};
+  const copy2 = array ? new Array(nextSize) : {};
   let equalItems = 0;
   for (let i = 0; i < nextSize; i++) {
     const key = array ? i : nextItems[i];
     const p2 = prev[key];
     const n = next[key];
     if (p2 === n) {
-      copy[key] = p2;
+      copy2[key] = p2;
       if (array ? i < prevSize : hasOwn.call(prev, key)) equalItems++;
       continue;
     }
     if (p2 === null || n === null || typeof p2 !== "object" || typeof n !== "object") {
-      copy[key] = n;
+      copy2[key] = n;
       continue;
     }
     const v2 = replaceEqualDeep(p2, n);
-    copy[key] = v2;
+    copy2[key] = v2;
     if (v2 === p2) equalItems++;
   }
-  return prevSize === nextSize && equalItems === prevSize ? prev : copy;
+  return prevSize === nextSize && equalItems === prevSize ? prev : copy2;
 }
 function getEnumerableOwnKeys(o2) {
   const keys = [];
@@ -31929,10 +37104,10 @@ function ErrorComponent({ error }) {
   ] });
 }
 function ClientOnly({ children, fallback = null }) {
-  return useHydrated() ? /* @__PURE__ */ jsxRuntimeExports.jsx(o.Fragment, { children }) : /* @__PURE__ */ jsxRuntimeExports.jsx(o.Fragment, { children: fallback });
+  return useHydrated() ? /* @__PURE__ */ jsxRuntimeExports.jsx(o$1.Fragment, { children }) : /* @__PURE__ */ jsxRuntimeExports.jsx(o$1.Fragment, { children: fallback });
 }
 function useHydrated() {
-  return o.useSyncExternalStore(
+  return o$1.useSyncExternalStore(
     subscribe,
     () => true,
     () => false
@@ -31944,63 +37119,6 @@ function subscribe() {
 }
 var withSelector = { exports: {} };
 var withSelector_production = {};
-var shim$2 = { exports: {} };
-var useSyncExternalStoreShim_production = {};
-/**
- * @license React
- * use-sync-external-store-shim.production.js
- *
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-var React$1 = reactExports;
-function is$1(x2, y2) {
-  return x2 === y2 && (0 !== x2 || 1 / x2 === 1 / y2) || x2 !== x2 && y2 !== y2;
-}
-var objectIs$1 = "function" === typeof Object.is ? Object.is : is$1, useState = React$1.useState, useEffect$1 = React$1.useEffect, useLayoutEffect$1 = React$1.useLayoutEffect, useDebugValue$1 = React$1.useDebugValue;
-function useSyncExternalStore$2(subscribe2, getSnapshot) {
-  var value = getSnapshot(), _useState = useState({ inst: { value, getSnapshot } }), inst = _useState[0].inst, forceUpdate = _useState[1];
-  useLayoutEffect$1(
-    function() {
-      inst.value = value;
-      inst.getSnapshot = getSnapshot;
-      checkIfSnapshotChanged(inst) && forceUpdate({ inst });
-    },
-    [subscribe2, value, getSnapshot]
-  );
-  useEffect$1(
-    function() {
-      checkIfSnapshotChanged(inst) && forceUpdate({ inst });
-      return subscribe2(function() {
-        checkIfSnapshotChanged(inst) && forceUpdate({ inst });
-      });
-    },
-    [subscribe2]
-  );
-  useDebugValue$1(value);
-  return value;
-}
-function checkIfSnapshotChanged(inst) {
-  var latestGetSnapshot = inst.getSnapshot;
-  inst = inst.value;
-  try {
-    var nextValue = latestGetSnapshot();
-    return !objectIs$1(inst, nextValue);
-  } catch (error) {
-    return true;
-  }
-}
-function useSyncExternalStore$1(subscribe2, getSnapshot) {
-  return getSnapshot();
-}
-var shim$1 = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
-useSyncExternalStoreShim_production.useSyncExternalStore = void 0 !== React$1.useSyncExternalStore ? React$1.useSyncExternalStore : shim$1;
-{
-  shim$2.exports = useSyncExternalStoreShim_production;
-}
-var shimExports = shim$2.exports;
 /**
  * @license React
  * use-sync-external-store-shim/with-selector.production.js
@@ -32616,7 +37734,7 @@ class Route extends BaseRoute {
     this.useNavigate = () => {
       return useNavigate({ from: this.fullPath });
     };
-    this.Link = o.forwardRef(
+    this.Link = o$1.forwardRef(
       (props, ref) => {
         return /* @__PURE__ */ jsxRuntimeExports.jsx(Link, { ref, from: this.fullPath, ...props });
       }
@@ -32670,7 +37788,7 @@ class RootRoute extends BaseRootRoute {
     this.useNavigate = () => {
       return useNavigate({ from: this.fullPath });
     };
-    this.Link = o.forwardRef(
+    this.Link = o$1.forwardRef(
       (props, ref) => {
         return /* @__PURE__ */ jsxRuntimeExports.jsx(Link, { ref, from: this.fullPath, ...props });
       }
@@ -33225,13 +38343,147 @@ function RouterContextProvider({
 function RouterProvider({ router: router2, ...rest }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsx(RouterContextProvider, { router: router2, ...rest, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Matches, {}) });
 }
+const LANGUAGES = [
+  { code: "sk", name: "Slovenčina", abbr: "SK" },
+  { code: "en", name: "English", abbr: "EN" },
+  { code: "de", name: "Deutsch", abbr: "DE" },
+  { code: "fr", name: "Français", abbr: "FR" },
+  { code: "es", name: "Español", abbr: "ES" },
+  { code: "zh", name: "中文", abbr: "ZH" },
+  { code: "ja", name: "日本語", abbr: "JA" },
+  { code: "ar", name: "العربية", abbr: "AR" },
+  { code: "pt", name: "Português", abbr: "PT" },
+  { code: "ru", name: "Русский", abbr: "RU" }
+];
+const STORAGE_KEY = "neferty_lang";
+function LanguageSwitcher() {
+  const [open, setOpen] = reactExports.useState(false);
+  const [current, setCurrent] = reactExports.useState(
+    () => localStorage.getItem(STORAGE_KEY) ?? "sk"
+  );
+  const ref = reactExports.useRef(null);
+  const currentLang = LANGUAGES.find((l) => l.code === current) ?? LANGUAGES[0];
+  const handleSelect = (code) => {
+    setCurrent(code);
+    instance.changeLanguage(code);
+    localStorage.setItem(STORAGE_KEY, code);
+    document.documentElement.dir = code === "ar" ? "rtl" : "ltr";
+    setOpen(false);
+  };
+  reactExports.useEffect(() => {
+    document.documentElement.dir = current === "ar" ? "rtl" : "ltr";
+  }, [current]);
+  reactExports.useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    if (open) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { ref, className: "relative", "data-ocid": "nav.language_switcher", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "button",
+      {
+        type: "button",
+        "data-ocid": "nav.language_button",
+        onClick: () => setOpen((v2) => !v2),
+        "aria-label": "Zmeniť jazyk / Change language",
+        "aria-expanded": open,
+        className: "flex items-center gap-1.5 text-xs font-mono font-bold text-muted-foreground hover:text-foreground transition-colors duration-200 rounded-2xl px-3 py-2",
+        style: {
+          background: open ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.07)",
+          border: "1px solid rgba(255,255,255,0.14)"
+        },
+        children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-[11px] uppercase tracking-wider", children: currentLang.abbr }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "svg",
+            {
+              className: "w-3 h-3 opacity-60",
+              viewBox: "0 0 12 12",
+              fill: "none",
+              stroke: "currentColor",
+              strokeWidth: "1.8",
+              "aria-hidden": "true",
+              style: {
+                transform: open ? "rotate(180deg)" : "rotate(0deg)",
+                transition: "transform 0.2s ease"
+              },
+              children: /* @__PURE__ */ jsxRuntimeExports.jsx("polyline", { points: "2,4 6,8 10,4" })
+            }
+          )
+        ]
+      }
+    ),
+    open && /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "div",
+      {
+        "data-ocid": "nav.language_dropdown",
+        role: "menu",
+        "aria-label": "Select language",
+        className: "absolute right-0 top-full mt-1.5 z-50 rounded-2xl overflow-hidden flex flex-col",
+        style: {
+          background: "rgba(10,6,28,0.96)",
+          border: "1px solid rgba(255,255,255,0.14)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.55)",
+          minWidth: 160,
+          animation: "mint-fade 0.15s both"
+        },
+        children: LANGUAGES.map((lang) => {
+          const isActive = lang.code === current;
+          return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "button",
+            {
+              type: "button",
+              role: "menuitem",
+              "data-ocid": `nav.lang_${lang.code}_option`,
+              onClick: () => handleSelect(lang.code),
+              className: "flex items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors hover:bg-white/[0.08]",
+              style: {
+                color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.60)"
+              },
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-sm flex-1", children: lang.name }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "span",
+                  {
+                    className: "text-[10px] font-bold tracking-wider",
+                    style: {
+                      color: isActive ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.25)"
+                    },
+                    children: lang.abbr
+                  }
+                ),
+                isActive && /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "span",
+                  {
+                    className: "w-1.5 h-1.5 rounded-full flex-shrink-0",
+                    style: {
+                      background: "linear-gradient(135deg, rgb(var(--theme-color-1-rgb,180,80,220)), rgb(var(--theme-color-2-rgb,230,100,180)))"
+                    },
+                    "aria-hidden": "true"
+                  }
+                )
+              ]
+            },
+            lang.code
+          );
+        })
+      }
+    )
+  ] });
+}
 const NAV_LINKS = [
-  { to: "/", label: "Domov", Icon: House },
-  { to: "/mint", label: "Raziť", Icon: Sparkles },
-  { to: "/gallery", label: "Galéria", Icon: Images },
-  { to: "/my-collection", label: "Moja Zbierka", Icon: Layers },
-  { to: "/marketplace", label: "Trhovisko", Icon: Store$1 },
-  { to: "/rating", label: "Hodnotenie", Icon: Star }
+  { to: "/", key: "home", Icon: House },
+  { to: "/mint", key: "mint", Icon: Sparkles },
+  { to: "/gallery", key: "gallery", Icon: Images },
+  { to: "/marketplace", key: "marketplace", Icon: Store$1 },
+  { to: "/rating", key: "rating", Icon: Star },
+  { to: "/settings", key: "settings", Icon: SlidersVertical }
 ];
 function Layout({ children }) {
   const {
@@ -33242,7 +38494,8 @@ function Layout({ children }) {
     isInitializing
   } = useAuth();
   const { isOpen: themeOpen, setIsOpen: setThemeOpen } = useTheme();
-  const [copiedPrincipal, setCopiedPrincipal] = o.useState(false);
+  const [copiedPrincipal, setCopiedPrincipal] = o$1.useState(false);
+  const { t } = useTranslation();
   const handleCopyPrincipal = async () => {
     if (!principalText) return;
     const success = await copyToClipboard(principalText);
@@ -33270,13 +38523,14 @@ function Layout({ children }) {
           /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between", children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-display font-bold text-base uppercase tracking-widest gradient-text", children: "Neferty Space" }),
             isAuthenticated && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-3", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(LanguageSwitcher, {}),
               shortPrincipal && principalText && /* @__PURE__ */ jsxRuntimeExports.jsxs(
                 "button",
                 {
                   type: "button",
                   "data-ocid": "nav.copy_principal_button",
                   onClick: handleCopyPrincipal,
-                  "aria-label": "Kopírovať Principal ID",
+                  "aria-label": t("aria.copyPrincipal"),
                   title: principalText,
                   className: "flex items-center gap-1.5 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors duration-200 rounded-2xl px-3 py-2 glass-nav-inactive hover:border-primary/40",
                   children: [
@@ -33291,7 +38545,7 @@ function Layout({ children }) {
                   type: "button",
                   "data-ocid": "nav.settings_button",
                   onClick: () => setThemeOpen(true),
-                  "aria-label": "Nastavenia dizajnu",
+                  "aria-label": t("aria.designSettings"),
                   className: "flex items-center justify-center w-9 h-9 rounded-2xl transition-all duration-200 text-white hover:scale-110",
                   style: {
                     background: "rgba(255,255,255,0.09)",
@@ -33313,7 +38567,7 @@ function Layout({ children }) {
                   },
                   children: [
                     /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "gradient-btn-inner", "aria-hidden": "true" }),
-                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "relative z-[1]", children: "Odhlásiť" })
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "relative z-[1]", children: t("buttons.logout") })
                   ]
                 }
               )
@@ -33323,7 +38577,7 @@ function Layout({ children }) {
             "nav",
             {
               className: "flex items-stretch gap-3",
-              "aria-label": "Hlavná navigácia",
+              "aria-label": t("aria.mainNav"),
               children: NAV_LINKS.map((link) => {
                 const active = link.to === "/" ? pathname === "/" : pathname.startsWith(link.to);
                 return /* @__PURE__ */ jsxRuntimeExports.jsxs(
@@ -33348,7 +38602,7 @@ function Layout({ children }) {
                           "aria-hidden": "true"
                         }
                       ),
-                      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-[11px] uppercase tracking-widest font-bold relative z-[1]", children: link.label })
+                      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-[11px] uppercase tracking-widest font-bold relative z-[1]", children: t(`nav.${link.key}`) })
                     ]
                   },
                   link.to
@@ -33411,16 +38665,28 @@ const NFTMetadata = Record({
   "description": Text,
   "history": Vec(TransactionEvent),
   "image": Vec(Nat8),
-  "isPublic": Bool
+  "isPublic": Bool,
+  "collectionName": Opt(Text)
 });
 const NFTPage = Record({
   "total": Nat,
   "items": Vec(NFTMetadata)
 });
-const CollectionPhase$1 = Variant({
-  "premium": Null,
-  "free": Null,
-  "bonus": Null
+const CollectionPhase = Variant({
+  "Premium": Null,
+  "Free": Null,
+  "Bonus": Null
+});
+const CycleHealth = Variant({
+  "red": Null,
+  "green": Null,
+  "yellow": Null
+});
+const HealthStatus = Record({
+  "status": Text,
+  "imagesRemaining": Nat,
+  "healthColor": CycleHealth,
+  "daysRemaining": Nat
 });
 const Standard = Record({ "url": Text, "name": Text });
 const Account = Record({
@@ -33452,26 +38718,41 @@ const TransferResult = Variant({
   "err": Text
 });
 Service({
-  "createMyCollection": Func([], [Text], []),
+  "createMyCollection": Func([], [Principal2], []),
+  "estimateCycles": Func([Nat], [Nat], ["query"]),
+  "estimateICPForImages": Func(
+    [Nat, Float64],
+    [Float64],
+    ["query"]
+  ),
+  "estimateImagesForICP": Func(
+    [Float64, Float64],
+    [Nat],
+    ["query"]
+  ),
   "getAllPublicNFTs": Func([], [Vec(NFTMetadata)], ["query"]),
+  "getAllPublicNFTsByOwner": Func(
+    [Principal2],
+    [Vec(NFTMetadata)],
+    ["query"]
+  ),
   "getAllPublicNFTsPaginated": Func(
     [Nat, Nat],
     [NFTPage],
     ["query"]
   ),
-  "getCollectionPhase": Func(
-    [Principal2],
-    [CollectionPhase$1],
-    ["query"]
-  ),
+  "getCollectionPhase": Func([Principal2], [CollectionPhase], []),
+  "getICPPrice": Func([], [Float64], []),
   "getMyCollection": Func(
     [Principal2],
     [Opt(Principal2)],
     ["query"]
   ),
-  "getMyMintCount": Func([Principal2], [Nat], ["query"]),
-  "getMyNFTs": Func([], [Vec(NFTMetadata)], ["query"]),
-  "getMyNFTsPaginated": Func([Nat, Nat], [NFTPage], ["query"]),
+  "getMyCollectionCycles": Func([], [Nat], []),
+  "getMyHealthStatus": Func([], [HealthStatus], []),
+  "getMyMintCount": Func([Principal2], [Nat], []),
+  "getMyNFTs": Func([], [Vec(NFTMetadata)], []),
+  "getMyNFTsPaginated": Func([Nat, Nat], [NFTPage], []),
   "getNFT": Func([TokenId], [Opt(NFTMetadata)], ["query"]),
   "getNFTHistory": Func(
     [TokenId],
@@ -33500,7 +38781,14 @@ Service({
   ),
   "icrc7_total_supply": Func([], [Nat], ["query"]),
   "mintNFT": Func(
-    [Text, Text, Vec(Nat8), Opt(Principal2), Bool],
+    [
+      Text,
+      Text,
+      Vec(Nat8),
+      Opt(Principal2),
+      Bool,
+      Opt(Text)
+    ],
     [MintResult],
     []
   ),
@@ -33525,16 +38813,28 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "description": IDL2.Text,
     "history": IDL2.Vec(TransactionEvent2),
     "image": IDL2.Vec(IDL2.Nat8),
-    "isPublic": IDL2.Bool
+    "isPublic": IDL2.Bool,
+    "collectionName": IDL2.Opt(IDL2.Text)
   });
   const NFTPage2 = IDL2.Record({
     "total": IDL2.Nat,
     "items": IDL2.Vec(NFTMetadata2)
   });
   const CollectionPhase2 = IDL2.Variant({
-    "premium": IDL2.Null,
-    "free": IDL2.Null,
-    "bonus": IDL2.Null
+    "Premium": IDL2.Null,
+    "Free": IDL2.Null,
+    "Bonus": IDL2.Null
+  });
+  const CycleHealth2 = IDL2.Variant({
+    "red": IDL2.Null,
+    "green": IDL2.Null,
+    "yellow": IDL2.Null
+  });
+  const HealthStatus2 = IDL2.Record({
+    "status": IDL2.Text,
+    "imagesRemaining": IDL2.Nat,
+    "healthColor": CycleHealth2,
+    "daysRemaining": IDL2.Nat
   });
   const Standard2 = IDL2.Record({ "url": IDL2.Text, "name": IDL2.Text });
   const Account2 = IDL2.Record({
@@ -33560,26 +38860,41 @@ const idlFactory = ({ IDL: IDL2 }) => {
   const VisibilityResult2 = IDL2.Variant({ "ok": IDL2.Null, "err": IDL2.Text });
   const TransferResult2 = IDL2.Variant({ "ok": IDL2.Null, "err": IDL2.Text });
   return IDL2.Service({
-    "createMyCollection": IDL2.Func([], [IDL2.Text], []),
+    "createMyCollection": IDL2.Func([], [IDL2.Principal], []),
+    "estimateCycles": IDL2.Func([IDL2.Nat], [IDL2.Nat], ["query"]),
+    "estimateICPForImages": IDL2.Func(
+      [IDL2.Nat, IDL2.Float64],
+      [IDL2.Float64],
+      ["query"]
+    ),
+    "estimateImagesForICP": IDL2.Func(
+      [IDL2.Float64, IDL2.Float64],
+      [IDL2.Nat],
+      ["query"]
+    ),
     "getAllPublicNFTs": IDL2.Func([], [IDL2.Vec(NFTMetadata2)], ["query"]),
+    "getAllPublicNFTsByOwner": IDL2.Func(
+      [IDL2.Principal],
+      [IDL2.Vec(NFTMetadata2)],
+      ["query"]
+    ),
     "getAllPublicNFTsPaginated": IDL2.Func(
       [IDL2.Nat, IDL2.Nat],
       [NFTPage2],
       ["query"]
     ),
-    "getCollectionPhase": IDL2.Func(
-      [IDL2.Principal],
-      [CollectionPhase2],
-      ["query"]
-    ),
+    "getCollectionPhase": IDL2.Func([IDL2.Principal], [CollectionPhase2], []),
+    "getICPPrice": IDL2.Func([], [IDL2.Float64], []),
     "getMyCollection": IDL2.Func(
       [IDL2.Principal],
       [IDL2.Opt(IDL2.Principal)],
       ["query"]
     ),
-    "getMyMintCount": IDL2.Func([IDL2.Principal], [IDL2.Nat], ["query"]),
-    "getMyNFTs": IDL2.Func([], [IDL2.Vec(NFTMetadata2)], ["query"]),
-    "getMyNFTsPaginated": IDL2.Func([IDL2.Nat, IDL2.Nat], [NFTPage2], ["query"]),
+    "getMyCollectionCycles": IDL2.Func([], [IDL2.Nat], []),
+    "getMyHealthStatus": IDL2.Func([], [HealthStatus2], []),
+    "getMyMintCount": IDL2.Func([IDL2.Principal], [IDL2.Nat], []),
+    "getMyNFTs": IDL2.Func([], [IDL2.Vec(NFTMetadata2)], []),
+    "getMyNFTsPaginated": IDL2.Func([IDL2.Nat, IDL2.Nat], [NFTPage2], []),
     "getNFT": IDL2.Func([TokenId2], [IDL2.Opt(NFTMetadata2)], ["query"]),
     "getNFTHistory": IDL2.Func(
       [TokenId2],
@@ -33613,7 +38928,8 @@ const idlFactory = ({ IDL: IDL2 }) => {
         IDL2.Text,
         IDL2.Vec(IDL2.Nat8),
         IDL2.Opt(IDL2.Principal),
-        IDL2.Bool
+        IDL2.Bool,
+        IDL2.Opt(IDL2.Text)
       ],
       [MintResult2],
       []
@@ -33633,12 +38949,6 @@ function candid_none() {
 function record_opt_to_undefined(arg) {
   return arg == null ? void 0 : arg;
 }
-var CollectionPhase = /* @__PURE__ */ ((CollectionPhase2) => {
-  CollectionPhase2["premium"] = "premium";
-  CollectionPhase2["free"] = "free";
-  CollectionPhase2["bonus"] = "bonus";
-  return CollectionPhase2;
-})(CollectionPhase || {});
 var Variant_Mint_Transfer = /* @__PURE__ */ ((Variant_Mint_Transfer2) => {
   Variant_Mint_Transfer2["Mint"] = "Mint";
   Variant_Mint_Transfer2["Transfer"] = "Transfer";
@@ -33665,6 +38975,48 @@ class Backend {
       return result;
     }
   }
+  async estimateCycles(arg0) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.estimateCycles(arg0);
+        return result;
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.estimateCycles(arg0);
+      return result;
+    }
+  }
+  async estimateICPForImages(arg0, arg1) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.estimateICPForImages(arg0, arg1);
+        return result;
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.estimateICPForImages(arg0, arg1);
+      return result;
+    }
+  }
+  async estimateImagesForICP(arg0, arg1) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.estimateImagesForICP(arg0, arg1);
+        return result;
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.estimateImagesForICP(arg0, arg1);
+      return result;
+    }
+  }
   async getAllPublicNFTs() {
     if (this.processError) {
       try {
@@ -33679,32 +39031,60 @@ class Backend {
       return from_candid_vec_n1(this._uploadFile, this._downloadFile, result);
     }
   }
+  async getAllPublicNFTsByOwner(arg0) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getAllPublicNFTsByOwner(arg0);
+        return from_candid_vec_n1(this._uploadFile, this._downloadFile, result);
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getAllPublicNFTsByOwner(arg0);
+      return from_candid_vec_n1(this._uploadFile, this._downloadFile, result);
+    }
+  }
   async getAllPublicNFTsPaginated(arg0, arg1) {
     if (this.processError) {
       try {
         const result = await this.actor.getAllPublicNFTsPaginated(arg0, arg1);
-        return from_candid_NFTPage_n9(this._uploadFile, this._downloadFile, result);
+        return from_candid_NFTPage_n10(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getAllPublicNFTsPaginated(arg0, arg1);
-      return from_candid_NFTPage_n9(this._uploadFile, this._downloadFile, result);
+      return from_candid_NFTPage_n10(this._uploadFile, this._downloadFile, result);
     }
   }
   async getCollectionPhase(arg0) {
     if (this.processError) {
       try {
         const result = await this.actor.getCollectionPhase(arg0);
-        return from_candid_CollectionPhase_n11(this._uploadFile, this._downloadFile, result);
+        return from_candid_CollectionPhase_n12(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getCollectionPhase(arg0);
-      return from_candid_CollectionPhase_n11(this._uploadFile, this._downloadFile, result);
+      return from_candid_CollectionPhase_n12(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async getICPPrice() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getICPPrice();
+        return result;
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getICPPrice();
+      return result;
     }
   }
   async getMyCollection(arg0) {
@@ -33719,6 +39099,34 @@ class Backend {
     } else {
       const result = await this.actor.getMyCollection(arg0);
       return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async getMyCollectionCycles() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getMyCollectionCycles();
+        return result;
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getMyCollectionCycles();
+      return result;
+    }
+  }
+  async getMyHealthStatus() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getMyHealthStatus();
+        return from_candid_HealthStatus_n14(this._uploadFile, this._downloadFile, result);
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getMyHealthStatus();
+      return from_candid_HealthStatus_n14(this._uploadFile, this._downloadFile, result);
     }
   }
   async getMyMintCount(arg0) {
@@ -33753,42 +39161,42 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.getMyNFTsPaginated(arg0, arg1);
-        return from_candid_NFTPage_n9(this._uploadFile, this._downloadFile, result);
+        return from_candid_NFTPage_n10(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getMyNFTsPaginated(arg0, arg1);
-      return from_candid_NFTPage_n9(this._uploadFile, this._downloadFile, result);
+      return from_candid_NFTPage_n10(this._uploadFile, this._downloadFile, result);
     }
   }
   async getNFT(arg0) {
     if (this.processError) {
       try {
         const result = await this.actor.getNFT(arg0);
-        return from_candid_opt_n13(this._uploadFile, this._downloadFile, result);
+        return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getNFT(arg0);
-      return from_candid_opt_n13(this._uploadFile, this._downloadFile, result);
+      return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
     }
   }
   async getNFTHistory(arg0) {
     if (this.processError) {
       try {
         const result = await this.actor.getNFTHistory(arg0);
-        return from_candid_opt_n14(this._uploadFile, this._downloadFile, result);
+        return from_candid_opt_n19(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getNFTHistory(arg0);
-      return from_candid_opt_n14(this._uploadFile, this._downloadFile, result);
+      return from_candid_opt_n19(this._uploadFile, this._downloadFile, result);
     }
   }
   async icrc10_supported_standards() {
@@ -33809,14 +39217,14 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.icrc7_description();
-        return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+        return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.icrc7_description();
-      return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+      return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
     }
   }
   async icrc7_name() {
@@ -33837,14 +39245,14 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.icrc7_owner_of(arg0);
-        return from_candid_opt_n16(this._uploadFile, this._downloadFile, result);
+        return from_candid_opt_n20(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.icrc7_owner_of(arg0);
-      return from_candid_opt_n16(this._uploadFile, this._downloadFile, result);
+      return from_candid_opt_n20(this._uploadFile, this._downloadFile, result);
     }
   }
   async icrc7_symbol() {
@@ -33865,41 +39273,41 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.icrc7_token_metadata(arg0);
-        return from_candid_vec_n20(this._uploadFile, this._downloadFile, result);
+        return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.icrc7_token_metadata(arg0);
-      return from_candid_vec_n20(this._uploadFile, this._downloadFile, result);
+      return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
     }
   }
   async icrc7_tokens(arg0, arg1) {
     if (this.processError) {
       try {
-        const result = await this.actor.icrc7_tokens(to_candid_opt_n26(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n26(this._uploadFile, this._downloadFile, arg1));
+        const result = await this.actor.icrc7_tokens(to_candid_opt_n30(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n30(this._uploadFile, this._downloadFile, arg1));
         return result;
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
-      const result = await this.actor.icrc7_tokens(to_candid_opt_n26(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n26(this._uploadFile, this._downloadFile, arg1));
+      const result = await this.actor.icrc7_tokens(to_candid_opt_n30(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n30(this._uploadFile, this._downloadFile, arg1));
       return result;
     }
   }
   async icrc7_tokens_of(arg0, arg1, arg2) {
     if (this.processError) {
       try {
-        const result = await this.actor.icrc7_tokens_of(to_candid_Account_n27(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n26(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n26(this._uploadFile, this._downloadFile, arg2));
+        const result = await this.actor.icrc7_tokens_of(to_candid_Account_n31(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n30(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n30(this._uploadFile, this._downloadFile, arg2));
         return result;
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
-      const result = await this.actor.icrc7_tokens_of(to_candid_Account_n27(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n26(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n26(this._uploadFile, this._downloadFile, arg2));
+      const result = await this.actor.icrc7_tokens_of(to_candid_Account_n31(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n30(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n30(this._uploadFile, this._downloadFile, arg2));
       return result;
     }
   }
@@ -33917,107 +39325,121 @@ class Backend {
       return result;
     }
   }
-  async mintNFT(arg0, arg1, arg2, arg3, arg4) {
+  async mintNFT(arg0, arg1, arg2, arg3, arg4, arg5) {
     if (this.processError) {
       try {
-        const result = await this.actor.mintNFT(arg0, arg1, arg2, to_candid_opt_n29(this._uploadFile, this._downloadFile, arg3), arg4);
-        return from_candid_MintResult_n30(this._uploadFile, this._downloadFile, result);
+        const result = await this.actor.mintNFT(arg0, arg1, arg2, to_candid_opt_n33(this._uploadFile, this._downloadFile, arg3), arg4, to_candid_opt_n34(this._uploadFile, this._downloadFile, arg5));
+        return from_candid_MintResult_n35(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
-      const result = await this.actor.mintNFT(arg0, arg1, arg2, to_candid_opt_n29(this._uploadFile, this._downloadFile, arg3), arg4);
-      return from_candid_MintResult_n30(this._uploadFile, this._downloadFile, result);
+      const result = await this.actor.mintNFT(arg0, arg1, arg2, to_candid_opt_n33(this._uploadFile, this._downloadFile, arg3), arg4, to_candid_opt_n34(this._uploadFile, this._downloadFile, arg5));
+      return from_candid_MintResult_n35(this._uploadFile, this._downloadFile, result);
     }
   }
   async setNFTVisibility(arg0, arg1) {
     if (this.processError) {
       try {
         const result = await this.actor.setNFTVisibility(arg0, arg1);
-        return from_candid_VisibilityResult_n32(this._uploadFile, this._downloadFile, result);
+        return from_candid_VisibilityResult_n37(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.setNFTVisibility(arg0, arg1);
-      return from_candid_VisibilityResult_n32(this._uploadFile, this._downloadFile, result);
+      return from_candid_VisibilityResult_n37(this._uploadFile, this._downloadFile, result);
     }
   }
   async transferNFT(arg0, arg1) {
     if (this.processError) {
       try {
         const result = await this.actor.transferNFT(arg0, arg1);
-        return from_candid_TransferResult_n34(this._uploadFile, this._downloadFile, result);
+        return from_candid_TransferResult_n39(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.transferNFT(arg0, arg1);
-      return from_candid_TransferResult_n34(this._uploadFile, this._downloadFile, result);
+      return from_candid_TransferResult_n39(this._uploadFile, this._downloadFile, result);
     }
   }
 }
-function from_candid_Account_n17(_uploadFile, _downloadFile, value) {
-  return from_candid_record_n18(_uploadFile, _downloadFile, value);
+function from_candid_Account_n21(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n22(_uploadFile, _downloadFile, value);
 }
-function from_candid_CollectionPhase_n11(_uploadFile, _downloadFile, value) {
-  return from_candid_variant_n12(_uploadFile, _downloadFile, value);
+function from_candid_CollectionPhase_n12(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n13(_uploadFile, _downloadFile, value);
 }
-function from_candid_MintResult_n30(_uploadFile, _downloadFile, value) {
-  return from_candid_variant_n31(_uploadFile, _downloadFile, value);
+function from_candid_CycleHealth_n16(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n17(_uploadFile, _downloadFile, value);
+}
+function from_candid_HealthStatus_n14(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n15(_uploadFile, _downloadFile, value);
+}
+function from_candid_MintResult_n35(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n36(_uploadFile, _downloadFile, value);
 }
 function from_candid_NFTMetadata_n2(_uploadFile, _downloadFile, value) {
   return from_candid_record_n3(_uploadFile, _downloadFile, value);
 }
-function from_candid_NFTPage_n9(_uploadFile, _downloadFile, value) {
-  return from_candid_record_n10(_uploadFile, _downloadFile, value);
+function from_candid_NFTPage_n10(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n11(_uploadFile, _downloadFile, value);
 }
 function from_candid_TransactionEvent_n5(_uploadFile, _downloadFile, value) {
   return from_candid_record_n6(_uploadFile, _downloadFile, value);
 }
-function from_candid_TransferResult_n34(_uploadFile, _downloadFile, value) {
-  return from_candid_variant_n33(_uploadFile, _downloadFile, value);
+function from_candid_TransferResult_n39(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n38(_uploadFile, _downloadFile, value);
 }
-function from_candid_Value_n24(_uploadFile, _downloadFile, value) {
-  return from_candid_variant_n25(_uploadFile, _downloadFile, value);
+function from_candid_Value_n28(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n29(_uploadFile, _downloadFile, value);
 }
-function from_candid_VisibilityResult_n32(_uploadFile, _downloadFile, value) {
-  return from_candid_variant_n33(_uploadFile, _downloadFile, value);
+function from_candid_VisibilityResult_n37(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n38(_uploadFile, _downloadFile, value);
 }
-function from_candid_opt_n13(_uploadFile, _downloadFile, value) {
+function from_candid_opt_n18(_uploadFile, _downloadFile, value) {
   return value.length === 0 ? null : from_candid_NFTMetadata_n2(_uploadFile, _downloadFile, value[0]);
 }
-function from_candid_opt_n14(_uploadFile, _downloadFile, value) {
+function from_candid_opt_n19(_uploadFile, _downloadFile, value) {
   return value.length === 0 ? null : from_candid_vec_n4(_uploadFile, _downloadFile, value[0]);
 }
-function from_candid_opt_n15(_uploadFile, _downloadFile, value) {
+function from_candid_opt_n20(_uploadFile, _downloadFile, value) {
+  return value.length === 0 ? null : from_candid_Account_n21(_uploadFile, _downloadFile, value[0]);
+}
+function from_candid_opt_n23(_uploadFile, _downloadFile, value) {
   return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n16(_uploadFile, _downloadFile, value) {
-  return value.length === 0 ? null : from_candid_Account_n17(_uploadFile, _downloadFile, value[0]);
-}
-function from_candid_opt_n19(_uploadFile, _downloadFile, value) {
-  return value.length === 0 ? null : value[0];
-}
-function from_candid_opt_n21(_uploadFile, _downloadFile, value) {
-  return value.length === 0 ? null : from_candid_vec_n22(_uploadFile, _downloadFile, value[0]);
+function from_candid_opt_n25(_uploadFile, _downloadFile, value) {
+  return value.length === 0 ? null : from_candid_vec_n26(_uploadFile, _downloadFile, value[0]);
 }
 function from_candid_opt_n7(_uploadFile, _downloadFile, value) {
   return value.length === 0 ? null : value[0];
 }
-function from_candid_record_n10(_uploadFile, _downloadFile, value) {
+function from_candid_opt_n9(_uploadFile, _downloadFile, value) {
+  return value.length === 0 ? null : value[0];
+}
+function from_candid_record_n11(_uploadFile, _downloadFile, value) {
   return {
     total: value.total,
     items: from_candid_vec_n1(_uploadFile, _downloadFile, value.items)
   };
 }
-function from_candid_record_n18(_uploadFile, _downloadFile, value) {
+function from_candid_record_n15(_uploadFile, _downloadFile, value) {
+  return {
+    status: value.status,
+    imagesRemaining: value.imagesRemaining,
+    healthColor: from_candid_CycleHealth_n16(_uploadFile, _downloadFile, value.healthColor),
+    daysRemaining: value.daysRemaining
+  };
+}
+function from_candid_record_n22(_uploadFile, _downloadFile, value) {
   return {
     owner: value.owner,
-    subaccount: record_opt_to_undefined(from_candid_opt_n19(_uploadFile, _downloadFile, value.subaccount))
+    subaccount: record_opt_to_undefined(from_candid_opt_n23(_uploadFile, _downloadFile, value.subaccount))
   };
 }
 function from_candid_record_n3(_uploadFile, _downloadFile, value) {
@@ -34029,7 +39451,8 @@ function from_candid_record_n3(_uploadFile, _downloadFile, value) {
     description: value.description,
     history: from_candid_vec_n4(_uploadFile, _downloadFile, value.history),
     image: value.image,
-    isPublic: value.isPublic
+    isPublic: value.isPublic,
+    collectionName: record_opt_to_undefined(from_candid_opt_n9(_uploadFile, _downloadFile, value.collectionName))
   };
 }
 function from_candid_record_n6(_uploadFile, _downloadFile, value) {
@@ -34040,22 +39463,25 @@ function from_candid_record_n6(_uploadFile, _downloadFile, value) {
     eventType: from_candid_variant_n8(_uploadFile, _downloadFile, value.eventType)
   };
 }
-function from_candid_tuple_n23(_uploadFile, _downloadFile, value) {
+function from_candid_tuple_n27(_uploadFile, _downloadFile, value) {
   return [
     value[0],
-    from_candid_Value_n24(_uploadFile, _downloadFile, value[1])
+    from_candid_Value_n28(_uploadFile, _downloadFile, value[1])
   ];
 }
-function from_candid_variant_n12(_uploadFile, _downloadFile, value) {
-  return "premium" in value ? "premium" : "free" in value ? "free" : "bonus" in value ? "bonus" : value;
+function from_candid_variant_n13(_uploadFile, _downloadFile, value) {
+  return "Premium" in value ? "Premium" : "Free" in value ? "Free" : "Bonus" in value ? "Bonus" : value;
 }
-function from_candid_variant_n25(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n17(_uploadFile, _downloadFile, value) {
+  return "red" in value ? "red" : "green" in value ? "green" : "yellow" in value ? "yellow" : value;
+}
+function from_candid_variant_n29(_uploadFile, _downloadFile, value) {
   return "Int" in value ? {
     __kind__: "Int",
     Int: value.Int
   } : "Map" in value ? {
     __kind__: "Map",
-    Map: from_candid_vec_n22(_uploadFile, _downloadFile, value.Map)
+    Map: from_candid_vec_n26(_uploadFile, _downloadFile, value.Map)
   } : "Nat" in value ? {
     __kind__: "Nat",
     Nat: value.Nat
@@ -34070,10 +39496,10 @@ function from_candid_variant_n25(_uploadFile, _downloadFile, value) {
     Text: value.Text
   } : "Array" in value ? {
     __kind__: "Array",
-    Array: from_candid_vec_n22(_uploadFile, _downloadFile, value.Array)
+    Array: from_candid_vec_n26(_uploadFile, _downloadFile, value.Array)
   } : value;
 }
-function from_candid_variant_n31(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n36(_uploadFile, _downloadFile, value) {
   return "ok" in value ? {
     __kind__: "ok",
     ok: value.ok
@@ -34085,7 +39511,7 @@ function from_candid_variant_n31(_uploadFile, _downloadFile, value) {
     paymentRequired: value.paymentRequired
   } : value;
 }
-function from_candid_variant_n33(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n38(_uploadFile, _downloadFile, value) {
   return "ok" in value ? {
     __kind__: "ok",
     ok: value.ok
@@ -34100,25 +39526,28 @@ function from_candid_variant_n8(_uploadFile, _downloadFile, value) {
 function from_candid_vec_n1(_uploadFile, _downloadFile, value) {
   return value.map((x2) => from_candid_NFTMetadata_n2(_uploadFile, _downloadFile, x2));
 }
-function from_candid_vec_n20(_uploadFile, _downloadFile, value) {
-  return value.map((x2) => from_candid_opt_n21(_uploadFile, _downloadFile, x2));
+function from_candid_vec_n24(_uploadFile, _downloadFile, value) {
+  return value.map((x2) => from_candid_opt_n25(_uploadFile, _downloadFile, x2));
 }
-function from_candid_vec_n22(_uploadFile, _downloadFile, value) {
-  return value.map((x2) => from_candid_tuple_n23(_uploadFile, _downloadFile, x2));
+function from_candid_vec_n26(_uploadFile, _downloadFile, value) {
+  return value.map((x2) => from_candid_tuple_n27(_uploadFile, _downloadFile, x2));
 }
 function from_candid_vec_n4(_uploadFile, _downloadFile, value) {
   return value.map((x2) => from_candid_TransactionEvent_n5(_uploadFile, _downloadFile, x2));
 }
-function to_candid_Account_n27(_uploadFile, _downloadFile, value) {
-  return to_candid_record_n28(_uploadFile, _downloadFile, value);
+function to_candid_Account_n31(_uploadFile, _downloadFile, value) {
+  return to_candid_record_n32(_uploadFile, _downloadFile, value);
 }
-function to_candid_opt_n26(_uploadFile, _downloadFile, value) {
+function to_candid_opt_n30(_uploadFile, _downloadFile, value) {
   return value === null ? candid_none() : candid_some(value);
 }
-function to_candid_opt_n29(_uploadFile, _downloadFile, value) {
+function to_candid_opt_n33(_uploadFile, _downloadFile, value) {
   return value === null ? candid_none() : candid_some(value);
 }
-function to_candid_record_n28(_uploadFile, _downloadFile, value) {
+function to_candid_opt_n34(_uploadFile, _downloadFile, value) {
+  return value === null ? candid_none() : candid_some(value);
+}
+function to_candid_record_n32(_uploadFile, _downloadFile, value) {
   return {
     owner: value.owner,
     subaccount: value.subaccount ? candid_some(value.subaccount) : candid_none()
@@ -34233,6 +39662,7 @@ function useBackend() {
 }
 function LoginPage() {
   const { isAuthenticated, isInitializing, isLoggingIn, handleLogin } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   reactExports.useEffect(() => {
     if (isAuthenticated) {
@@ -34263,7 +39693,7 @@ function LoginPage() {
             },
             children: [
               /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "gradient-btn-inner", "aria-hidden": "true" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "relative z-[1]", children: isInitializing ? "Načítávam..." : isLoggingIn ? "Prihlasovanie..." : "Prihlásiť sa" })
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "relative z-[1]", children: isInitializing ? t("messages.loading") : isLoggingIn ? t("messages.signingIn") : t("buttons.login") })
             ]
           }
         ),
@@ -34272,12 +39702,12 @@ function LoginPage() {
     ] })
   ] });
 }
-const HomePage = reactExports.lazy(() => __vitePreload(() => import("./HomePage-BtvzjrPX.js"), true ? [] : void 0));
-const GalleryPage = reactExports.lazy(() => __vitePreload(() => import("./GalleryPage-C2T9pJIs.js"), true ? __vite__mapDeps([0,1,2,3,4]) : void 0));
-const MintPage = reactExports.lazy(() => __vitePreload(() => import("./MintPage-DIJSX60g.js"), true ? __vite__mapDeps([5,1,2,6,4]) : void 0));
-const MarketplacePage = reactExports.lazy(() => __vitePreload(() => import("./MarketplacePage-Sxa585mw.js"), true ? [] : void 0));
-const RatingPage = reactExports.lazy(() => __vitePreload(() => import("./RatingPage-C-6wI_Rq.js"), true ? __vite__mapDeps([7,3,4,2]) : void 0));
-const MyCollectionPage = reactExports.lazy(() => __vitePreload(() => import("./MyCollectionPage-DRBejF0n.js"), true ? __vite__mapDeps([8,6,4]) : void 0));
+const HomePage = reactExports.lazy(() => __vitePreload(() => import("./HomePage-9J_rjT24.js"), true ? [] : void 0));
+const GalleryPage = reactExports.lazy(() => __vitePreload(() => import("./GalleryPage-DwfCpnUk.js"), true ? __vite__mapDeps([0,1,2,3,4,5]) : void 0));
+const MintPage = reactExports.lazy(() => __vitePreload(() => import("./MintPage-CgHOWD_k.js"), true ? __vite__mapDeps([6,1,2,3]) : void 0));
+const MarketplacePage = reactExports.lazy(() => __vitePreload(() => import("./MarketplacePage-89Ykx93_.js"), true ? [] : void 0));
+const RatingPage = reactExports.lazy(() => __vitePreload(() => import("./RatingPage-BvTCiGI8.js"), true ? __vite__mapDeps([7,5,3,2]) : void 0));
+const SettingsPage = reactExports.lazy(() => __vitePreload(() => import("./SettingsPage-9Q1saK-u.js"), true ? __vite__mapDeps([8,2,4]) : void 0));
 const LoadingScreen = () => /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "min-h-screen bg-background flex items-center justify-center", children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-semibold uppercase tracking-widest text-muted-foreground animate-pulse", children: "Načítavam..." }) });
 function ProtectedLayout() {
   const { isAuthenticated, isInitializing } = useInternetIdentity();
@@ -34324,10 +39754,10 @@ const ratingRoute = createRoute({
   path: "/rating",
   component: () => /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.Suspense, { fallback: /* @__PURE__ */ jsxRuntimeExports.jsx(LoadingScreen, {}), children: /* @__PURE__ */ jsxRuntimeExports.jsx(RatingPage, {}) })
 });
-const myCollectionRoute = createRoute({
+const settingsRoute = createRoute({
   getParentRoute: () => protectedRoute,
-  path: "/my-collection",
-  component: () => /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.Suspense, { fallback: /* @__PURE__ */ jsxRuntimeExports.jsx(LoadingScreen, {}), children: /* @__PURE__ */ jsxRuntimeExports.jsx(MyCollectionPage, {}) })
+  path: "/settings",
+  component: () => /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.Suspense, { fallback: /* @__PURE__ */ jsxRuntimeExports.jsx(LoadingScreen, {}), children: /* @__PURE__ */ jsxRuntimeExports.jsx(SettingsPage, {}) })
 });
 const routeTree = rootRoute.addChildren([
   loginRoute,
@@ -34337,7 +39767,7 @@ const routeTree = rootRoute.addChildren([
     galleryRoute,
     marketplaceRoute,
     ratingRoute,
-    myCollectionRoute
+    settingsRoute
   ])
 ]);
 const router = createRouter({
@@ -34359,22 +39789,21 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ jsxRuntimeExports.jsx(InternetIdentityProvider, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) }) })
 );
 export {
-  replaceData as A,
-  notifyManager as B,
+  focusManager as A,
+  fetchState as B,
   Check as C,
-  hashKey as D,
-  getDefaultState as E,
-  shouldThrowError as F,
-  useQueryClient as G,
-  useBackend as H,
+  replaceData as D,
+  notifyManager as E,
+  hashKey as F,
+  getDefaultState as G,
+  shouldThrowError as H,
   Images as I,
-  CollectionPhase as J,
-  Layers as K,
+  useQueryClient as J,
   Link as L,
-  React$4 as M,
   Principal$1 as P,
-  RATING_DISPLAY_PRESETS as R,
+  React$4 as R,
   Sparkles as S,
+  ThemeSettingsPanel as T,
   Variant_Mint_Transfer as V,
   X,
   Store$1 as a,
@@ -34382,25 +39811,25 @@ export {
   createLucideIcon as c,
   Copy as d,
   copyToClipboard as e,
-  useInternetIdentity as f,
-  useNavigate as g,
+  useAuth as f,
+  useInternetIdentity as g,
   reactDomExports as h,
   useRatingDisplay as i,
   jsxRuntimeExports as j,
-  Subscribable as k,
-  resolveEnabled as l,
-  resolveStaleTime as m,
-  noop$6 as n,
-  o,
+  RATING_DISPLAY_PRESETS as k,
+  useBackend as l,
+  Subscribable as m,
+  resolveEnabled as n,
+  o$1 as o,
   pendingThenable as p,
-  environmentManager as q,
+  resolveStaleTime as q,
   reactExports as r,
   shallowEqualObjects as s,
-  isValidTimeout as t,
-  useAuth as u,
+  noop$5 as t,
+  useTranslation as u,
   vt as v,
-  timeUntilStale as w,
-  timeoutManager as x,
-  focusManager as y,
-  fetchState as z
+  environmentManager as w,
+  isValidTimeout as x,
+  timeUntilStale as y,
+  timeoutManager as z
 };

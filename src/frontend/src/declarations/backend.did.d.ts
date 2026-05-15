@@ -14,9 +14,18 @@ export interface Account {
   'owner' : Principal,
   'subaccount' : [] | [Uint8Array],
 }
-export type CollectionPhase = { 'premium' : null } |
-  { 'free' : null } |
-  { 'bonus' : null };
+export type CollectionPhase = { 'Premium' : null } |
+  { 'Free' : null } |
+  { 'Bonus' : null };
+export type CycleHealth = { 'red' : null } |
+  { 'green' : null } |
+  { 'yellow' : null };
+export interface HealthStatus {
+  'status' : string,
+  'imagesRemaining' : bigint,
+  'healthColor' : CycleHealth,
+  'daysRemaining' : bigint,
+}
 export type MintResult = { 'ok' : TokenId } |
   { 'err' : string } |
   { 'paymentRequired' : null };
@@ -29,6 +38,7 @@ export interface NFTMetadata {
   'history' : Array<TransactionEvent>,
   'image' : Uint8Array,
   'isPublic' : boolean,
+  'collectionName' : [] | [string],
 }
 export interface NFTPage { 'total' : bigint, 'items' : Array<NFTMetadata> }
 export interface Standard { 'url' : string, 'name' : string }
@@ -53,11 +63,18 @@ export type Value = { 'Int' : bigint } |
 export type VisibilityResult = { 'ok' : null } |
   { 'err' : string };
 export interface _SERVICE {
-  'createMyCollection' : ActorMethod<[], string>,
+  'createMyCollection' : ActorMethod<[], Principal>,
+  'estimateCycles' : ActorMethod<[bigint], bigint>,
+  'estimateICPForImages' : ActorMethod<[bigint, number], number>,
+  'estimateImagesForICP' : ActorMethod<[number, number], bigint>,
   'getAllPublicNFTs' : ActorMethod<[], Array<NFTMetadata>>,
+  'getAllPublicNFTsByOwner' : ActorMethod<[Principal], Array<NFTMetadata>>,
   'getAllPublicNFTsPaginated' : ActorMethod<[bigint, bigint], NFTPage>,
   'getCollectionPhase' : ActorMethod<[Principal], CollectionPhase>,
+  'getICPPrice' : ActorMethod<[], number>,
   'getMyCollection' : ActorMethod<[Principal], [] | [Principal]>,
+  'getMyCollectionCycles' : ActorMethod<[], bigint>,
+  'getMyHealthStatus' : ActorMethod<[], HealthStatus>,
   'getMyMintCount' : ActorMethod<[Principal], bigint>,
   'getMyNFTs' : ActorMethod<[], Array<NFTMetadata>>,
   'getMyNFTsPaginated' : ActorMethod<[bigint, bigint], NFTPage>,
@@ -79,7 +96,7 @@ export interface _SERVICE {
   >,
   'icrc7_total_supply' : ActorMethod<[], bigint>,
   'mintNFT' : ActorMethod<
-    [string, string, Uint8Array, [] | [Principal], boolean],
+    [string, string, Uint8Array, [] | [Principal], boolean, [] | [string]],
     MintResult
   >,
   'setNFTVisibility' : ActorMethod<[TokenId, boolean], VisibilityResult>,

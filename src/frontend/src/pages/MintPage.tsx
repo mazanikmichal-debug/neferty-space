@@ -5,24 +5,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAddressHistory } from "@/hooks/useAddressHistory";
 import { useMintNFT } from "@/hooks/useQueries";
 import { Principal } from "@dfinity/principal";
-import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+
+type MintMode = "collection" | "standalone" | null;
 
 export default function MintPage() {
-  const navigate = useNavigate();
   const mintMutation = useMintNFT();
   const fileRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
 
+  const [mintMode, setMintMode] = useState<MintMode>(null);
+  const [blinkMode, setBlinkMode] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [collectionName, setCollectionName] = useState("");
   const [recipientId, setRecipientId] = useState("");
   const [phase, setPhase] = useState<"idle" | "minting" | "error">("idle");
   const [errors, setErrors] = useState<{
     name?: string;
     image?: string;
     recipient?: string;
+    collectionName?: string;
     submit?: string;
   }>({});
   const [dragOver, setDragOver] = useState(false);
@@ -41,7 +47,7 @@ export default function MintPage() {
 
   function truncateMid(addr: string, keep = 10) {
     if (addr.length <= keep * 2 + 3) return addr;
-    return `${addr.slice(0, keep)}…${addr.slice(-6)}`;
+    return `${addr.slice(0, keep)}\u2026${addr.slice(-6)}`;
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,6 +56,8 @@ export default function MintPage() {
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
     setErrors((prev) => ({ ...prev, image: undefined }));
+    const autoName = file.name.replace(/\.[^.]*$/, "");
+    if (!name) setName(autoName);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLElement>) => {
@@ -60,6 +68,8 @@ export default function MintPage() {
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
     setErrors((prev) => ({ ...prev, image: undefined }));
+    const autoName = file.name.replace(/\.[^.]*$/, "");
+    if (!name) setName(autoName);
   };
 
   const validateRecipient = (val: string): string | undefined => {
@@ -68,41 +78,65 @@ export default function MintPage() {
       Principal.fromText(val.trim());
       return undefined;
     } catch {
-      return "Neplatné Principal ID.";
+      return t("errors.invalidPrincipal");
     }
   };
 
   const validate = () => {
-    const errs: { name?: string; image?: string; recipient?: string } = {};
-    if (!name.trim()) errs.name = "Zadajte názov NFT.";
-    if (!imageFile) errs.image = "Vyberte obrázok.";
+    const errs: typeof errors = {};
+    if (!mintMode) errs.submit = t("errors.selectMode");
+    if (!name.trim()) errs.name = t("errors.enterNftName");
+    if (!imageFile) errs.image = t("errors.selectImage");
+    if (mintMode === "collection" && !collectionName.trim())
+      errs.collectionName = t("errors.enterCollectionName");
     const recipientErr = validateRecipient(recipientId);
     if (recipientErr) errs.recipient = recipientErr;
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
+  const isSubmitDisabled =
+    mintMutation.isPending ||
+    !name.trim() ||
+    !imageFile ||
+    (mintMode === "collection" && !collectionName.trim());
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!mintMode) {
+      setBlinkMode(true);
+      setTimeout(() => setBlinkMode(false), 1200);
+      return;
+    }
     if (!validate() || !imageFile) return;
     setErrors((prev) => ({ ...prev, submit: undefined }));
     setPhase("minting");
     try {
-      const _tokenId = await mintMutation.mutateAsync({
+      await mintMutation.mutateAsync({
         name: name.trim(),
         description: description.trim(),
         imageFile,
         recipientId: recipientId.trim() || undefined,
         isPublic,
+        collectionName:
+          mintMode === "collection" ? collectionName.trim() : undefined,
       });
       if (recipientId.trim()) saveAddress(recipientId.trim());
       setShowSuccess(true);
+      // Reset form after successful mint — stay on page
+      setName("");
+      setDescription("");
+      setCollectionName("");
+      setRecipientId("");
+      setImageFile(null);
+      setImagePreview(null);
+      setMintMode(null);
+      setPhase("idle");
+      if (fileRef.current) fileRef.current.value = "";
+      setTimeout(() => setShowSuccess(false), 2500);
     } catch (err) {
       console.error("[MintPage] mintNFT failed:", err);
-      const msg =
-        err instanceof Error
-          ? err.message
-          : "Razenie sa nepodarilo. Skúste znova.";
+      const msg = err instanceof Error ? err.message : t("errors.mintFailed");
       setErrors((prev) => ({ ...prev, submit: msg }));
       setPhase("error");
       setTimeout(() => {
@@ -111,20 +145,14 @@ export default function MintPage() {
     }
   };
 
-  useEffect(() => {
-    if (!showSuccess) return;
-    const t = setTimeout(() => navigate({ to: "/" }), 2500);
-    return () => clearTimeout(t);
-  }, [showSuccess, navigate]);
-
   const isBusy = mintMutation.isPending;
   const showProgress = phase === "minting" || phase === "error";
   const phaseLabel =
     phase === "minting"
-      ? "Razenie..."
+      ? t("messages.minting")
       : phase === "error"
         ? "Chyba"
-        : "Vyraziť NFT";
+        : t("buttons.mintNFT");
 
   return (
     <>
@@ -138,7 +166,7 @@ export default function MintPage() {
             background: "rgba(8,5,24,0.72)",
           }}
           aria-live="assertive"
-          aria-label="NFT vyrazené"
+          aria-label={t("messages.minted")}
         >
           <div
             className="flex flex-col items-center gap-6 rounded-3xl px-14 py-12"
@@ -214,7 +242,7 @@ export default function MintPage() {
               className="font-display font-bold text-2xl tracking-widest uppercase gradient-text"
               style={{ animation: "mint-fade 0.4s 0.85s both" }}
             >
-              Vyrazené!
+              {t("messages.minted")}
             </span>
           </div>
         </div>
@@ -225,7 +253,7 @@ export default function MintPage() {
             ⧁
           </span>
           <h1 className="font-display text-3xl font-bold tracking-tight gradient-text">
-            Raziť NFT
+            {t("messages.mintTitle")}
           </h1>
         </div>
 
@@ -234,19 +262,242 @@ export default function MintPage() {
           <div className="w-full lg:max-w-[448px] shrink-0">
             <div className="glass-card rounded-3xl p-8">
               <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+                {/* ── Minting mode selector ── */}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/50 mb-3">
+                    {t("labels.mintMode")}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Raziť do zbierky */}
+                    <button
+                      type="button"
+                      data-ocid="mint.mode_collection_button"
+                      onClick={() => {
+                        setMintMode("collection");
+                        setBlinkMode(false);
+                      }}
+                      className={`relative flex flex-col items-center gap-2 rounded-2xl py-5 px-3 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring${blinkMode ? " blink-highlight" : ""}`}
+                      style={{
+                        background:
+                          mintMode === "collection"
+                            ? "linear-gradient(135deg, rgba(var(--theme-color-1-rgb,180,80,220),0.22), rgba(var(--theme-color-2-rgb,230,100,180),0.12))"
+                            : "rgba(255,255,255,0.06)",
+                        border:
+                          mintMode === "collection"
+                            ? "1.5px solid rgba(var(--theme-color-1-rgb,180,80,220),0.55)"
+                            : "1.5px solid rgba(255,255,255,0.13)",
+                        boxShadow:
+                          mintMode === "collection"
+                            ? "0 0 18px 2px rgba(var(--theme-color-1-rgb,180,80,220),0.18)"
+                            : "none",
+                      }}
+                      aria-pressed={mintMode === "collection"}
+                    >
+                      {mintMode === "collection" && (
+                        <span
+                          className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center"
+                          style={{
+                            background:
+                              "linear-gradient(135deg, rgb(var(--theme-color-1-rgb,180,80,220)), rgb(var(--theme-color-2-rgb,230,100,180)))",
+                          }}
+                          aria-hidden="true"
+                        >
+                          <svg
+                            viewBox="0 0 10 10"
+                            className="w-2.5 h-2.5"
+                            fill="none"
+                            role="presentation"
+                          >
+                            <polyline
+                              points="1.5,5.5 4,8 8.5,2"
+                              stroke="white"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </span>
+                      )}
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="w-8 h-8"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                        aria-hidden="true"
+                        style={{
+                          color:
+                            mintMode === "collection"
+                              ? "rgb(var(--theme-color-1-rgb,180,80,220))"
+                              : "rgba(255,255,255,0.45)",
+                        }}
+                      >
+                        <rect x="2" y="7" width="20" height="14" rx="3" />
+                        <path d="M7 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2" />
+                        <line x1="12" y1="12" x2="12" y2="16" />
+                        <line x1="10" y1="14" x2="14" y2="14" />
+                      </svg>
+                      <span
+                        className="text-[11px] font-bold uppercase tracking-wider text-center leading-tight"
+                        style={{
+                          color:
+                            mintMode === "collection"
+                              ? "rgba(255,255,255,0.92)"
+                              : "rgba(255,255,255,0.5)",
+                        }}
+                      >
+                        {t("labels.toCollection")}
+                      </span>
+                    </button>
+
+                    {/* Raziť samostatne */}
+                    <button
+                      type="button"
+                      data-ocid="mint.mode_standalone_button"
+                      onClick={() => {
+                        setMintMode("standalone");
+                        setBlinkMode(false);
+                      }}
+                      className={`relative flex flex-col items-center gap-2 rounded-2xl py-5 px-3 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring${blinkMode ? " blink-highlight" : ""}`}
+                      style={{
+                        background:
+                          mintMode === "standalone"
+                            ? "linear-gradient(135deg, rgba(var(--theme-color-2-rgb,230,100,180),0.22), rgba(var(--theme-color-3-rgb,255,180,60),0.12))"
+                            : "rgba(255,255,255,0.06)",
+                        border:
+                          mintMode === "standalone"
+                            ? "1.5px solid rgba(var(--theme-color-2-rgb,230,100,180),0.55)"
+                            : "1.5px solid rgba(255,255,255,0.13)",
+                        boxShadow:
+                          mintMode === "standalone"
+                            ? "0 0 18px 2px rgba(var(--theme-color-2-rgb,230,100,180),0.18)"
+                            : "none",
+                      }}
+                      aria-pressed={mintMode === "standalone"}
+                    >
+                      {mintMode === "standalone" && (
+                        <span
+                          className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center"
+                          style={{
+                            background:
+                              "linear-gradient(135deg, rgb(var(--theme-color-2-rgb,230,100,180)), rgb(var(--theme-color-3-rgb,255,180,60)))",
+                          }}
+                          aria-hidden="true"
+                        >
+                          <svg
+                            viewBox="0 0 10 10"
+                            className="w-2.5 h-2.5"
+                            fill="none"
+                            role="presentation"
+                          >
+                            <polyline
+                              points="1.5,5.5 4,8 8.5,2"
+                              stroke="white"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </span>
+                      )}
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="w-8 h-8"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.4"
+                        aria-hidden="true"
+                        style={{
+                          color:
+                            mintMode === "standalone"
+                              ? "rgb(var(--theme-color-2-rgb,230,100,180))"
+                              : "rgba(255,255,255,0.45)",
+                        }}
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                      </svg>
+                      <span
+                        className="text-[11px] font-bold uppercase tracking-wider text-center leading-tight"
+                        style={{
+                          color:
+                            mintMode === "standalone"
+                              ? "rgba(255,255,255,0.92)"
+                              : "rgba(255,255,255,0.5)",
+                        }}
+                      >
+                        {t("labels.standalone")}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Collection name input */}
+                  {mintMode === "collection" && (
+                    <div className="mt-3">
+                      <Label
+                        htmlFor="nft-collection"
+                        className="text-xs font-semibold uppercase tracking-[0.12em] text-white/50"
+                      >
+                        {t("labels.collectionName")}
+                      </Label>
+                      <Input
+                        id="nft-collection"
+                        data-ocid="mint.collection_name_input"
+                        value={collectionName}
+                        onChange={(e) => {
+                          setCollectionName(e.target.value);
+                          if (e.target.value.trim())
+                            setErrors((p) => ({
+                              ...p,
+                              collectionName: undefined,
+                            }));
+                        }}
+                        onBlur={() => {
+                          if (!collectionName.trim())
+                            setErrors((p) => ({
+                              ...p,
+                              collectionName: t("errors.enterCollectionName"),
+                            }));
+                        }}
+                        placeholder="napr. Moja prvá zbierka"
+                        className={`mt-1.5 rounded-2xl text-sm text-white/90 placeholder:text-white/30 border-0 outline-none focus-visible:ring-1 ${
+                          errors.collectionName
+                            ? "ring-1 ring-destructive"
+                            : "focus-visible:ring-white/30"
+                        }`}
+                        style={{
+                          background: "rgba(255,255,255,0.08)",
+                          border: errors.collectionName
+                            ? "1px solid rgba(239,68,68,0.6)"
+                            : "1px solid rgba(255,255,255,0.14)",
+                          backdropFilter: "blur(8px)",
+                          WebkitBackdropFilter: "blur(8px)",
+                        }}
+                      />
+                      {errors.collectionName && (
+                        <p
+                          data-ocid="mint.collection_name.field_error"
+                          className="text-xs text-destructive mt-1"
+                        >
+                          {errors.collectionName}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* Image upload */}
                 <div>
                   <Label className="text-xs font-semibold uppercase tracking-[0.12em] text-white/50">
-                    Vyberte obrázok
+                    {t("labels.image")}
                   </Label>
                   <button
                     type="button"
                     data-ocid="mint.dropzone"
                     tabIndex={0}
-                    aria-label="Vyberte obrázok"
-                    className={`mt-1.5 w-full rounded-2xl transition-smooth cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring text-left ${
-                      dragOver ? "bg-white/[0.08]" : errors.image ? "" : ""
-                    }`}
+                    aria-label={t("labels.image")}
+                    className="mt-1.5 w-full rounded-2xl transition-smooth cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring text-left"
                     style={{
                       background: dragOver
                         ? "rgba(255,255,255,0.08)"
@@ -274,12 +525,12 @@ export default function MintPage() {
                       <div className="relative aspect-video overflow-hidden">
                         <img
                           src={imagePreview}
-                          alt="Náhľad obrázka"
+                          alt={t("messages.imagePreviewAlt")}
                           className="w-full h-full object-contain bg-muted"
                         />
                         <button
                           type="button"
-                          aria-label="Odstrániť obrázok"
+                          aria-label={t("messages.imageRemove")}
                           onClick={(e) => {
                             e.stopPropagation();
                             setImageFile(null);
@@ -288,7 +539,7 @@ export default function MintPage() {
                           }}
                           className="absolute top-2 right-2 glass-card rounded-xl text-xs px-3 py-1.5 font-semibold uppercase hover:bg-white/10 transition-smooth text-foreground"
                         >
-                          Odstrániť
+                          {t("messages.imageRemove")}
                         </button>
                       </div>
                     ) : (
@@ -312,15 +563,15 @@ export default function MintPage() {
                         </div>
                         <p className="text-sm text-muted-foreground">
                           <span className="text-foreground font-semibold">
-                            Nahrať obrázok
+                            {t("messages.uploadImage")}
                           </span>
                           <br />
                           <span className="text-xs">
-                            alebo pretáhnite súbor sem
+                            {t("messages.uploadImageDrop")}
                           </span>
                         </p>
                         <span className="text-xs text-muted-foreground/60">
-                          PNG, JPG, GIF, WEBP
+                          {t("messages.uploadImageFormats")}
                         </span>
                       </div>
                     )}
@@ -349,7 +600,7 @@ export default function MintPage() {
                     htmlFor="nft-name"
                     className="text-xs font-semibold uppercase tracking-[0.12em] text-white/50"
                   >
-                    Názov NFT
+                    {t("labels.nftName")}
                   </Label>
                   <Input
                     id="nft-name"
@@ -364,7 +615,7 @@ export default function MintPage() {
                       if (!name.trim())
                         setErrors((p) => ({
                           ...p,
-                          name: "Zadajte názov NFT.",
+                          name: t("errors.enterNftName"),
                         }));
                     }}
                     placeholder="napr. Môj prvý NFT"
@@ -398,9 +649,9 @@ export default function MintPage() {
                     htmlFor="nft-recipient"
                     className="text-xs font-semibold uppercase tracking-[0.12em] text-white/50"
                   >
-                    Príjemca{" "}
+                    {t("labels.recipient")}{" "}
                     <span className="font-normal normal-case tracking-normal text-white/30">
-                      (voliteľné)
+                      {t("labels.recipientOptional")}
                     </span>
                   </Label>
                   <div className="relative mt-1.5">
@@ -415,7 +666,10 @@ export default function MintPage() {
                         else {
                           const err = validateRecipient(e.target.value);
                           if (!err)
-                            setErrors((p) => ({ ...p, recipient: undefined }));
+                            setErrors((p) => ({
+                              ...p,
+                              recipient: undefined,
+                            }));
                         }
                       }}
                       onFocus={() => setRecipientFocused(true)}
@@ -443,7 +697,7 @@ export default function MintPage() {
                     {recipientFocused && filteredSuggestions.length > 0 && (
                       <div
                         data-ocid="mint.recipient_suggestions"
-                        aria-label="Nedávne adresy"
+                        aria-label={t("labels.recentAddresses")}
                         className="absolute z-30 left-0 right-0 top-full mt-1 rounded-2xl overflow-hidden flex flex-col"
                         style={{
                           background: "rgba(18,12,40,0.92)",
@@ -455,7 +709,7 @@ export default function MintPage() {
                         }}
                       >
                         <p className="px-3 pt-2 pb-1 text-[9px] font-semibold uppercase tracking-widest text-white/30">
-                          Nedávne adresy
+                          {t("labels.recentAddresses")}
                         </p>
                         {filteredSuggestions.map((addr) => (
                           <button
@@ -506,10 +760,7 @@ export default function MintPage() {
                     htmlFor="nft-desc"
                     className="text-xs font-semibold uppercase tracking-[0.12em] text-white/50"
                   >
-                    Popis{" "}
-                    <span className="font-normal normal-case tracking-normal text-white/30">
-                      (voliteľný)
-                    </span>
+                    {t("labels.descriptionOptional")}
                   </Label>
                   <Textarea
                     id="nft-desc"
@@ -532,12 +783,12 @@ export default function MintPage() {
                 <div className="flex items-center justify-between gap-4 py-1">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/50">
-                      Viditeľnosť
+                      {t("labels.visibility")}
                     </p>
                     <p className="text-[11px] text-white/30 mt-0.5">
                       {isPublic
-                        ? "Zobrazí sa v sekcii Hodnotenie"
-                        : "Vidí len vlastník"}
+                        ? t("labels.visibilityPublic")
+                        : t("labels.visibilityPrivate")}
                     </p>
                   </div>
                   <button
@@ -545,7 +796,7 @@ export default function MintPage() {
                     data-ocid="mint.visibility_toggle"
                     role="switch"
                     aria-checked={isPublic}
-                    aria-label="Verejné alebo súkromné NFT"
+                    aria-label={t("labels.visibility")}
                     onClick={() => setIsPublic((v) => !v)}
                     className="relative flex-shrink-0 rounded-full transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring outline-none"
                     style={{
@@ -586,7 +837,7 @@ export default function MintPage() {
                         : "rgba(255,255,255,0.35)",
                     }}
                   >
-                    {isPublic ? "Verejné" : "Súkromné"}
+                    {isPublic ? t("labels.publicNFT") : t("labels.privateNFT")}
                   </span>
                 </div>
 
@@ -596,8 +847,8 @@ export default function MintPage() {
                     <div className="flex text-xs text-muted-foreground">
                       <span>
                         {phase === "minting"
-                          ? "Razenie na blockchain..."
-                          : "Chyba — skúste znova"}
+                          ? t("messages.mintingOnChain")
+                          : t("messages.mintingError")}
                       </span>
                     </div>
                     <div
@@ -637,8 +888,9 @@ export default function MintPage() {
                 <button
                   type="submit"
                   data-ocid="mint.submit_button"
-                  disabled={isBusy}
-                  className="relative overflow-hidden w-full rounded-2xl py-5 min-h-[60px] font-display font-bold text-base uppercase tracking-widest text-white transition-all duration-200 hover:scale-[1.02] hover:shadow-xl disabled:opacity-40 disabled:scale-100"
+                  disabled={isSubmitDisabled}
+                  title={!mintMode ? t("messages.selectMintMode") : undefined}
+                  className="relative overflow-hidden w-full rounded-2xl py-5 min-h-[60px] font-display font-bold text-base uppercase tracking-widest text-white transition-all duration-200 hover:scale-[1.02] hover:shadow-xl disabled:opacity-40 disabled:scale-100 disabled:cursor-not-allowed"
                   style={{
                     boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
                   }}
@@ -654,7 +906,7 @@ export default function MintPage() {
                         {phaseLabel}
                       </>
                     ) : (
-                      "Vyraziť NFT"
+                      t("buttons.mintNFT")
                     )}
                   </span>
                 </button>

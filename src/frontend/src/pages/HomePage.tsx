@@ -1,25 +1,27 @@
 import { Link } from "@tanstack/react-router";
 import { Images, Sparkles, Star, Store } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const HUB_SECTIONS: Array<{
   to: string;
   Icon: LucideIcon;
-  label: string;
+  key: string;
   ocid: string;
 }> = [
-  { to: "/mint", Icon: Sparkles, label: "Raziť", ocid: "home.mint_card" },
+  { to: "/mint", Icon: Sparkles, key: "mint", ocid: "home.mint_card" },
   {
     to: "/marketplace",
     Icon: Store,
-    label: "Trhovisko",
+    key: "marketplace",
     ocid: "home.marketplace_card",
   },
-  { to: "/gallery", Icon: Images, label: "Galéria", ocid: "home.gallery_card" },
-  { to: "/rating", Icon: Star, label: "Hodnotenie", ocid: "home.rating_card" },
+  { to: "/gallery", Icon: Images, key: "gallery", ocid: "home.gallery_card" },
+  { to: "/rating", Icon: Star, key: "rating", ocid: "home.rating_card" },
 ];
 
 export default function HomePage() {
+  const { t } = useTranslation();
   return (
     <div className="section-content flex flex-col items-center justify-center min-h-[70vh]">
       <div className="hub-card-grid" data-ocid="home.hub_grid">
@@ -36,7 +38,7 @@ export default function HomePage() {
               aria-hidden="true"
             />
             <span className="text-base font-display font-bold uppercase tracking-widest text-white">
-              {section.label}
+              {t(`nav.${section.key}` as const)}
             </span>
           </Link>
         ))}

@@ -11,8 +11,10 @@
  */
 
 import { motion } from "motion/react";
+import { useTranslation } from "react-i18next";
 
 export default function MarketplacePage() {
+  const { t } = useTranslation();
   return (
     <div className="section-content flex-1 flex flex-col items-center justify-center min-h-[70vh] select-none">
       {/* Ambient glow orb */}
@@ -97,7 +99,7 @@ export default function MarketplacePage() {
               backgroundClip: "text",
             }}
           >
-            Trhovisko
+            {t("nav.marketplace")}
           </h1>
 
           <motion.p
@@ -106,7 +108,7 @@ export default function MarketplacePage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.25, duration: 0.5 }}
           >
-            Čoskoro
+            {t("messages.comingSoon")}
           </motion.p>
         </div>
 
@@ -116,7 +118,7 @@ export default function MarketplacePage() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}
         >
-          Nakupuj a predávaj NFT na decentralizovanom trhovisku.
+          {t("messages.marketplaceDesc")}
         </motion.p>
 
         {/* Animated dots */}

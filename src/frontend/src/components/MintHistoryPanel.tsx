@@ -5,7 +5,8 @@ import { Variant_Mint_Transfer } from "@/types/nft";
 import { nftImageUrl } from "@/utils/nftImage";
 import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { Clock } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 /** Determine whether an NFT is still owned by caller or was sent elsewhere */
 function getSentStatus(
@@ -71,9 +72,60 @@ function HistoryEntryCard({
   callerPrincipal,
 }: HistoryEntryCardProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [aspectLabel, setAspectLabel] = useState<string | null>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
   const status = getSentStatus(nft, callerPrincipal);
   const isSent = status === "sent";
   const imageUrl = nftImageUrl(nft.image);
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      const ratio = img.naturalWidth / img.naturalHeight;
+      const standards: { label: string; value: number }[] = [
+        { label: "1:1", value: 1 },
+        { label: "4:3", value: 4 / 3 },
+        { label: "16:9", value: 16 / 9 },
+      ];
+      let closest = standards[0];
+      let minDiff = Math.abs(ratio - standards[0].value);
+      for (const s of standards) {
+        const diff = Math.abs(ratio - s.value);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closest = s;
+        }
+      }
+      setAspectLabel(closest.label);
+    };
+    img.src = imageUrl;
+  }, [imageUrl]);
+
+  /** Truncate principal: first 10 chars + … + last 5 chars */
+  function truncatePrincipal(addr: string): string {
+    if (addr.length <= 18) return addr;
+    return `${addr.slice(0, 10)}\u2026${addr.slice(-5)}`;
+  }
+
+  /** Format nanosecond bigint timestamp to locale date string */
+  function formatDate(ns: bigint | undefined): string | null {
+    if (!ns) return null;
+    try {
+      const ms = Number(ns / 1_000_000n);
+      if (!Number.isFinite(ms) || ms <= 0) return null;
+      return new Date(ms).toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch {
+      return null;
+    }
+  }
+
+  const ownerText = nft.owner.toText();
+  const mintDate = formatDate(nft.createdAt);
 
   return (
     <>
@@ -103,59 +155,133 @@ function HistoryEntryCard({
             "rgba(var(--theme-color-1-rgb,255,255,255),0.13)";
         }}
       >
-        {/* Image — overflow:hidden + scale on hover ONLY on the img element */}
+        {/* Image — always 1:1 square via padding-top trick, object-cover centered */}
         <button
           type="button"
-          className="relative overflow-hidden cursor-zoom-in w-full p-0 border-0 bg-transparent"
-          style={{ height: "172px", display: "block" }}
+          className="relative overflow-hidden cursor-zoom-in w-full p-0 border-0 bg-transparent block"
+          style={{ paddingTop: "100%" }}
           onClick={() => setLightboxOpen(true)}
-          aria-label={`Zobraziť ${nft.name} na celú obrazovku`}
+          aria-label={t("messages.imagePreviewFullscreen", { name: nft.name })}
         >
           <img
+            ref={imgRef}
             src={imageUrl}
             alt={nft.name}
             loading="lazy"
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full"
             style={{
+              objectFit: "cover",
+              objectPosition: "center",
               transition: "transform 300ms cubic-bezier(0.4,0,0.2,1)",
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLImageElement).style.transform =
-                "scale(1.25)";
+                "scale(1.08)";
             }}
             onMouseLeave={(e) => {
               (e.currentTarget as HTMLImageElement).style.transform =
                 "scale(1)";
             }}
           />
-          {/* Subtle gradient overlay at bottom of image for readability */}
+          {/* Bottom gradient overlay for readability */}
           <div
-            className="absolute inset-x-0 bottom-0 h-8 pointer-events-none"
+            className="absolute inset-x-0 bottom-0 h-10 pointer-events-none"
             style={{
               background:
-                "linear-gradient(to top,rgba(8,5,24,0.55),transparent)",
+                "linear-gradient(to top,rgba(8,5,24,0.65),transparent)",
             }}
             aria-hidden="true"
           />
+          {/* Aspect ratio badge — top right corner */}
+          {aspectLabel && (
+            <span
+              className="absolute top-2 right-2 text-[11px] font-bold tracking-wide px-2 py-0.5 rounded-full pointer-events-none select-none"
+              style={{
+                background: "rgba(0,0,0,0.78)",
+                color: "#ffffff",
+                letterSpacing: "0.04em",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.5)",
+                lineHeight: "1.5",
+              }}
+              aria-label={`${t("messages.imageFormat")} ${aspectLabel}`}
+            >
+              {aspectLabel}
+            </span>
+          )}
         </button>
 
-        {/* Card body */}
-        <div className="px-3 pt-2.5 pb-3 flex flex-col gap-1.5">
+        {/* Card metadata — always visible, no hover required */}
+        <div className="px-3 pt-2.5 pb-3 flex flex-col gap-1">
+          {/* NFT name */}
           <p
-            className="font-display font-bold text-sm text-foreground truncate"
+            className="font-display font-bold text-sm text-foreground truncate leading-snug"
             title={nft.name}
           >
             {nft.name}
           </p>
 
+          {/* Collection name — always shown, fallback to „Samostatné“ */}
+          <p
+            className="text-[11px] truncate"
+            title={nft.collectionName ?? t("messages.standalone")}
+          >
+            <span className="text-white/30 uppercase tracking-wider text-[9px] font-semibold mr-1">
+              {t("messages.collectionBadge")}:
+            </span>
+            <span
+              style={{
+                color: nft.collectionName
+                  ? "rgba(255,255,255,0.7)"
+                  : "rgba(255,255,255,0.35)",
+                fontStyle: nft.collectionName ? "normal" : "italic",
+              }}
+            >
+              {nft.collectionName ?? t("messages.standalone")}
+            </span>
+          </p>
+
+          {/* Description — if present */}
           {nft.description && (
             <p className="text-xs text-muted-foreground line-clamp-2 leading-snug">
               {nft.description}
             </p>
           )}
 
+          {/* Owner address — truncated first 10 + … + last 5 */}
+          <p
+            className="text-[10px] font-mono truncate"
+            title={ownerText}
+            style={{ color: "rgba(255,255,255,0.38)" }}
+          >
+            <span className="text-white/25 uppercase tracking-wider text-[8px] font-semibold mr-1 not-italic">
+              {t("messages.ownerBadge") || "Own"}:
+            </span>
+            {truncatePrincipal(ownerText)}
+          </p>
+
+          {/* Mint date */}
+          {mintDate && (
+            <p
+              className="text-[10px] flex items-center gap-1"
+              style={{ color: "rgba(255,255,255,0.28)" }}
+            >
+              <svg
+                className="w-2.5 h-2.5 shrink-0"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
+              >
+                <circle cx="8" cy="8" r="6.5" />
+                <polyline points="8 4.5 8 8 10.5 10" />
+              </svg>
+              {mintDate}
+            </p>
+          )}
+
           {/* Status badge */}
-          <div className="mt-0.5">
+          <div className="mt-1">
             {isSent ? (
               <span
                 className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
@@ -168,7 +294,7 @@ function HistoryEntryCard({
                 }}
               >
                 <span aria-hidden="true">↗</span>
-                Odoslané inam
+                {t("messages.sentElsewhere")}
               </span>
             ) : (
               <span
@@ -181,7 +307,7 @@ function HistoryEntryCard({
                 }}
               >
                 <span aria-hidden="true">✦</span>
-                Vymintované sem
+                {t("messages.mintedHere")}
               </span>
             )}
           </div>
@@ -202,6 +328,7 @@ function HistoryEntryCard({
 export function MintHistoryPanel() {
   const { identity } = useInternetIdentity();
   const callerPrincipal = identity?.getPrincipal().toString() ?? "";
+  const { t } = useTranslation();
 
   const { data: nfts, isLoading, isError, error } = useGetMyNFTs();
 
@@ -241,7 +368,7 @@ export function MintHistoryPanel() {
           style={{ color: "rgba(var(--theme-color-1-rgb,180,80,220),0.85)" }}
         />
         <span className="font-display font-bold text-sm tracking-wide gradient-text">
-          História razenia
+          {t("messages.historyTitle")}
         </span>
         {!isLoading && sorted.length > 0 && (
           <span
@@ -296,7 +423,7 @@ export function MintHistoryPanel() {
               ⚠
             </div>
             <p className="text-xs text-muted-foreground">
-              {error?.message ?? "Chyba pri načítaní"}
+              {error?.message ?? t("errors.loadErrorShort")}
             </p>
           </div>
         )}
@@ -318,10 +445,10 @@ export function MintHistoryPanel() {
               ⬡
             </div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Zatiaľ žiadne razenia
+              {t("messages.noNFTs")}
             </p>
             <p className="text-[11px] text-muted-foreground/60">
-              Vyrazené NFT sa tu objavia automaticky
+              {t("messages.noNFTsDesc")}
             </p>
           </div>
         )}

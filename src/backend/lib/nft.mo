@@ -25,9 +25,9 @@ module {
       case (?n) n;
       case null 0;
     };
-    if (count < PHASE_FREE_LIMIT) #free
-    else if (count < PHASE_BONUS_LIMIT) #bonus
-    else #premium;
+    if (count < PHASE_FREE_LIMIT) #Free
+    else if (count < PHASE_BONUS_LIMIT) #Bonus
+    else #Premium;
   };
 
   public func getMintCount(factoryState : FactoryState, user : Principal) : Nat {
@@ -64,6 +64,7 @@ module {
     image : Blob,
     mintEvent : Types.TransactionEvent,
     isPublic : Bool,
+    collectionName : ?Text,
   ) : Types.MintResult {
     let tokenId = state.counter.nextId;
     state.counter.nextId += 1;
@@ -76,6 +77,7 @@ module {
       createdAt = mintEvent.timestamp;
       history = [mintEvent];
       isPublic;
+      collectionName;
     };
     state.nfts.add(tokenId, metadata);
     #ok tokenId;
@@ -98,6 +100,13 @@ module {
     state : State,
   ) : [Types.NFTMetadata] {
     state.nfts.values().filter(func(nft) { nft.isPublic }).toArray();
+  };
+
+  public func getAllPublicByOwner(
+    state : State,
+    owner : Principal,
+  ) : [Types.NFTMetadata] {
+    state.nfts.values().filter(func(nft) { nft.isPublic and Principal.equal(nft.owner, owner) }).toArray();
   };
 
   public func getAllPublicPaginated(
