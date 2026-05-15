@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/GalleryPage-DwfCpnUk.js","assets/useAddressHistory-CndP1UJA.js","assets/useQueries-D31pTvel.js","assets/utils-BsXaUsmB.js","assets/chevron-down-DurnAk45.js","assets/skeleton-C_-9GLZE.js","assets/MintPage-CgHOWD_k.js","assets/RatingPage-BvTCiGI8.js","assets/SettingsPage-9Q1saK-u.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/GalleryPage-BuWCuOlR.js","assets/useAddressHistory-BogifUMq.js","assets/useQueries-CRRcsVdq.js","assets/utils-BsXaUsmB.js","assets/chevron-down-BNH9W-0P.js","assets/skeleton-Dl3FbxI0.js","assets/MintPage-C-hfN3_W.js","assets/RatingPage-BkhGw6Yz.js","assets/SettingsPage-EvshckRg.js"])))=>i.map(i=>d[i]);
 var __defProp = Object.defineProperty;
 var __typeError = (msg) => {
   throw TypeError(msg);
@@ -38679,13 +38679,16 @@ const CollectionPhase = Variant({
 });
 const CycleHealth = Variant({
   "red": Null,
-  "green": Null,
-  "yellow": Null
+  "orange": Null,
+  "green": Null
 });
 const HealthStatus = Record({
   "status": Text,
+  "daysPercentage": Nat,
   "imagesRemaining": Nat,
+  "estimatedStorageMB": Nat,
   "healthColor": CycleHealth,
+  "rawCycles": Nat,
   "daysRemaining": Nat
 });
 const Standard = Record({ "url": Text, "name": Text });
@@ -38713,8 +38716,20 @@ const VisibilityResult = Variant({
   "ok": Null,
   "err": Text
 });
+const TopUpResult = Variant({
+  "ok": Record({
+    "platformFee": Nat64,
+    "icpUsed": Nat64,
+    "cyclesMinted": Nat
+  }),
+  "err": Text
+});
 const TransferResult = Variant({
   "ok": Null,
+  "err": Text
+});
+const WithdrawResult = Variant({
+  "ok": Nat64,
   "err": Text
 });
 Service({
@@ -38730,6 +38745,7 @@ Service({
     [Nat],
     ["query"]
   ),
+  "getAdminPrincipal": Func([], [Principal2], ["query"]),
   "getAllPublicNFTs": Func([], [Vec(NFTMetadata)], ["query"]),
   "getAllPublicNFTsByOwner": Func(
     [Principal2],
@@ -38742,6 +38758,7 @@ Service({
     ["query"]
   ),
   "getCollectionPhase": Func([Principal2], [CollectionPhase], []),
+  "getFactoryAccountId": Func([], [Text], ["query"]),
   "getICPPrice": Func([], [Float64], []),
   "getMyCollection": Func(
     [Principal2],
@@ -38759,6 +38776,7 @@ Service({
     [Opt(Vec(TransactionEvent))],
     ["query"]
   ),
+  "getPlatformFees": Func([], [Nat64], ["query"]),
   "icrc10_supported_standards": Func([], [Vec(Standard)], ["query"]),
   "icrc7_description": Func([], [Opt(Text)], ["query"]),
   "icrc7_name": Func([], [Text], ["query"]),
@@ -38780,6 +38798,7 @@ Service({
     ["query"]
   ),
   "icrc7_total_supply": Func([], [Nat], ["query"]),
+  "initSelf": Func([], [], []),
   "mintNFT": Func(
     [
       Text,
@@ -38793,7 +38812,9 @@ Service({
     []
   ),
   "setNFTVisibility": Func([TokenId, Bool], [VisibilityResult], []),
-  "transferNFT": Func([TokenId, Principal2], [TransferResult], [])
+  "topUpCollection": Func([Nat64], [TopUpResult], []),
+  "transferNFT": Func([TokenId, Principal2], [TransferResult], []),
+  "withdrawPlatformFees": Func([Principal2], [WithdrawResult], [])
 });
 const idlFactory = ({ IDL: IDL2 }) => {
   const Value2 = IDL2.Rec();
@@ -38827,13 +38848,16 @@ const idlFactory = ({ IDL: IDL2 }) => {
   });
   const CycleHealth2 = IDL2.Variant({
     "red": IDL2.Null,
-    "green": IDL2.Null,
-    "yellow": IDL2.Null
+    "orange": IDL2.Null,
+    "green": IDL2.Null
   });
   const HealthStatus2 = IDL2.Record({
     "status": IDL2.Text,
+    "daysPercentage": IDL2.Nat,
     "imagesRemaining": IDL2.Nat,
+    "estimatedStorageMB": IDL2.Nat,
     "healthColor": CycleHealth2,
+    "rawCycles": IDL2.Nat,
     "daysRemaining": IDL2.Nat
   });
   const Standard2 = IDL2.Record({ "url": IDL2.Text, "name": IDL2.Text });
@@ -38858,7 +38882,16 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "paymentRequired": IDL2.Null
   });
   const VisibilityResult2 = IDL2.Variant({ "ok": IDL2.Null, "err": IDL2.Text });
+  const TopUpResult2 = IDL2.Variant({
+    "ok": IDL2.Record({
+      "platformFee": IDL2.Nat64,
+      "icpUsed": IDL2.Nat64,
+      "cyclesMinted": IDL2.Nat
+    }),
+    "err": IDL2.Text
+  });
   const TransferResult2 = IDL2.Variant({ "ok": IDL2.Null, "err": IDL2.Text });
+  const WithdrawResult2 = IDL2.Variant({ "ok": IDL2.Nat64, "err": IDL2.Text });
   return IDL2.Service({
     "createMyCollection": IDL2.Func([], [IDL2.Principal], []),
     "estimateCycles": IDL2.Func([IDL2.Nat], [IDL2.Nat], ["query"]),
@@ -38872,6 +38905,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
       [IDL2.Nat],
       ["query"]
     ),
+    "getAdminPrincipal": IDL2.Func([], [IDL2.Principal], ["query"]),
     "getAllPublicNFTs": IDL2.Func([], [IDL2.Vec(NFTMetadata2)], ["query"]),
     "getAllPublicNFTsByOwner": IDL2.Func(
       [IDL2.Principal],
@@ -38884,6 +38918,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
       ["query"]
     ),
     "getCollectionPhase": IDL2.Func([IDL2.Principal], [CollectionPhase2], []),
+    "getFactoryAccountId": IDL2.Func([], [IDL2.Text], ["query"]),
     "getICPPrice": IDL2.Func([], [IDL2.Float64], []),
     "getMyCollection": IDL2.Func(
       [IDL2.Principal],
@@ -38901,6 +38936,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
       [IDL2.Opt(IDL2.Vec(TransactionEvent2))],
       ["query"]
     ),
+    "getPlatformFees": IDL2.Func([], [IDL2.Nat64], ["query"]),
     "icrc10_supported_standards": IDL2.Func([], [IDL2.Vec(Standard2)], ["query"]),
     "icrc7_description": IDL2.Func([], [IDL2.Opt(IDL2.Text)], ["query"]),
     "icrc7_name": IDL2.Func([], [IDL2.Text], ["query"]),
@@ -38922,6 +38958,7 @@ const idlFactory = ({ IDL: IDL2 }) => {
       ["query"]
     ),
     "icrc7_total_supply": IDL2.Func([], [IDL2.Nat], ["query"]),
+    "initSelf": IDL2.Func([], [], []),
     "mintNFT": IDL2.Func(
       [
         IDL2.Text,
@@ -38935,7 +38972,9 @@ const idlFactory = ({ IDL: IDL2 }) => {
       []
     ),
     "setNFTVisibility": IDL2.Func([TokenId2, IDL2.Bool], [VisibilityResult2], []),
-    "transferNFT": IDL2.Func([TokenId2, IDL2.Principal], [TransferResult2], [])
+    "topUpCollection": IDL2.Func([IDL2.Nat64], [TopUpResult2], []),
+    "transferNFT": IDL2.Func([TokenId2, IDL2.Principal], [TransferResult2], []),
+    "withdrawPlatformFees": IDL2.Func([IDL2.Principal], [WithdrawResult2], [])
   });
 };
 function candid_some(value) {
@@ -39017,6 +39056,20 @@ class Backend {
       return result;
     }
   }
+  async getAdminPrincipal() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getAdminPrincipal();
+        return result;
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getAdminPrincipal();
+      return result;
+    }
+  }
   async getAllPublicNFTs() {
     if (this.processError) {
       try {
@@ -39071,6 +39124,20 @@ class Backend {
     } else {
       const result = await this.actor.getCollectionPhase(arg0);
       return from_candid_CollectionPhase_n12(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async getFactoryAccountId() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getFactoryAccountId();
+        return result;
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getFactoryAccountId();
+      return result;
     }
   }
   async getICPPrice() {
@@ -39199,6 +39266,20 @@ class Backend {
       return from_candid_opt_n19(this._uploadFile, this._downloadFile, result);
     }
   }
+  async getPlatformFees() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getPlatformFees();
+        return result;
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getPlatformFees();
+      return result;
+    }
+  }
   async icrc10_supported_standards() {
     if (this.processError) {
       try {
@@ -39325,6 +39406,20 @@ class Backend {
       return result;
     }
   }
+  async initSelf() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.initSelf();
+        return result;
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.initSelf();
+      return result;
+    }
+  }
   async mintNFT(arg0, arg1, arg2, arg3, arg4, arg5) {
     if (this.processError) {
       try {
@@ -39353,18 +39448,46 @@ class Backend {
       return from_candid_VisibilityResult_n37(this._uploadFile, this._downloadFile, result);
     }
   }
+  async topUpCollection(arg0) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.topUpCollection(arg0);
+        return from_candid_TopUpResult_n39(this._uploadFile, this._downloadFile, result);
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.topUpCollection(arg0);
+      return from_candid_TopUpResult_n39(this._uploadFile, this._downloadFile, result);
+    }
+  }
   async transferNFT(arg0, arg1) {
     if (this.processError) {
       try {
         const result = await this.actor.transferNFT(arg0, arg1);
-        return from_candid_TransferResult_n39(this._uploadFile, this._downloadFile, result);
+        return from_candid_TransferResult_n41(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.transferNFT(arg0, arg1);
-      return from_candid_TransferResult_n39(this._uploadFile, this._downloadFile, result);
+      return from_candid_TransferResult_n41(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async withdrawPlatformFees(arg0) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.withdrawPlatformFees(arg0);
+        return from_candid_WithdrawResult_n42(this._uploadFile, this._downloadFile, result);
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.withdrawPlatformFees(arg0);
+      return from_candid_WithdrawResult_n42(this._uploadFile, this._downloadFile, result);
     }
   }
 }
@@ -39389,10 +39512,13 @@ function from_candid_NFTMetadata_n2(_uploadFile, _downloadFile, value) {
 function from_candid_NFTPage_n10(_uploadFile, _downloadFile, value) {
   return from_candid_record_n11(_uploadFile, _downloadFile, value);
 }
+function from_candid_TopUpResult_n39(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n40(_uploadFile, _downloadFile, value);
+}
 function from_candid_TransactionEvent_n5(_uploadFile, _downloadFile, value) {
   return from_candid_record_n6(_uploadFile, _downloadFile, value);
 }
-function from_candid_TransferResult_n39(_uploadFile, _downloadFile, value) {
+function from_candid_TransferResult_n41(_uploadFile, _downloadFile, value) {
   return from_candid_variant_n38(_uploadFile, _downloadFile, value);
 }
 function from_candid_Value_n28(_uploadFile, _downloadFile, value) {
@@ -39400,6 +39526,9 @@ function from_candid_Value_n28(_uploadFile, _downloadFile, value) {
 }
 function from_candid_VisibilityResult_n37(_uploadFile, _downloadFile, value) {
   return from_candid_variant_n38(_uploadFile, _downloadFile, value);
+}
+function from_candid_WithdrawResult_n42(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n43(_uploadFile, _downloadFile, value);
 }
 function from_candid_opt_n18(_uploadFile, _downloadFile, value) {
   return value.length === 0 ? null : from_candid_NFTMetadata_n2(_uploadFile, _downloadFile, value[0]);
@@ -39431,8 +39560,11 @@ function from_candid_record_n11(_uploadFile, _downloadFile, value) {
 function from_candid_record_n15(_uploadFile, _downloadFile, value) {
   return {
     status: value.status,
+    daysPercentage: value.daysPercentage,
     imagesRemaining: value.imagesRemaining,
+    estimatedStorageMB: value.estimatedStorageMB,
     healthColor: from_candid_CycleHealth_n16(_uploadFile, _downloadFile, value.healthColor),
+    rawCycles: value.rawCycles,
     daysRemaining: value.daysRemaining
   };
 }
@@ -39473,7 +39605,7 @@ function from_candid_variant_n13(_uploadFile, _downloadFile, value) {
   return "Premium" in value ? "Premium" : "Free" in value ? "Free" : "Bonus" in value ? "Bonus" : value;
 }
 function from_candid_variant_n17(_uploadFile, _downloadFile, value) {
-  return "red" in value ? "red" : "green" in value ? "green" : "yellow" in value ? "yellow" : value;
+  return "red" in value ? "red" : "orange" in value ? "orange" : "green" in value ? "green" : value;
 }
 function from_candid_variant_n29(_uploadFile, _downloadFile, value) {
   return "Int" in value ? {
@@ -39512,6 +39644,24 @@ function from_candid_variant_n36(_uploadFile, _downloadFile, value) {
   } : value;
 }
 function from_candid_variant_n38(_uploadFile, _downloadFile, value) {
+  return "ok" in value ? {
+    __kind__: "ok",
+    ok: value.ok
+  } : "err" in value ? {
+    __kind__: "err",
+    err: value.err
+  } : value;
+}
+function from_candid_variant_n40(_uploadFile, _downloadFile, value) {
+  return "ok" in value ? {
+    __kind__: "ok",
+    ok: value.ok
+  } : "err" in value ? {
+    __kind__: "err",
+    err: value.err
+  } : value;
+}
+function from_candid_variant_n43(_uploadFile, _downloadFile, value) {
   return "ok" in value ? {
     __kind__: "ok",
     ok: value.ok
@@ -39702,12 +39852,12 @@ function LoginPage() {
     ] })
   ] });
 }
-const HomePage = reactExports.lazy(() => __vitePreload(() => import("./HomePage-9J_rjT24.js"), true ? [] : void 0));
-const GalleryPage = reactExports.lazy(() => __vitePreload(() => import("./GalleryPage-DwfCpnUk.js"), true ? __vite__mapDeps([0,1,2,3,4,5]) : void 0));
-const MintPage = reactExports.lazy(() => __vitePreload(() => import("./MintPage-CgHOWD_k.js"), true ? __vite__mapDeps([6,1,2,3]) : void 0));
-const MarketplacePage = reactExports.lazy(() => __vitePreload(() => import("./MarketplacePage-89Ykx93_.js"), true ? [] : void 0));
-const RatingPage = reactExports.lazy(() => __vitePreload(() => import("./RatingPage-BvTCiGI8.js"), true ? __vite__mapDeps([7,5,3,2]) : void 0));
-const SettingsPage = reactExports.lazy(() => __vitePreload(() => import("./SettingsPage-9Q1saK-u.js"), true ? __vite__mapDeps([8,2,4]) : void 0));
+const HomePage = reactExports.lazy(() => __vitePreload(() => import("./HomePage-CyNt8hpL.js"), true ? [] : void 0));
+const GalleryPage = reactExports.lazy(() => __vitePreload(() => import("./GalleryPage-BuWCuOlR.js"), true ? __vite__mapDeps([0,1,2,3,4,5]) : void 0));
+const MintPage = reactExports.lazy(() => __vitePreload(() => import("./MintPage-C-hfN3_W.js"), true ? __vite__mapDeps([6,1,2,3]) : void 0));
+const MarketplacePage = reactExports.lazy(() => __vitePreload(() => import("./MarketplacePage-CyLURbTm.js"), true ? [] : void 0));
+const RatingPage = reactExports.lazy(() => __vitePreload(() => import("./RatingPage-BkhGw6Yz.js"), true ? __vite__mapDeps([7,5,3,2]) : void 0));
+const SettingsPage = reactExports.lazy(() => __vitePreload(() => import("./SettingsPage-EvshckRg.js"), true ? __vite__mapDeps([8,2,4]) : void 0));
 const LoadingScreen = () => /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "min-h-screen bg-background flex items-center justify-center", children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-semibold uppercase tracking-widest text-muted-foreground animate-pulse", children: "Načítavam..." }) });
 function ProtectedLayout() {
   const { isAuthenticated, isInitializing } = useInternetIdentity();
@@ -39799,25 +39949,30 @@ export {
   shouldThrowError as H,
   Images as I,
   useQueryClient as J,
+  JSON_KEY_PRINCIPAL as K,
   Link as L,
+  base32Decode as M,
+  base32Encode as N,
+  getCrc32 as O,
   Principal$1 as P,
-  React$4 as R,
+  RATING_DISPLAY_PRESETS as R,
   Sparkles as S,
   ThemeSettingsPanel as T,
   Variant_Mint_Transfer as V,
   X,
+  __vitePreload as _,
   Store$1 as a,
   Star as b,
   createLucideIcon as c,
-  Copy as d,
-  copyToClipboard as e,
-  useAuth as f,
+  useRatingDisplay as d,
+  reactDomExports as e,
+  useBackend as f,
   useInternetIdentity as g,
-  reactDomExports as h,
-  useRatingDisplay as i,
+  Copy as h,
+  copyToClipboard as i,
   jsxRuntimeExports as j,
-  RATING_DISPLAY_PRESETS as k,
-  useBackend as l,
+  useAuth as k,
+  React$4 as l,
   Subscribable as m,
   resolveEnabled as n,
   o$1 as o,

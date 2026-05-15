@@ -72,5 +72,7 @@ actor {
     {
       var root : Node__46230540<TokenId__283674492, NFTMetadata__266438664>;
       var size : Nat__490723111
-    }
+    };
+  stable selfRef : {var selfPrincipal : Principal};
+  stable treasury : {var platformFeesE8s : Nat64}
 };

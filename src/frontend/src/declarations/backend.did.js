@@ -39,13 +39,16 @@ export const CollectionPhase = IDL.Variant({
 });
 export const CycleHealth = IDL.Variant({
   'red' : IDL.Null,
+  'orange' : IDL.Null,
   'green' : IDL.Null,
-  'yellow' : IDL.Null,
 });
 export const HealthStatus = IDL.Record({
   'status' : IDL.Text,
+  'daysPercentage' : IDL.Nat,
   'imagesRemaining' : IDL.Nat,
+  'estimatedStorageMB' : IDL.Nat,
   'healthColor' : CycleHealth,
+  'rawCycles' : IDL.Nat,
   'daysRemaining' : IDL.Nat,
 });
 export const Standard = IDL.Record({ 'url' : IDL.Text, 'name' : IDL.Text });
@@ -73,8 +76,20 @@ export const VisibilityResult = IDL.Variant({
   'ok' : IDL.Null,
   'err' : IDL.Text,
 });
+export const TopUpResult = IDL.Variant({
+  'ok' : IDL.Record({
+    'platformFee' : IDL.Nat64,
+    'icpUsed' : IDL.Nat64,
+    'cyclesMinted' : IDL.Nat,
+  }),
+  'err' : IDL.Text,
+});
 export const TransferResult = IDL.Variant({
   'ok' : IDL.Null,
+  'err' : IDL.Text,
+});
+export const WithdrawResult = IDL.Variant({
+  'ok' : IDL.Nat64,
   'err' : IDL.Text,
 });
 
@@ -91,6 +106,7 @@ export const idlService = IDL.Service({
       [IDL.Nat],
       ['query'],
     ),
+  'getAdminPrincipal' : IDL.Func([], [IDL.Principal], ['query']),
   'getAllPublicNFTs' : IDL.Func([], [IDL.Vec(NFTMetadata)], ['query']),
   'getAllPublicNFTsByOwner' : IDL.Func(
       [IDL.Principal],
@@ -103,6 +119,7 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getCollectionPhase' : IDL.Func([IDL.Principal], [CollectionPhase], []),
+  'getFactoryAccountId' : IDL.Func([], [IDL.Text], ['query']),
   'getICPPrice' : IDL.Func([], [IDL.Float64], []),
   'getMyCollection' : IDL.Func(
       [IDL.Principal],
@@ -120,6 +137,7 @@ export const idlService = IDL.Service({
       [IDL.Opt(IDL.Vec(TransactionEvent))],
       ['query'],
     ),
+  'getPlatformFees' : IDL.Func([], [IDL.Nat64], ['query']),
   'icrc10_supported_standards' : IDL.Func([], [IDL.Vec(Standard)], ['query']),
   'icrc7_description' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
   'icrc7_name' : IDL.Func([], [IDL.Text], ['query']),
@@ -141,6 +159,7 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'icrc7_total_supply' : IDL.Func([], [IDL.Nat], ['query']),
+  'initSelf' : IDL.Func([], [], []),
   'mintNFT' : IDL.Func(
       [
         IDL.Text,
@@ -154,7 +173,9 @@ export const idlService = IDL.Service({
       [],
     ),
   'setNFTVisibility' : IDL.Func([TokenId, IDL.Bool], [VisibilityResult], []),
+  'topUpCollection' : IDL.Func([IDL.Nat64], [TopUpResult], []),
   'transferNFT' : IDL.Func([TokenId, IDL.Principal], [TransferResult], []),
+  'withdrawPlatformFees' : IDL.Func([IDL.Principal], [WithdrawResult], []),
 });
 
 export const idlInitArgs = [];
@@ -191,13 +212,16 @@ export const idlFactory = ({ IDL }) => {
   });
   const CycleHealth = IDL.Variant({
     'red' : IDL.Null,
+    'orange' : IDL.Null,
     'green' : IDL.Null,
-    'yellow' : IDL.Null,
   });
   const HealthStatus = IDL.Record({
     'status' : IDL.Text,
+    'daysPercentage' : IDL.Nat,
     'imagesRemaining' : IDL.Nat,
+    'estimatedStorageMB' : IDL.Nat,
     'healthColor' : CycleHealth,
+    'rawCycles' : IDL.Nat,
     'daysRemaining' : IDL.Nat,
   });
   const Standard = IDL.Record({ 'url' : IDL.Text, 'name' : IDL.Text });
@@ -222,7 +246,16 @@ export const idlFactory = ({ IDL }) => {
     'paymentRequired' : IDL.Null,
   });
   const VisibilityResult = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
+  const TopUpResult = IDL.Variant({
+    'ok' : IDL.Record({
+      'platformFee' : IDL.Nat64,
+      'icpUsed' : IDL.Nat64,
+      'cyclesMinted' : IDL.Nat,
+    }),
+    'err' : IDL.Text,
+  });
   const TransferResult = IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text });
+  const WithdrawResult = IDL.Variant({ 'ok' : IDL.Nat64, 'err' : IDL.Text });
   
   return IDL.Service({
     'createMyCollection' : IDL.Func([], [IDL.Principal], []),
@@ -237,6 +270,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Nat],
         ['query'],
       ),
+    'getAdminPrincipal' : IDL.Func([], [IDL.Principal], ['query']),
     'getAllPublicNFTs' : IDL.Func([], [IDL.Vec(NFTMetadata)], ['query']),
     'getAllPublicNFTsByOwner' : IDL.Func(
         [IDL.Principal],
@@ -249,6 +283,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getCollectionPhase' : IDL.Func([IDL.Principal], [CollectionPhase], []),
+    'getFactoryAccountId' : IDL.Func([], [IDL.Text], ['query']),
     'getICPPrice' : IDL.Func([], [IDL.Float64], []),
     'getMyCollection' : IDL.Func(
         [IDL.Principal],
@@ -266,6 +301,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(IDL.Vec(TransactionEvent))],
         ['query'],
       ),
+    'getPlatformFees' : IDL.Func([], [IDL.Nat64], ['query']),
     'icrc10_supported_standards' : IDL.Func([], [IDL.Vec(Standard)], ['query']),
     'icrc7_description' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
     'icrc7_name' : IDL.Func([], [IDL.Text], ['query']),
@@ -287,6 +323,7 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'icrc7_total_supply' : IDL.Func([], [IDL.Nat], ['query']),
+    'initSelf' : IDL.Func([], [], []),
     'mintNFT' : IDL.Func(
         [
           IDL.Text,
@@ -300,7 +337,9 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'setNFTVisibility' : IDL.Func([TokenId, IDL.Bool], [VisibilityResult], []),
+    'topUpCollection' : IDL.Func([IDL.Nat64], [TopUpResult], []),
     'transferNFT' : IDL.Func([TokenId, IDL.Principal], [TransferResult], []),
+    'withdrawPlatformFees' : IDL.Func([IDL.Principal], [WithdrawResult], []),
   });
 };
 

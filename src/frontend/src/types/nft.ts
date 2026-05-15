@@ -30,13 +30,16 @@ export { Variant_Mint_Transfer };
 export type { TokenId, Time };
 export type { _TransactionEvent };
 // Cycles health types
-export type CycleHealth = "green" | "yellow" | "red";
+export type CycleHealth = "green" | "orange" | "red";
 
 export interface HealthStatus {
   status: string;
   daysRemaining: bigint;
   imagesRemaining: bigint;
   healthColor: CycleHealth;
+  daysPercentage: bigint;
+  rawCycles: bigint;
+  estimatedStorageMB: bigint;
 }
 
 export type CollectionPhase =

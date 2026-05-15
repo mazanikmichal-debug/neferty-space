@@ -1773,6 +1773,9 @@ body{
 .p-4{
   padding: 1rem;
 }
+.p-5{
+  padding: 1.25rem;
+}
 .p-6{
   padding: 1.5rem;
 }
@@ -3021,6 +3024,9 @@ body{
 .hover\:text-white:hover{
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity, 1));
+}
+.hover\:text-white\/70:hover{
+  color: rgb(255 255 255 / 0.7);
 }
 .hover\:text-white\/80:hover{
   color: rgb(255 255 255 / 0.8);

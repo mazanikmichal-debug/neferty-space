@@ -47,11 +47,13 @@ function calcMonths(images: number): number {
 interface CyclesCalculatorProps {
   onTopUp?: (icpAmount: number) => void;
   onClose?: () => void;
+  onIcpChange?: (icp: number) => void;
 }
 
 export function CyclesCalculator({
   onTopUp = () => {},
   onClose = () => {},
+  onIcpChange,
 }: CyclesCalculatorProps) {
   const { actor } = useBackend();
   const { t } = useTranslation();
@@ -128,8 +130,10 @@ export function CyclesCalculator({
     if (!Number.isNaN(n) && n > 0) {
       const icp = calcICPForImages(n, currentIcpUsd);
       setIcpAmount(icp.toFixed(4));
+      onIcpChange?.(icp);
     } else {
       setIcpAmount("");
+      onIcpChange?.(0);
     }
   };
 
@@ -140,8 +144,10 @@ export function CyclesCalculator({
     if (!Number.isNaN(f) && f > 0) {
       const imgs = calcImagesForICP(f, currentIcpUsd);
       setImageCount(imgs > 0 ? String(imgs) : "");
+      onIcpChange?.(f);
     } else {
       setImageCount("");
+      onIcpChange?.(0);
     }
   };
 

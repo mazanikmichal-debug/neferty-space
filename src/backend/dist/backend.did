@@ -1,3 +1,8 @@
+type WithdrawResult = 
+ variant {
+   err: text;
+   ok: nat64;
+ };
 type VisibilityResult = 
  variant {
    err: text;
@@ -34,6 +39,15 @@ type TransactionEvent =
    timestamp: int;
    to: principal;
  };
+type TopUpResult = 
+ variant {
+   err: text;
+   ok: record {
+         cyclesMinted: nat;
+         icpUsed: nat64;
+         platformFee: nat64;
+       };
+ };
 type TokenId = nat;
 type Time = int;
 type Standard = 
@@ -66,16 +80,19 @@ type MintResult =
  };
 type HealthStatus = 
  record {
+   daysPercentage: nat;
    daysRemaining: nat;
+   estimatedStorageMB: nat;
    healthColor: CycleHealth;
    imagesRemaining: nat;
+   rawCycles: nat;
    status: text;
  };
 type CycleHealth = 
  variant {
    green;
+   orange;
    red;
-   yellow;
  };
 type CollectionPhase = 
  variant {
@@ -95,19 +112,23 @@ service : {
    (float64) query;
   estimateImagesForICP: (icpAmount: float64, icpPriceUSD: float64) ->
    (nat) query;
+  getAdminPrincipal: () -> (principal) query;
   getAllPublicNFTs: () -> (vec NFTMetadata) query;
   getAllPublicNFTsByOwner: (owner: principal) -> (vec NFTMetadata) query;
   getAllPublicNFTsPaginated: (offset: nat, limit: nat) -> (NFTPage) query;
   getCollectionPhase: (user: principal) -> (CollectionPhase);
+  getFactoryAccountId: () -> (text) query;
   getICPPrice: () -> (float64);
   getMyCollection: (user: principal) -> (opt principal) query;
   getMyCollectionCycles: () -> (nat);
   getMyHealthStatus: () -> (HealthStatus);
   getMyMintCount: (user: principal) -> (nat);
+  /// One-time init — call once after deploy to wire self-principal.
   getMyNFTs: () -> (vec NFTMetadata);
   getMyNFTsPaginated: (offset: nat, limit: nat) -> (NFTPage);
   getNFT: (tokenId: TokenId) -> (opt NFTMetadata) query;
   getNFTHistory: (tokenId: TokenId) -> (opt vec TransactionEvent) query;
+  getPlatformFees: () -> (nat64) query;
   icrc10_supported_standards: () -> (vec Standard) query;
   icrc7_description: () -> (opt text) query;
   icrc7_name: () -> (text) query;
@@ -122,8 +143,12 @@ service : {
   icrc7_tokens_of: (account: Account, prev: opt nat, take: opt nat) ->
    (vec nat) query;
   icrc7_total_supply: () -> (nat) query;
+  /// One-time init — call once after deploy to wire self-principal.
+  initSelf: () -> ();
   mintNFT: (name: text, description: text, image: blob, recipientOpt:
    opt principal, isPublic: bool, collectionName: opt text) -> (MintResult);
   setNFTVisibility: (tokenId: TokenId, isPublic: bool) -> (VisibilityResult);
+  topUpCollection: (blockIndex: nat64) -> (TopUpResult);
   transferNFT: (tokenId: TokenId, to: principal) -> (TransferResult);
+  withdrawPlatformFees: (toPrincipal: principal) -> (WithdrawResult);
 }

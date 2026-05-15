@@ -95,6 +95,13 @@ export interface Account {
 }
 export type Time = bigint;
 export type TokenId = bigint;
+export type WithdrawResult = {
+    __kind__: "ok";
+    ok: bigint;
+} | {
+    __kind__: "err";
+    err: string;
+};
 export type MintResult = {
     __kind__: "ok";
     ok: TokenId;
@@ -107,10 +114,24 @@ export type MintResult = {
 };
 export interface HealthStatus {
     status: string;
+    daysPercentage: bigint;
     imagesRemaining: bigint;
+    estimatedStorageMB: bigint;
     healthColor: CycleHealth;
+    rawCycles: bigint;
     daysRemaining: bigint;
 }
+export type TopUpResult = {
+    __kind__: "ok";
+    ok: {
+        platformFee: bigint;
+        icpUsed: bigint;
+        cyclesMinted: bigint;
+    };
+} | {
+    __kind__: "err";
+    err: string;
+};
 export interface NFTPage {
     total: bigint;
     items: Array<NFTMetadata>;
@@ -179,8 +200,8 @@ export enum CollectionPhase {
 }
 export enum CycleHealth {
     red = "red",
-    green = "green",
-    yellow = "yellow"
+    orange = "orange",
+    green = "green"
 }
 export enum Variant_Mint_Transfer {
     Mint = "Mint",
@@ -191,19 +212,25 @@ export interface backendInterface {
     estimateCycles(imageCount: bigint): Promise<bigint>;
     estimateICPForImages(imageCount: bigint, icpPriceUSD: number): Promise<number>;
     estimateImagesForICP(icpAmount: number, icpPriceUSD: number): Promise<bigint>;
+    getAdminPrincipal(): Promise<Principal>;
     getAllPublicNFTs(): Promise<Array<NFTMetadata>>;
     getAllPublicNFTsByOwner(owner: Principal): Promise<Array<NFTMetadata>>;
     getAllPublicNFTsPaginated(offset: bigint, limit: bigint): Promise<NFTPage>;
     getCollectionPhase(user: Principal): Promise<CollectionPhase>;
+    getFactoryAccountId(): Promise<string>;
     getICPPrice(): Promise<number>;
     getMyCollection(user: Principal): Promise<Principal | null>;
     getMyCollectionCycles(): Promise<bigint>;
     getMyHealthStatus(): Promise<HealthStatus>;
     getMyMintCount(user: Principal): Promise<bigint>;
+    /**
+     * / One-time init — call once after deploy to wire self-principal.
+     */
     getMyNFTs(): Promise<Array<NFTMetadata>>;
     getMyNFTsPaginated(offset: bigint, limit: bigint): Promise<NFTPage>;
     getNFT(tokenId: TokenId): Promise<NFTMetadata | null>;
     getNFTHistory(tokenId: TokenId): Promise<Array<TransactionEvent> | null>;
+    getPlatformFees(): Promise<bigint>;
     icrc10_supported_standards(): Promise<Array<Standard>>;
     icrc7_description(): Promise<string | null>;
     icrc7_name(): Promise<string>;
@@ -213,11 +240,17 @@ export interface backendInterface {
     icrc7_tokens(prev: bigint | null, take: bigint | null): Promise<Array<bigint>>;
     icrc7_tokens_of(account: Account, prev: bigint | null, take: bigint | null): Promise<Array<bigint>>;
     icrc7_total_supply(): Promise<bigint>;
+    /**
+     * / One-time init — call once after deploy to wire self-principal.
+     */
+    initSelf(): Promise<void>;
     mintNFT(name: string, description: string, image: Uint8Array, recipientOpt: Principal | null, isPublic: boolean, collectionName: string | null): Promise<MintResult>;
     setNFTVisibility(tokenId: TokenId, isPublic: boolean): Promise<VisibilityResult>;
+    topUpCollection(blockIndex: bigint): Promise<TopUpResult>;
     transferNFT(tokenId: TokenId, to: Principal): Promise<TransferResult>;
+    withdrawPlatformFees(toPrincipal: Principal): Promise<WithdrawResult>;
 }
-import type { Account as _Account, CollectionPhase as _CollectionPhase, CycleHealth as _CycleHealth, HealthStatus as _HealthStatus, MintResult as _MintResult, NFTMetadata as _NFTMetadata, NFTPage as _NFTPage, Time as _Time, TokenId as _TokenId, TransactionEvent as _TransactionEvent, TransferResult as _TransferResult, Value as _Value, VisibilityResult as _VisibilityResult } from "./declarations/backend.did.d.ts";
+import type { Account as _Account, CollectionPhase as _CollectionPhase, CycleHealth as _CycleHealth, HealthStatus as _HealthStatus, MintResult as _MintResult, NFTMetadata as _NFTMetadata, NFTPage as _NFTPage, Time as _Time, TokenId as _TokenId, TopUpResult as _TopUpResult, TransactionEvent as _TransactionEvent, TransferResult as _TransferResult, Value as _Value, VisibilityResult as _VisibilityResult, WithdrawResult as _WithdrawResult } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async createMyCollection(): Promise<Principal> {
@@ -276,6 +309,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getAdminPrincipal(): Promise<Principal> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAdminPrincipal();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAdminPrincipal();
+            return result;
+        }
+    }
     async getAllPublicNFTs(): Promise<Array<NFTMetadata>> {
         if (this.processError) {
             try {
@@ -330,6 +377,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getCollectionPhase(arg0);
             return from_candid_CollectionPhase_n12(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getFactoryAccountId(): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getFactoryAccountId();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getFactoryAccountId();
+            return result;
         }
     }
     async getICPPrice(): Promise<number> {
@@ -458,6 +519,20 @@ export class Backend implements backendInterface {
             return from_candid_opt_n19(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getPlatformFees(): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPlatformFees();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPlatformFees();
+            return result;
+        }
+    }
     async icrc10_supported_standards(): Promise<Array<Standard>> {
         if (this.processError) {
             try {
@@ -584,6 +659,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async initSelf(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.initSelf();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.initSelf();
+            return result;
+        }
+    }
     async mintNFT(arg0: string, arg1: string, arg2: Uint8Array, arg3: Principal | null, arg4: boolean, arg5: string | null): Promise<MintResult> {
         if (this.processError) {
             try {
@@ -612,18 +701,46 @@ export class Backend implements backendInterface {
             return from_candid_VisibilityResult_n37(this._uploadFile, this._downloadFile, result);
         }
     }
+    async topUpCollection(arg0: bigint): Promise<TopUpResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.topUpCollection(arg0);
+                return from_candid_TopUpResult_n39(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.topUpCollection(arg0);
+            return from_candid_TopUpResult_n39(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async transferNFT(arg0: TokenId, arg1: Principal): Promise<TransferResult> {
         if (this.processError) {
             try {
                 const result = await this.actor.transferNFT(arg0, arg1);
-                return from_candid_TransferResult_n39(this._uploadFile, this._downloadFile, result);
+                return from_candid_TransferResult_n41(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.transferNFT(arg0, arg1);
-            return from_candid_TransferResult_n39(this._uploadFile, this._downloadFile, result);
+            return from_candid_TransferResult_n41(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async withdrawPlatformFees(arg0: Principal): Promise<WithdrawResult> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.withdrawPlatformFees(arg0);
+                return from_candid_WithdrawResult_n42(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.withdrawPlatformFees(arg0);
+            return from_candid_WithdrawResult_n42(this._uploadFile, this._downloadFile, result);
         }
     }
 }
@@ -648,10 +765,13 @@ function from_candid_NFTMetadata_n2(_uploadFile: (file: ExternalBlob) => Promise
 function from_candid_NFTPage_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _NFTPage): NFTPage {
     return from_candid_record_n11(_uploadFile, _downloadFile, value);
 }
+function from_candid_TopUpResult_n39(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _TopUpResult): TopUpResult {
+    return from_candid_variant_n40(_uploadFile, _downloadFile, value);
+}
 function from_candid_TransactionEvent_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _TransactionEvent): TransactionEvent {
     return from_candid_record_n6(_uploadFile, _downloadFile, value);
 }
-function from_candid_TransferResult_n39(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _TransferResult): TransferResult {
+function from_candid_TransferResult_n41(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _TransferResult): TransferResult {
     return from_candid_variant_n38(_uploadFile, _downloadFile, value);
 }
 function from_candid_Value_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Value): Value {
@@ -659,6 +779,9 @@ function from_candid_Value_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint
 }
 function from_candid_VisibilityResult_n37(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _VisibilityResult): VisibilityResult {
     return from_candid_variant_n38(_uploadFile, _downloadFile, value);
+}
+function from_candid_WithdrawResult_n42(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _WithdrawResult): WithdrawResult {
+    return from_candid_variant_n43(_uploadFile, _downloadFile, value);
 }
 function from_candid_opt_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_NFTMetadata]): NFTMetadata | null {
     return value.length === 0 ? null : from_candid_NFTMetadata_n2(_uploadFile, _downloadFile, value[0]);
@@ -695,19 +818,28 @@ function from_candid_record_n11(_uploadFile: (file: ExternalBlob) => Promise<Uin
 }
 function from_candid_record_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     status: string;
+    daysPercentage: bigint;
     imagesRemaining: bigint;
+    estimatedStorageMB: bigint;
     healthColor: _CycleHealth;
+    rawCycles: bigint;
     daysRemaining: bigint;
 }): {
     status: string;
+    daysPercentage: bigint;
     imagesRemaining: bigint;
+    estimatedStorageMB: bigint;
     healthColor: CycleHealth;
+    rawCycles: bigint;
     daysRemaining: bigint;
 } {
     return {
         status: value.status,
+        daysPercentage: value.daysPercentage,
         imagesRemaining: value.imagesRemaining,
+        estimatedStorageMB: value.estimatedStorageMB,
         healthColor: from_candid_CycleHealth_n16(_uploadFile, _downloadFile, value.healthColor),
+        rawCycles: value.rawCycles,
         daysRemaining: value.daysRemaining
     };
 }
@@ -796,11 +928,11 @@ function from_candid_variant_n13(_uploadFile: (file: ExternalBlob) => Promise<Ui
 function from_candid_variant_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     red: null;
 } | {
-    green: null;
+    orange: null;
 } | {
-    yellow: null;
+    green: null;
 }): CycleHealth {
-    return "red" in value ? CycleHealth.red : "green" in value ? CycleHealth.green : "yellow" in value ? CycleHealth.yellow : value;
+    return "red" in value ? CycleHealth.red : "orange" in value ? CycleHealth.orange : "green" in value ? CycleHealth.green : value;
 }
 function from_candid_variant_n29(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     Int: bigint;
@@ -895,6 +1027,52 @@ function from_candid_variant_n38(_uploadFile: (file: ExternalBlob) => Promise<Ui
 }): {
     __kind__: "ok";
     ok: null;
+} | {
+    __kind__: "err";
+    err: string;
+} {
+    return "ok" in value ? {
+        __kind__: "ok",
+        ok: value.ok
+    } : "err" in value ? {
+        __kind__: "err",
+        err: value.err
+    } : value;
+}
+function from_candid_variant_n40(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    ok: {
+        platformFee: bigint;
+        icpUsed: bigint;
+        cyclesMinted: bigint;
+    };
+} | {
+    err: string;
+}): {
+    __kind__: "ok";
+    ok: {
+        platformFee: bigint;
+        icpUsed: bigint;
+        cyclesMinted: bigint;
+    };
+} | {
+    __kind__: "err";
+    err: string;
+} {
+    return "ok" in value ? {
+        __kind__: "ok",
+        ok: value.ok
+    } : "err" in value ? {
+        __kind__: "err",
+        err: value.err
+    } : value;
+}
+function from_candid_variant_n43(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    ok: bigint;
+} | {
+    err: string;
+}): {
+    __kind__: "ok";
+    ok: bigint;
 } | {
     __kind__: "err";
     err: string;

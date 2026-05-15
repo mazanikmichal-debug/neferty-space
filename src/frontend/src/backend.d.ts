@@ -13,6 +13,13 @@ export interface Account {
 }
 export type Time = bigint;
 export type TokenId = bigint;
+export type WithdrawResult = {
+    __kind__: "ok";
+    ok: bigint;
+} | {
+    __kind__: "err";
+    err: string;
+};
 export type MintResult = {
     __kind__: "ok";
     ok: TokenId;
@@ -25,10 +32,24 @@ export type MintResult = {
 };
 export interface HealthStatus {
     status: string;
+    daysPercentage: bigint;
     imagesRemaining: bigint;
+    estimatedStorageMB: bigint;
     healthColor: CycleHealth;
+    rawCycles: bigint;
     daysRemaining: bigint;
 }
+export type TopUpResult = {
+    __kind__: "ok";
+    ok: {
+        platformFee: bigint;
+        icpUsed: bigint;
+        cyclesMinted: bigint;
+    };
+} | {
+    __kind__: "err";
+    err: string;
+};
 export interface NFTPage {
     total: bigint;
     items: Array<NFTMetadata>;
@@ -97,8 +118,8 @@ export enum CollectionPhase {
 }
 export enum CycleHealth {
     red = "red",
-    green = "green",
-    yellow = "yellow"
+    orange = "orange",
+    green = "green"
 }
 export enum Variant_Mint_Transfer {
     Mint = "Mint",
@@ -109,19 +130,25 @@ export interface backendInterface {
     estimateCycles(imageCount: bigint): Promise<bigint>;
     estimateICPForImages(imageCount: bigint, icpPriceUSD: number): Promise<number>;
     estimateImagesForICP(icpAmount: number, icpPriceUSD: number): Promise<bigint>;
+    getAdminPrincipal(): Promise<Principal>;
     getAllPublicNFTs(): Promise<Array<NFTMetadata>>;
     getAllPublicNFTsByOwner(owner: Principal): Promise<Array<NFTMetadata>>;
     getAllPublicNFTsPaginated(offset: bigint, limit: bigint): Promise<NFTPage>;
     getCollectionPhase(user: Principal): Promise<CollectionPhase>;
+    getFactoryAccountId(): Promise<string>;
     getICPPrice(): Promise<number>;
     getMyCollection(user: Principal): Promise<Principal | null>;
     getMyCollectionCycles(): Promise<bigint>;
     getMyHealthStatus(): Promise<HealthStatus>;
     getMyMintCount(user: Principal): Promise<bigint>;
+    /**
+     * / One-time init — call once after deploy to wire self-principal.
+     */
     getMyNFTs(): Promise<Array<NFTMetadata>>;
     getMyNFTsPaginated(offset: bigint, limit: bigint): Promise<NFTPage>;
     getNFT(tokenId: TokenId): Promise<NFTMetadata | null>;
     getNFTHistory(tokenId: TokenId): Promise<Array<TransactionEvent> | null>;
+    getPlatformFees(): Promise<bigint>;
     icrc10_supported_standards(): Promise<Array<Standard>>;
     icrc7_description(): Promise<string | null>;
     icrc7_name(): Promise<string>;
@@ -131,7 +158,13 @@ export interface backendInterface {
     icrc7_tokens(prev: bigint | null, take: bigint | null): Promise<Array<bigint>>;
     icrc7_tokens_of(account: Account, prev: bigint | null, take: bigint | null): Promise<Array<bigint>>;
     icrc7_total_supply(): Promise<bigint>;
+    /**
+     * / One-time init — call once after deploy to wire self-principal.
+     */
+    initSelf(): Promise<void>;
     mintNFT(name: string, description: string, image: Uint8Array, recipientOpt: Principal | null, isPublic: boolean, collectionName: string | null): Promise<MintResult>;
     setNFTVisibility(tokenId: TokenId, isPublic: boolean): Promise<VisibilityResult>;
+    topUpCollection(blockIndex: bigint): Promise<TopUpResult>;
     transferNFT(tokenId: TokenId, to: Principal): Promise<TransferResult>;
+    withdrawPlatformFees(toPrincipal: Principal): Promise<WithdrawResult>;
 }

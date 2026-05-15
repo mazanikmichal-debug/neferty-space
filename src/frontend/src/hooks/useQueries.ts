@@ -237,3 +237,105 @@ export function useCreateMyCollection() {
     },
   });
 }
+
+/**
+ * useGetFactoryAccountId — fetches the Factory canister's ICP account address.
+ */
+export function useGetFactoryAccountId() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+
+  return useQuery<string, Error, string, string[]>({
+    queryKey: ["factoryAccountId"],
+    queryFn: async () => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      return actor.getFactoryAccountId();
+    },
+    enabled: actorReady,
+    staleTime: 300_000, // account ID doesn't change
+  });
+}
+
+/**
+ * useTopUpCollection — sends blockIndex to topUpCollection on the backend.
+ */
+export function useTopUpCollection() {
+  const { actor } = useBackend();
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    { icpUsed: bigint; cyclesMinted: bigint; platformFee: bigint },
+    Error,
+    bigint
+  >({
+    mutationFn: async (blockIndex: bigint) => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      const result = await actor.topUpCollection(blockIndex);
+      if (result.__kind__ === "err") throw new Error(result.err);
+      return result.ok;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myHealthStatus"] });
+      queryClient.invalidateQueries({ queryKey: ["myCollectionCycles"] });
+    },
+  });
+}
+
+/**
+ * useGetAdminPrincipal — fetches the admin principal ID.
+ */
+export function useGetAdminPrincipal() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+
+  return useQuery<string, Error, string, string[]>({
+    queryKey: ["adminPrincipal"],
+    queryFn: async () => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      const p = await actor.getAdminPrincipal();
+      return p.toText();
+    },
+    enabled: actorReady,
+    staleTime: 300_000,
+  });
+}
+
+/**
+ * useGetPlatformFees — fetches accumulated 25% fees (admin only).
+ */
+export function useGetPlatformFees() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+
+  return useQuery<bigint, Error, bigint, string[]>({
+    queryKey: ["platformFees"],
+    queryFn: async () => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      return actor.getPlatformFees();
+    },
+    enabled: actorReady,
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * useWithdrawPlatformFees — admin mutation to withdraw accumulated fees.
+ */
+export function useWithdrawPlatformFees() {
+  const { actor } = useBackend();
+  const queryClient = useQueryClient();
+
+  return useMutation<bigint, Error, string>({
+    mutationFn: async (principalText: string) => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      const { Principal } = await import("@dfinity/principal");
+      const p = Principal.fromText(principalText);
+      const result = await actor.withdrawPlatformFees(p);
+      if (result.__kind__ === "err") throw new Error(result.err);
+      return result.ok;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["platformFees"] });
+    },
+  });
+}

@@ -106,14 +106,26 @@ module {
 
   // ── Health colour ───────────────────────────────────────────────────────────
 
-  public type CycleHealthStatus = { #green; #yellow; #red };
+  public type CycleHealthStatus = { #green; #orange; #red };
 
-  /// green: >180 days remaining, yellow: 30–180 days, red: <30 days.
+  /// Percentage-based thresholds with 365 days as 100 % reference.
+  /// green: daysRemaining > 182 (>50 %), orange: 73-182 (20-50 %), red: <73 (<20 %).
   public func cycleHealthStatus(cycles : Nat) : CycleHealthStatus {
     let days = estimateDaysFromCycles(cycles);
-    if (days > 180) #green
-    else if (days >= 30) #yellow
+    if (days > 182) #green
+    else if (days >= 73) #orange
     else #red;
+  };
+
+  /// Returns (daysRemaining / 365 * 100) capped at 100.
+  public func daysPercentage(days : Nat) : Nat {
+    let pct = days * 100 / 365;
+    if (pct > 100) 100 else pct;
+  };
+
+  /// Estimated storage in MB: mintCount * 500 KB per image, rounded.
+  public func estimateStorageMB(mintCount : Nat) : Nat {
+    (mintCount * 500 + 512) / 1024;  // +512 for rounding
   };
 
   /// Fetch current ICP/USD price from the Exchange Rate Canister.

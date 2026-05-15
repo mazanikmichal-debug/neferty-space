@@ -115,5 +115,20 @@ export const mockBackend: backendInterface = {
     imagesRemaining: BigInt(250),
     healthColor: CycleHealth.green,
     daysRemaining: BigInt(450),
+    daysPercentage: BigInt(123),
+    estimatedStorageMB: BigInt(420),
+    rawCycles: BigInt(2_450_000_000_000),
+  }),
+  getAdminPrincipal: async (): Promise<Principal> => Principal.fromText("aaaaa-aa"),
+  getFactoryAccountId: async (): Promise<string> => "aaaaa-aa-account-id",
+  getPlatformFees: async (): Promise<bigint> => BigInt(0),
+  initSelf: async (): Promise<void> => {},
+  topUpCollection: async (_blockIndex: bigint) => ({
+    __kind__: "ok" as const,
+    ok: { icpUsed: BigInt(50_000_000), cyclesMinted: BigInt(4_200_000_000_000), platformFee: BigInt(12_500_000) },
+  }),
+  withdrawPlatformFees: async (_toPrincipal: Principal) => ({
+    __kind__: "ok" as const,
+    ok: BigInt(0),
   }),
 };

@@ -18,12 +18,15 @@ export type CollectionPhase = { 'Premium' : null } |
   { 'Free' : null } |
   { 'Bonus' : null };
 export type CycleHealth = { 'red' : null } |
-  { 'green' : null } |
-  { 'yellow' : null };
+  { 'orange' : null } |
+  { 'green' : null };
 export interface HealthStatus {
   'status' : string,
+  'daysPercentage' : bigint,
   'imagesRemaining' : bigint,
+  'estimatedStorageMB' : bigint,
   'healthColor' : CycleHealth,
+  'rawCycles' : bigint,
   'daysRemaining' : bigint,
 }
 export type MintResult = { 'ok' : TokenId } |
@@ -44,6 +47,14 @@ export interface NFTPage { 'total' : bigint, 'items' : Array<NFTMetadata> }
 export interface Standard { 'url' : string, 'name' : string }
 export type Time = bigint;
 export type TokenId = bigint;
+export type TopUpResult = {
+    'ok' : {
+      'platformFee' : bigint,
+      'icpUsed' : bigint,
+      'cyclesMinted' : bigint,
+    }
+  } |
+  { 'err' : string };
 export interface TransactionEvent {
   'to' : Principal,
   'from' : [] | [Principal],
@@ -62,24 +73,32 @@ export type Value = { 'Int' : bigint } |
   { 'Array' : Array<[string, Value]> };
 export type VisibilityResult = { 'ok' : null } |
   { 'err' : string };
+export type WithdrawResult = { 'ok' : bigint } |
+  { 'err' : string };
 export interface _SERVICE {
   'createMyCollection' : ActorMethod<[], Principal>,
   'estimateCycles' : ActorMethod<[bigint], bigint>,
   'estimateICPForImages' : ActorMethod<[bigint, number], number>,
   'estimateImagesForICP' : ActorMethod<[number, number], bigint>,
+  'getAdminPrincipal' : ActorMethod<[], Principal>,
   'getAllPublicNFTs' : ActorMethod<[], Array<NFTMetadata>>,
   'getAllPublicNFTsByOwner' : ActorMethod<[Principal], Array<NFTMetadata>>,
   'getAllPublicNFTsPaginated' : ActorMethod<[bigint, bigint], NFTPage>,
   'getCollectionPhase' : ActorMethod<[Principal], CollectionPhase>,
+  'getFactoryAccountId' : ActorMethod<[], string>,
   'getICPPrice' : ActorMethod<[], number>,
   'getMyCollection' : ActorMethod<[Principal], [] | [Principal]>,
   'getMyCollectionCycles' : ActorMethod<[], bigint>,
   'getMyHealthStatus' : ActorMethod<[], HealthStatus>,
   'getMyMintCount' : ActorMethod<[Principal], bigint>,
+  /**
+   * / One-time init — call once after deploy to wire self-principal.
+   */
   'getMyNFTs' : ActorMethod<[], Array<NFTMetadata>>,
   'getMyNFTsPaginated' : ActorMethod<[bigint, bigint], NFTPage>,
   'getNFT' : ActorMethod<[TokenId], [] | [NFTMetadata]>,
   'getNFTHistory' : ActorMethod<[TokenId], [] | [Array<TransactionEvent>]>,
+  'getPlatformFees' : ActorMethod<[], bigint>,
   'icrc10_supported_standards' : ActorMethod<[], Array<Standard>>,
   'icrc7_description' : ActorMethod<[], [] | [string]>,
   'icrc7_name' : ActorMethod<[], string>,
@@ -95,12 +114,18 @@ export interface _SERVICE {
     Array<bigint>
   >,
   'icrc7_total_supply' : ActorMethod<[], bigint>,
+  /**
+   * / One-time init — call once after deploy to wire self-principal.
+   */
+  'initSelf' : ActorMethod<[], undefined>,
   'mintNFT' : ActorMethod<
     [string, string, Uint8Array, [] | [Principal], boolean, [] | [string]],
     MintResult
   >,
   'setNFTVisibility' : ActorMethod<[TokenId, boolean], VisibilityResult>,
+  'topUpCollection' : ActorMethod<[bigint], TopUpResult>,
   'transferNFT' : ActorMethod<[TokenId, Principal], TransferResult>,
+  'withdrawPlatformFees' : ActorMethod<[Principal], WithdrawResult>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

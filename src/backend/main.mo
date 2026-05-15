@@ -7,8 +7,9 @@ import FactoryMixin "mixins/factory-api";
 import FactoryLib "lib/factory";
 import PaymentsMixin "mixins/payments-api";
 import Principal "mo:core/Principal";
+import Nat64 "mo:core/Nat64";
 
-actor {
+actor NefertyFactory {
   // ── NFT state (single-canister gallery) ─────────────────────────────────
   let nfts = Map.empty<NFTTypes.TokenId, NFTTypes.NFTMetadata>();
   let counter = { var nextId : Nat = 0 };
@@ -22,8 +23,20 @@ actor {
   // admin is the anonymous principal by default; update after deploy
   let factory : FactoryLib.State = FactoryLib.init([], Principal.fromText("aaaaa-aa"));
 
+  // ── Platform treasury: accumulates 25 % of all top-up payments ──────────
+  let treasury = { var platformFeesE8s : Nat64 = 0 };
+
+  // ── Self-principal (set on first call, used for account ID derivation) ───
+  let selfRef = { var selfPrincipal : Principal = Principal.fromText("aaaaa-aa") };
+
   include NFTMixin(nftState, factoryState);
   include ICRC7Mixin(nftState);
-  include FactoryMixin(factory);
-  include PaymentsMixin();
+  include FactoryMixin(factory, treasury, selfRef);
+  include PaymentsMixin(treasury, factory, selfRef);
+
+  /// One-time init — call once after deploy to wire self-principal.
+  public func initSelf() : async () {
+    selfRef.selfPrincipal := Principal.fromActor(NefertyFactory);
+    factory.admin.principal := Principal.fromActor(NefertyFactory);
+  };
 }

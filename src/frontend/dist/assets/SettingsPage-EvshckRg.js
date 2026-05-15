@@ -1,6 +1,30 @@
-import { c as createLucideIcon, l as useBackend, u as useTranslation, r as reactExports, j as jsxRuntimeExports, T as ThemeSettingsPanel } from "./index-B8lwuDBy.js";
-import { f as useGetMyHealthStatus } from "./useQueries-D31pTvel.js";
-import { C as ChevronDown } from "./chevron-down-DurnAk45.js";
+import { c as createLucideIcon, f as useBackend, u as useTranslation, r as reactExports, j as jsxRuntimeExports, g as useInternetIdentity, C as Check, h as Copy, T as ThemeSettingsPanel } from "./index-Dzz2Xx7E.js";
+import { a as useGetMyHealthStatus, b as useGetAdminPrincipal, c as useGetPlatformFees, d as useWithdrawPlatformFees, e as useGetFactoryAccountId, f as useTopUpCollection } from "./useQueries-CRRcsVdq.js";
+import { C as ChevronDown } from "./chevron-down-BNH9W-0P.js";
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$3 = [
+  [
+    "path",
+    {
+      d: "M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2",
+      key: "169zse"
+    }
+  ]
+];
+const Activity = createLucideIcon("activity", __iconNode$3);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$2 = [["path", { d: "M21 12a9 9 0 1 1-6.219-8.56", key: "13zald" }]];
+const LoaderCircle = createLucideIcon("loader-circle", __iconNode$2);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -11,12 +35,13 @@ const __iconNode$1 = [
   [
     "path",
     {
-      d: "M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2",
-      key: "169zse"
+      d: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",
+      key: "oel41y"
     }
-  ]
+  ],
+  ["path", { d: "m9 12 2 2 4-4", key: "dzmm74" }]
 ];
-const Activity = createLucideIcon("activity", __iconNode$1);
+const ShieldCheck = createLucideIcon("shield-check", __iconNode$1);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -60,7 +85,8 @@ function CyclesCalculator({
   onTopUp = () => {
   },
   onClose = () => {
-  }
+  },
+  onIcpChange
 }) {
   const { actor } = useBackend();
   const { t } = useTranslation();
@@ -118,8 +144,10 @@ function CyclesCalculator({
     if (!Number.isNaN(n) && n > 0) {
       const icp = calcICPForImages(n, currentIcpUsd);
       setIcpAmount(icp.toFixed(4));
+      onIcpChange == null ? void 0 : onIcpChange(icp);
     } else {
       setIcpAmount("");
+      onIcpChange == null ? void 0 : onIcpChange(0);
     }
   };
   const handleIcpChange = (raw) => {
@@ -129,8 +157,10 @@ function CyclesCalculator({
     if (!Number.isNaN(f) && f > 0) {
       const imgs = calcImagesForICP(f, currentIcpUsd);
       setImageCount(imgs > 0 ? String(imgs) : "");
+      onIcpChange == null ? void 0 : onIcpChange(f);
     } else {
       setImageCount("");
+      onIcpChange == null ? void 0 : onIcpChange(0);
     }
   };
   reactExports.useEffect(() => {
@@ -333,12 +363,12 @@ function CyclesCalculator({
 }
 const HEALTH_HEX = {
   green: "#22c55e",
-  yellow: "#eab308",
+  orange: "#f97316",
   red: "#ef4444"
 };
 const HEALTH_GLOW = {
   green: "rgba(34,197,94,0.35)",
-  yellow: "rgba(234,179,8,0.35)",
+  orange: "rgba(249,115,22,0.35)",
   red: "rgba(239,68,68,0.35)"
 };
 function HealthBar({
@@ -380,7 +410,8 @@ function StatCard({
   value,
   unit,
   color,
-  ocid
+  ocid,
+  expertLine
 }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     "div",
@@ -417,7 +448,15 @@ function StatCard({
               children: unit
             }
           )
-        ] })
+        ] }),
+        expertLine && /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "span",
+          {
+            className: "text-xs mt-1",
+            style: { color: "rgba(255,255,255,0.28)" },
+            children: expertLine
+          }
+        )
       ]
     }
   );
@@ -453,7 +492,313 @@ function SectionCard({
     }
   );
 }
-function CyclesCard({ onTopUpClick }) {
+function TopUpFlow({
+  icpAmount,
+  onClose
+}) {
+  const [step, setStep] = reactExports.useState("address");
+  const [blockIndex, setBlockIndex] = reactExports.useState("");
+  const [copied, setCopied] = reactExports.useState(false);
+  const [successData, setSuccessData] = reactExports.useState(null);
+  const { data: factoryAccount, isLoading: accountLoading } = useGetFactoryAccountId();
+  const topUp = useTopUpCollection();
+  const handleCopy = () => {
+    if (factoryAccount) {
+      navigator.clipboard.writeText(factoryAccount).catch(() => {
+      });
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2e3);
+    }
+  };
+  const handleConfirm = async () => {
+    const idx = blockIndex.trim();
+    if (!idx) return;
+    try {
+      const result = await topUp.mutateAsync(BigInt(idx));
+      setSuccessData({
+        icpUsed: result.icpUsed,
+        cyclesMinted: result.cyclesMinted
+      });
+      setStep("success");
+    } catch {
+    }
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "div",
+    {
+      "data-ocid": "settings.topup_flow",
+      className: "rounded-2xl p-5 space-y-4",
+      style: {
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.12)"
+      },
+      children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2 mb-1", children: [
+          ["address", "confirm", "success"].map((s, i) => /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-1.5", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "div",
+              {
+                className: "w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors duration-300",
+                style: {
+                  background: step === s ? "rgba(139,92,246,0.8)" : s === "success" && step === "success" ? "rgba(34,197,94,0.7)" : "rgba(255,255,255,0.10)",
+                  color: step === s || s === "success" && step === "success" ? "white" : "rgba(255,255,255,0.35)"
+                },
+                children: i + 1
+              }
+            ),
+            i < 2 && /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "div",
+              {
+                className: "h-px w-6",
+                style: { background: "rgba(255,255,255,0.12)" }
+              }
+            )
+          ] }, s)),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              "data-ocid": "settings.topup_close_button",
+              onClick: onClose,
+              className: "ml-auto text-white/40 hover:text-white/70 transition-colors",
+              "aria-label": "Zatvoriť",
+              children: "×"
+            }
+          )
+        ] }),
+        step === "address" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "p",
+            {
+              className: "text-xs leading-relaxed",
+              style: { color: "rgba(255,255,255,0.55)" },
+              children: [
+                "Pošlite",
+                " ",
+                /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "font-bold text-white/80", children: [
+                  icpAmount > 0 ? icpAmount.toFixed(4) : "??",
+                  " ICP"
+                ] }),
+                " ",
+                "na túto adresu zo svojej peňaženky (Plug, Bitfinity alebo NNS)"
+              ]
+            }
+          ),
+          accountLoading ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "div",
+            {
+              className: "h-10 rounded-xl animate-pulse",
+              style: { background: "rgba(255,255,255,0.07)" }
+            }
+          ) : factoryAccount ? /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "div",
+            {
+              className: "flex items-center gap-2 rounded-xl px-3 py-2",
+              style: {
+                background: "rgba(255,255,255,0.07)",
+                border: "1px solid rgba(255,255,255,0.12)"
+              },
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "span",
+                  {
+                    className: "flex-1 text-xs font-mono truncate",
+                    style: { color: "rgba(255,255,255,0.80)" },
+                    children: factoryAccount
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  "button",
+                  {
+                    type: "button",
+                    "data-ocid": "settings.copy_address_button",
+                    onClick: handleCopy,
+                    className: "flex-shrink-0 flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-colors duration-200",
+                    style: {
+                      background: copied ? "rgba(34,197,94,0.2)" : "rgba(255,255,255,0.10)",
+                      color: copied ? "#22c55e" : "rgba(255,255,255,0.65)"
+                    },
+                    "aria-label": "Kopírovať adresu",
+                    children: [
+                      copied ? /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { size: 10 }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Copy, { size: 10 }),
+                      copied ? "Skopírované" : "Kopírovať"
+                    ]
+                  }
+                )
+              ]
+            }
+          ) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs", style: { color: "rgba(255,80,80,0.8)" }, children: "Nepodarilo sa načítať adresu. Skúste neskôr." }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "button",
+            {
+              type: "button",
+              "data-ocid": "settings.topup_next_button",
+              onClick: () => setStep("confirm"),
+              disabled: !factoryAccount,
+              className: "w-full rounded-xl py-2.5 text-sm font-semibold transition-all duration-200 hover:scale-[1.01] disabled:opacity-40",
+              style: {
+                background: "linear-gradient(135deg, rgb(var(--theme-color-1-rgb,120,50,200)), rgb(var(--theme-color-2-rgb,60,80,220)))",
+                color: "white"
+              },
+              children: "Potvrdenie platby →"
+            }
+          )
+        ] }),
+        step === "confirm" && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "p",
+            {
+              className: "text-xs leading-relaxed",
+              style: { color: "rgba(255,255,255,0.55)" },
+              children: "Po odoslaní ICP zadajte číslo bloku transakcie z histórie vašej peňaženky."
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-1.5", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "label",
+              {
+                htmlFor: "block-index",
+                className: "text-[10px] font-semibold uppercase tracking-widest",
+                style: { color: "rgba(255,255,255,0.45)" },
+                children: "Číslo bloku transakcie"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "input",
+              {
+                id: "block-index",
+                "data-ocid": "settings.block_index_input",
+                type: "number",
+                min: 0,
+                step: 1,
+                value: blockIndex,
+                onChange: (e) => setBlockIndex(e.target.value),
+                placeholder: "napr. 12345678",
+                className: "w-full rounded-xl px-3 py-2.5 text-sm text-white/90 placeholder:text-white/25 outline-none focus:ring-1 focus:ring-white/25 transition-all",
+                style: {
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.14)"
+                }
+              }
+            )
+          ] }),
+          topUp.error && /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "p",
+            {
+              "data-ocid": "settings.topup_error_state",
+              className: "text-xs rounded-lg px-3 py-2",
+              style: {
+                background: "rgba(239,68,68,0.12)",
+                color: "rgba(239,68,68,0.90)",
+                border: "1px solid rgba(239,68,68,0.25)"
+              },
+              children: topUp.error.message
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex gap-2", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                "data-ocid": "settings.topup_back_button",
+                onClick: () => setStep("address"),
+                className: "flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors",
+                style: {
+                  background: "rgba(255,255,255,0.08)",
+                  color: "rgba(255,255,255,0.60)"
+                },
+                children: "← Späť"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                type: "button",
+                "data-ocid": "settings.topup_confirm_button",
+                onClick: handleConfirm,
+                disabled: !blockIndex.trim() || topUp.isPending,
+                className: "flex-[2] rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.01] disabled:opacity-40",
+                style: {
+                  background: "linear-gradient(135deg, rgb(var(--theme-color-1-rgb,120,50,200)), rgb(var(--theme-color-2-rgb,60,80,220)))",
+                  color: "white"
+                },
+                children: topUp.isPending ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { size: 14, className: "animate-spin" }),
+                  "Spracovávam..."
+                ] }) : "Potvrdiť platbu"
+              }
+            )
+          ] })
+        ] }),
+        step === "success" && successData && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "div",
+          {
+            "data-ocid": "settings.topup_success_state",
+            className: "space-y-3 text-center",
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "div",
+                {
+                  className: "w-12 h-12 rounded-full flex items-center justify-center mx-auto",
+                  style: { background: "rgba(34,197,94,0.15)" },
+                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(Check, { size: 22, style: { color: "#22c55e" } })
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "p",
+                {
+                  className: "text-sm font-semibold leading-relaxed",
+                  style: { color: "rgba(255,255,255,0.85)" },
+                  children: [
+                    "Úspešne sme premenili",
+                    " ",
+                    /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { color: "#22c55e" }, children: [
+                      (Number(successData.icpUsed) / 1e8).toFixed(3),
+                      " ICP"
+                    ] }),
+                    " ",
+                    "na",
+                    " ",
+                    /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { style: { color: "#38bdf8" }, children: [
+                      (Number(successData.cyclesMinted) / 1e12).toFixed(
+                        1
+                      ),
+                      " ",
+                      "Trillion Cycles"
+                    ] }),
+                    " ",
+                    "pre tvoj trezor."
+                  ]
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "button",
+                {
+                  type: "button",
+                  "data-ocid": "settings.topup_done_button",
+                  onClick: onClose,
+                  className: "w-full rounded-xl py-2.5 text-sm font-semibold transition-all hover:scale-[1.01]",
+                  style: {
+                    background: "rgba(34,197,94,0.20)",
+                    color: "#22c55e",
+                    border: "1px solid rgba(34,197,94,0.30)"
+                  },
+                  children: "Zatvoriť"
+                }
+              )
+            ]
+          }
+        )
+      ]
+    }
+  );
+}
+function CyclesCard({
+  onTopUpClick,
+  calculatedIcp,
+  showTopUp,
+  setShowTopUp
+}) {
   const { t } = useTranslation();
   const { data: health, isLoading, isError } = useGetMyHealthStatus();
   if (isLoading) {
@@ -519,12 +864,17 @@ function CyclesCard({ onTopUpClick }) {
     );
   }
   const color = health.healthColor;
-  const hex = HEALTH_HEX[color];
-  const fillPct = Math.min(
-    100,
-    Math.max(5, Math.round(Number(health.daysRemaining) / 365 * 100))
+  const hex = HEALTH_HEX[color] ?? HEALTH_HEX.green;
+  const fillPct = Math.min(100, Math.max(5, Number(health.daysPercentage)));
+  const healthText = color === "green" ? t("settings.cyclesCard.healthGreen") : color === "orange" ? t("settings.cyclesCard.healthYellow") : t("settings.cyclesCard.healthRed");
+  const trillionCycles = (Number(health.rawCycles) / 1e12).toFixed(
+    2
   );
-  const healthText = color === "green" ? t("settings.cyclesCard.healthGreen") : color === "yellow" ? t("settings.cyclesCard.healthYellow") : t("settings.cyclesCard.healthRed");
+  const storageMB = Number(health.estimatedStorageMB);
+  const handleTopUpClick = () => {
+    setShowTopUp(true);
+    onTopUpClick();
+  };
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     SectionCard,
     {
@@ -561,7 +911,8 @@ function CyclesCard({ onTopUpClick }) {
               label: t("settings.cyclesCard.daysRemaining"),
               value: health.daysRemaining,
               unit: t("settings.cyclesCard.days"),
-              color: hex
+              color: hex,
+              expertLine: `${trillionCycles} Trillion Cycles`
             }
           ),
           /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -571,7 +922,8 @@ function CyclesCard({ onTopUpClick }) {
               label: t("settings.cyclesCard.imagesRemaining"),
               value: health.imagesRemaining,
               unit: t("settings.cyclesCard.images"),
-              color: "rgba(255,255,255,0.85)"
+              color: "rgba(255,255,255,0.85)",
+              expertLine: `${storageMB} MB voľného miesta`
             }
           )
         ] }),
@@ -583,56 +935,179 @@ function CyclesCard({ onTopUpClick }) {
             children: health.status
           }
         ),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs(
-          "button",
+        showTopUp ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+          TopUpFlow,
           {
-            type: "button",
-            "data-ocid": "settings.topup_open_button",
-            onClick: onTopUpClick,
-            className: "relative overflow-hidden w-full rounded-2xl py-3.5 font-display font-bold text-sm uppercase tracking-widest text-white transition-all duration-200 hover:scale-[1.02] flex items-center justify-center gap-2",
-            style: {
-              background: "linear-gradient(135deg, rgb(var(--theme-color-1-rgb,120,50,200)), rgb(var(--theme-color-2-rgb,60,80,220)))",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.30)"
-            },
-            children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(Zap, { size: 16 }),
-              t("settings.cyclesCard.topUpButton"),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronDown, { size: 14, className: "opacity-60" })
-            ]
+            icpAmount: calculatedIcp,
+            onClose: () => setShowTopUp(false)
           }
+        ) : (
+          /* Top-up CTA */
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "button",
+            {
+              type: "button",
+              "data-ocid": "settings.topup_open_button",
+              onClick: handleTopUpClick,
+              className: "relative overflow-hidden w-full rounded-2xl py-3.5 font-display font-bold text-sm uppercase tracking-widest text-white transition-all duration-200 hover:scale-[1.02] flex items-center justify-center gap-2",
+              style: {
+                background: "linear-gradient(135deg, rgb(var(--theme-color-1-rgb,120,50,200)), rgb(var(--theme-color-2-rgb,60,80,220)))",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.30)"
+              },
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(Zap, { size: 16 }),
+                t("settings.cyclesCard.topUpButton"),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronDown, { size: 14, className: "opacity-60" })
+              ]
+            }
+          )
         )
       ]
     }
   );
 }
 function CalculatorCard({
-  calcRef
+  calcRef,
+  onIcpChange,
+  onTopUpRequest
 }) {
   const { t } = useTranslation();
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { ref: calcRef, children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { ref: calcRef, children: /* @__PURE__ */ jsxRuntimeExports.jsx(
     SectionCard,
     {
       title: t("settings.calculator.title"),
       icon: /* @__PURE__ */ jsxRuntimeExports.jsx(Zap, { size: 14 }),
-      children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
-          CyclesCalculator,
-          {
-            onTopUp: () => {
-            }
-          }
-        ),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "p",
-          {
-            className: "text-[11px] text-center",
-            style: { color: "rgba(255,255,255,0.22)" },
-            children: t("messages.comingSoon")
-          }
-        )
-      ]
+      children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+        CyclesCalculator,
+        {
+          onTopUp: (icp) => {
+            onIcpChange(icp);
+            onTopUpRequest();
+          },
+          onIcpChange
+        }
+      )
     }
   ) });
+}
+function AdminTreasuryCard() {
+  const { identity } = useInternetIdentity();
+  const { data: adminPrincipal } = useGetAdminPrincipal();
+  const { data: platformFees, refetch: refetchFees } = useGetPlatformFees();
+  const withdraw = useWithdrawPlatformFees();
+  const [withdrawSuccess, setWithdrawSuccess] = reactExports.useState(null);
+  const userPrincipal = identity == null ? void 0 : identity.getPrincipal().toText();
+  const isAdmin = !!userPrincipal && userPrincipal === adminPrincipal;
+  if (!isAdmin) return null;
+  const feesIcp = platformFees ? (Number(platformFees) / 1e8).toFixed(3) : "0.000";
+  const handleWithdraw = async () => {
+    if (!userPrincipal) return;
+    try {
+      const result = await withdraw.mutateAsync(userPrincipal);
+      setWithdrawSuccess(result);
+      refetchFees();
+    } catch {
+    }
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(SectionCard, { title: "Pokladňa platformy", icon: /* @__PURE__ */ jsxRuntimeExports.jsx(ShieldCheck, { size: 14 }), children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "div",
+      {
+        className: "rounded-2xl p-4 flex items-center justify-between gap-3",
+        style: {
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.08)"
+        },
+        children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "p",
+            {
+              className: "text-[10px] font-semibold uppercase tracking-widest",
+              style: { color: "rgba(255,255,255,0.40)" },
+              children: "Nazbierané poplatky"
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "p",
+            {
+              className: "text-2xl font-bold font-mono mt-0.5",
+              style: { color: "rgba(255,255,255,0.85)" },
+              children: [
+                feesIcp,
+                " ",
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "span",
+                  {
+                    className: "text-sm font-normal",
+                    style: { color: "rgba(255,255,255,0.40)" },
+                    children: "ICP"
+                  }
+                )
+              ]
+            }
+          ),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
+            "p",
+            {
+              className: "text-[10px] mt-1",
+              style: { color: "rgba(255,255,255,0.25)" },
+              children: "25% platforma podiel"
+            }
+          )
+        ] })
+      }
+    ),
+    withdraw.error && /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "p",
+      {
+        "data-ocid": "settings.treasury_error_state",
+        className: "text-xs rounded-lg px-3 py-2",
+        style: {
+          background: "rgba(239,68,68,0.12)",
+          color: "rgba(239,68,68,0.90)",
+          border: "1px solid rgba(239,68,68,0.25)"
+        },
+        children: withdraw.error.message
+      }
+    ),
+    withdrawSuccess !== null && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "p",
+      {
+        "data-ocid": "settings.treasury_success_state",
+        className: "text-xs rounded-lg px-3 py-2",
+        style: {
+          background: "rgba(34,197,94,0.12)",
+          color: "rgba(34,197,94,0.90)",
+          border: "1px solid rgba(34,197,94,0.25)"
+        },
+        children: [
+          "Úspešne prevedené ",
+          (Number(withdrawSuccess) / 1e8).toFixed(3),
+          " ",
+          "ICP na vašu peňaženku"
+        ]
+      }
+    ),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(
+      "button",
+      {
+        type: "button",
+        "data-ocid": "settings.withdraw_fees_button",
+        onClick: handleWithdraw,
+        disabled: withdraw.isPending || !platformFees || platformFees === 0n,
+        className: "w-full rounded-2xl py-3 text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.01] disabled:opacity-40 disabled:cursor-not-allowed",
+        style: {
+          background: "linear-gradient(135deg, rgba(251,191,36,0.25), rgba(245,158,11,0.25))",
+          color: "#fbbf24",
+          border: "1px solid rgba(251,191,36,0.30)"
+        },
+        children: withdraw.isPending ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { size: 14, className: "animate-spin" }),
+          "Spracovávam..."
+        ] }) : "Vybrať na moju peňaženku"
+      }
+    )
+  ] });
 }
 function ThemeAccordion() {
   const { t } = useTranslation();
@@ -703,6 +1178,8 @@ function ThemeSettingsInline() {
 function SettingsPage() {
   const { t } = useTranslation();
   const calcRef = reactExports.useRef(null);
+  const [calculatedIcp, setCalculatedIcp] = reactExports.useState(0);
+  const [showTopUp, setShowTopUp] = reactExports.useState(false);
   function scrollToCalc() {
     var _a;
     (_a = calcRef.current) == null ? void 0 : _a.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -731,8 +1208,27 @@ function SettingsPage() {
             }
           )
         ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("section", { "data-ocid": "settings.cycles_section", children: /* @__PURE__ */ jsxRuntimeExports.jsx(CyclesCard, { onTopUpClick: scrollToCalc }) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("section", { "data-ocid": "settings.calculator_section", children: /* @__PURE__ */ jsxRuntimeExports.jsx(CalculatorCard, { calcRef }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("section", { "data-ocid": "settings.cycles_section", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+          CyclesCard,
+          {
+            onTopUpClick: scrollToCalc,
+            calculatedIcp,
+            showTopUp,
+            setShowTopUp
+          }
+        ) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("section", { "data-ocid": "settings.calculator_section", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+          CalculatorCard,
+          {
+            calcRef,
+            onIcpChange: setCalculatedIcp,
+            onTopUpRequest: () => {
+              setShowTopUp(true);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          }
+        ) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("section", { "data-ocid": "settings.treasury_section", children: /* @__PURE__ */ jsxRuntimeExports.jsx(AdminTreasuryCard, {}) }),
         /* @__PURE__ */ jsxRuntimeExports.jsx("section", { "data-ocid": "settings.theme_section", children: /* @__PURE__ */ jsxRuntimeExports.jsx(ThemeAccordion, {}) })
       ] })
     }

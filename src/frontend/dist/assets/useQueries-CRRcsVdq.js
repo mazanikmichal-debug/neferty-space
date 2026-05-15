@@ -7,7 +7,15 @@ var __privateAdd = (obj, member, value) => member.has(obj) ? __typeError("Cannot
 var __privateSet = (obj, member, value, setter) => (__accessCheck(obj, member, "write to private field"), setter ? setter.call(obj, value) : member.set(obj, value), value);
 var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "access private method"), method);
 var _client, _currentQuery, _currentQueryInitialState, _currentResult, _currentResultState, _currentResultOptions, _currentThenable, _selectError, _selectFn, _selectResult, _lastQueryWithDefinedData, _staleTimeoutId, _refetchIntervalId, _currentRefetchInterval, _trackedProps, _QueryObserver_instances, executeFetch_fn, updateStaleTimeout_fn, computeRefetchInterval_fn, updateRefetchInterval_fn, updateTimers_fn, clearStaleTimeout_fn, clearRefetchInterval_fn, updateQuery_fn, notify_fn, _a, _client2, _currentResult2, _currentMutation, _mutateOptions, _MutationObserver_instances, updateResult_fn, notify_fn2, _b;
-import { m as Subscribable, p as pendingThenable, n as resolveEnabled, s as shallowEqualObjects, q as resolveStaleTime, t as noop, w as environmentManager, x as isValidTimeout, y as timeUntilStale, z as timeoutManager, A as focusManager, B as fetchState, D as replaceData, E as notifyManager, F as hashKey, G as getDefaultState, r as reactExports, H as shouldThrowError, J as useQueryClient, l as useBackend, P as Principal } from "./index-B8lwuDBy.js";
+import { P as Principal, m as Subscribable, p as pendingThenable, n as resolveEnabled, s as shallowEqualObjects, q as resolveStaleTime, t as noop, w as environmentManager, x as isValidTimeout, y as timeUntilStale, z as timeoutManager, A as focusManager, B as fetchState, D as replaceData, E as notifyManager, F as hashKey, G as getDefaultState, r as reactExports, H as shouldThrowError, J as useQueryClient, f as useBackend, _ as __vitePreload, K as JSON_KEY_PRINCIPAL, M as base32Decode, N as base32Encode, O as getCrc32 } from "./index-Dzz2Xx7E.js";
+const index = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  JSON_KEY_PRINCIPAL,
+  Principal,
+  base32Decode,
+  base32Encode,
+  getCrc32
+}, Symbol.toStringTag, { value: "Module" }));
 var QueryObserver = (_a = class extends Subscribable {
   constructor(client, options) {
     super();
@@ -880,12 +888,94 @@ function useGetMyHealthStatus() {
     staleTime: 3e4
   });
 }
+function useGetFactoryAccountId() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+  return useQuery({
+    queryKey: ["factoryAccountId"],
+    queryFn: async () => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      return actor.getFactoryAccountId();
+    },
+    enabled: actorReady,
+    staleTime: 3e5
+    // account ID doesn't change
+  });
+}
+function useTopUpCollection() {
+  const { actor } = useBackend();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (blockIndex) => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      const result = await actor.topUpCollection(blockIndex);
+      if (result.__kind__ === "err") throw new Error(result.err);
+      return result.ok;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myHealthStatus"] });
+      queryClient.invalidateQueries({ queryKey: ["myCollectionCycles"] });
+    }
+  });
+}
+function useGetAdminPrincipal() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+  return useQuery({
+    queryKey: ["adminPrincipal"],
+    queryFn: async () => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      const p = await actor.getAdminPrincipal();
+      return p.toText();
+    },
+    enabled: actorReady,
+    staleTime: 3e5
+  });
+}
+function useGetPlatformFees() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+  return useQuery({
+    queryKey: ["platformFees"],
+    queryFn: async () => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      return actor.getPlatformFees();
+    },
+    enabled: actorReady,
+    staleTime: 3e4
+  });
+}
+function useWithdrawPlatformFees() {
+  const { actor } = useBackend();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (principalText) => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      const { Principal: Principal2 } = await __vitePreload(async () => {
+        const { Principal: Principal22 } = await Promise.resolve().then(() => index);
+        return { Principal: Principal22 };
+      }, true ? void 0 : void 0);
+      const p = Principal2.fromText(principalText);
+      const result = await actor.withdrawPlatformFees(p);
+      if (result.__kind__ === "err") throw new Error(result.err);
+      return result.ok;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["platformFees"] });
+    }
+  });
+}
 export {
-  useSetNFTVisibility as a,
-  useGetNFTHistory as b,
-  useGetMyNFTs as c,
-  useGetAllPublicNFTs as d,
-  useMintNFT as e,
-  useGetMyHealthStatus as f,
-  useTransferNFT as u
+  useGetMyHealthStatus as a,
+  useGetAdminPrincipal as b,
+  useGetPlatformFees as c,
+  useWithdrawPlatformFees as d,
+  useGetFactoryAccountId as e,
+  useTopUpCollection as f,
+  useTransferNFT as g,
+  useSetNFTVisibility as h,
+  useGetNFTHistory as i,
+  useGetMyNFTs as j,
+  useMintNFT as k,
+  useGetAllPublicNFTs as u
 };

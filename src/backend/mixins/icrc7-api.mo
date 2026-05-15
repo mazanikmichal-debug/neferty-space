@@ -2,6 +2,7 @@ import Principal "mo:core/Principal";
 import NFTLib "../lib/nft";
 import Int "mo:core/Int";
 import Nat "mo:core/Nat";
+import NFTTypes "../types/nft";
 
 mixin (state : NFTLib.State) {
   // ICRC-7 Value variant for token metadata
@@ -76,7 +77,7 @@ mixin (state : NFTLib.State) {
   public query func icrc7_tokens_of(account : Account, prev : ?Nat, take : ?Nat) : async [Nat] {
     let owned = state.nfts.entries()
       .filter(func((_, nft)) { Principal.equal(nft.owner, account.owner) })
-      .map<(Nat, NFTLib.State), Nat>(func(entry) { entry.0 })
+      .map(func(entry) { entry.0 })
       .toArray();
     let startIndex = switch (prev) {
       case null 0;
