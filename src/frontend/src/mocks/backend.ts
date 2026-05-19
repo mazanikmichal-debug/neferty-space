@@ -1,4 +1,11 @@
-import { CollectionPhase, CycleHealth, HealthStatus, Variant_Mint_Transfer } from "../backend.d";
+import { 
+  CollectionPhase,
+  CycleHealth,
+  HealthStatus,
+  PendingTx,
+  TxStatus,
+  Variant_Mint_Transfer,
+ } from "../backend.d";
 import type { 
   MintResult,
   NFTMetadata,
@@ -95,7 +102,7 @@ export const mockBackend: backendInterface = {
   ],
   createMyCollection: async () => Principal.fromText("aaaaa-aa"),
   getCollectionPhase: async (_user: Principal): Promise<CollectionPhase> => CollectionPhase.Free,
-  getMyCollection: async (_user: Principal): Promise<Principal | null> => null,
+  getMyCollection: async (_user: Principal): Promise<Principal | null> => Principal.fromText("rdmx6-jaaaa-aaaaa-aaadq-cai"),
   getMyMintCount: async (_user: Principal): Promise<bigint> => BigInt(0),
   getICPPrice: async (): Promise<number> => 10.0,
   estimateCycles: async (_imageCount: bigint): Promise<bigint> => BigInt(20_000_000_000) * _imageCount,
@@ -109,7 +116,9 @@ export const mockBackend: backendInterface = {
     const cycles = (usd / 1.2) * 1_000_000_000_000;
     return BigInt(Math.floor(cycles / 20_000_000_000));
   },
+  // MOCK DATA - only used in local dev, never in production
   getMyCollectionCycles: async (): Promise<bigint> => BigInt(500_000_000_000_000),
+  // MOCK DATA - only used in local dev, never in production
   getMyHealthStatus: async (): Promise<HealthStatus> => ({
     status: "Zbierka má palivo na cca 450 dní",
     imagesRemaining: BigInt(250),
@@ -131,4 +140,37 @@ export const mockBackend: backendInterface = {
     __kind__: "ok" as const,
     ok: BigInt(0),
   }),
+  getStatus: async () => ({
+    cycles: BigInt(2_500_000_000_000),
+    memory: BigInt(420 * 1024 * 1024),
+    heap_memory: BigInt(180 * 1024 * 1024),
+    estimate_days: BigInt(450),
+  }),
+  getCmcDepositAddress: async (): Promise<string> => "2d0e897f7e862d2b57d9bc9ea5c65f9a24ac6c074575f47898314b8d6cb0929d",
+  processTopUp: async (_blockIndex: bigint, _collectionId: Principal): Promise<import('../backend.d').ProcessTopUpResult> => ({
+    __kind__: "ok" as const,
+    ok: { icpUsed: BigInt(50_000_000), cyclesMinted: BigInt(4_200_000_000_000), platformFee: BigInt(12_500_000) },
+  }),
+  retryTopUp: async (_blockIndex: bigint): Promise<import('../backend.d').ProcessTopUpResult> => ({
+    __kind__: "ok" as const,
+    ok: { icpUsed: BigInt(50_000_000), cyclesMinted: BigInt(4_200_000_000_000), platformFee: BigInt(12_500_000) },
+  }),
+  adminRetryTopUp: async (_blockIndex: bigint): Promise<import('../backend.d').ProcessTopUpResult> => ({
+    __kind__: "ok" as const,
+    ok: { icpUsed: BigInt(50_000_000), cyclesMinted: BigInt(4_200_000_000_000), platformFee: BigInt(12_500_000) },
+  }),
+  getMyPendingTransactions: async (): Promise<PendingTx[]> => [],
+  getPendingTransactions: async (): Promise<PendingTx[]> => [],
+  getNFTImage: async (_tokenId: bigint): Promise<Uint8Array | null> => sampleImageBytes,
+  getCollectionStatus: async (_collectionId: Principal) => ({
+    cycles: BigInt(500_000_000_000),
+    imageCount: BigInt(8),
+    ownerPrincipal: Principal.fromText("aaaaa-aa"),
+  }),
+  cleanupCorruptedRegistry: async (): Promise<bigint> => BigInt(0),
+  getUserRegistryEntry: async (): Promise<Principal | null> => null,
+  isUsingDefaultCollection: async () => true,
+  addAdmin: async (_newAdmin: Principal) => ({ __kind__: "ok" as const, ok: null }),
+  listAdmins: async (): Promise<Principal[]> => [],
+  removeAdmin: async (_adminToRemove: Principal) => ({ __kind__: "ok" as const, ok: null }),
 };

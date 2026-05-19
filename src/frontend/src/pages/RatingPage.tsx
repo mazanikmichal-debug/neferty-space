@@ -1,13 +1,14 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetAllPublicNFTs } from "@/hooks/useQueries";
+import { useGetNFTImage } from "@/hooks/useQueries";
 import { useRatingDisplay } from "@/hooks/useRatingDisplay";
 import type {
   RatingDisplaySettings,
   SavedProfile,
 } from "@/hooks/useRatingDisplay";
 import { RATING_DISPLAY_PRESETS } from "@/hooks/useRatingDisplay";
-import type { NFTMetadata } from "@/types/nft";
-import { nftImageUrl } from "@/utils/nftImage";
+import type { NFTMetadataLite } from "@/types/nft";
+import { nftImageUrlById } from "@/utils/nftImage";
 import type React from "react";
 import { type ReactElement, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -18,12 +19,12 @@ import { toast } from "sonner";
 // Helpers
 // ---------------------------------------------------------------------------
 function useShuffledNFTs(
-  nfts: NFTMetadata[] | undefined,
-): NFTMetadata[] | undefined {
-  const [shuffled, setShuffled] = useState<NFTMetadata[] | undefined>(
+  nfts: NFTMetadataLite[] | undefined,
+): NFTMetadataLite[] | undefined {
+  const [shuffled, setShuffled] = useState<NFTMetadataLite[] | undefined>(
     undefined,
   );
-  const prevRef = useRef<NFTMetadata[] | undefined>(undefined);
+  const prevRef = useRef<NFTMetadataLite[] | undefined>(undefined);
   useEffect(() => {
     if (!nfts) {
       setShuffled(undefined);
@@ -123,11 +124,13 @@ function ActiveCard({
   rating,
   settings,
 }: {
-  nft: NFTMetadata;
+  nft: NFTMetadataLite;
   rating: EmotionId | null;
   settings: RatingDisplaySettings;
 }) {
   const ratedEmotion = EMOTIONS.find((e) => e.id === rating);
+  const { data: imageBytes } = useGetNFTImage(nft.tokenId);
+  const imageUrl = imageBytes ? nftImageUrlById(nft.tokenId, imageBytes) : "";
   const aspectStyle =
     settings.cardAspectRatio === "auto"
       ? {}
@@ -149,7 +152,7 @@ function ActiveCard({
       }}
     >
       <img
-        src={nftImageUrl(nft.image)}
+        src={imageUrl}
         alt={nft.name}
         loading="eager"
         draggable={false}
@@ -212,10 +215,12 @@ function PeekCard({
   nft,
   pos,
   settings,
-}: { nft: NFTMetadata; pos: number; settings: RatingDisplaySettings }) {
+}: { nft: NFTMetadataLite; pos: number; settings: RatingDisplaySettings }) {
   const opacities = [1, 0.85, 0.65, 0.45, 0.28];
   const opacity = (opacities[pos] ?? 0.2) * settings.opacity;
   const [hovered, setHovered] = useState(false);
+  const { data: imageBytes } = useGetNFTImage(nft.tokenId);
+  const imageUrl = imageBytes ? nftImageUrlById(nft.tokenId, imageBytes) : "";
   return (
     <div
       className="w-full h-full rounded-2xl overflow-hidden"
@@ -240,7 +245,7 @@ function PeekCard({
       }}
     >
       <img
-        src={nftImageUrl(nft.image)}
+        src={imageUrl}
         alt={nft.name}
         loading="lazy"
         draggable={false}
@@ -2383,7 +2388,7 @@ export default function RatingPage() {
   const [ratings, setRatings] = useState<Record<string, EmotionId>>({});
   const [activeIndex, setActiveIndex] = useState(0);
   const [exitState, setExitState] = useState<{
-    nft: NFTMetadata;
+    nft: NFTMetadataLite;
     dir: "left" | "right";
   } | null>(null);
   const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

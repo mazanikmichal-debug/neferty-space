@@ -35,8 +35,8 @@ mixin (state : NFTLib.State, factoryState : NFTLib.FactoryState) {
     result;
   };
 
-  public shared ({ caller }) func getMyNFTs() : async [Types.NFTMetadata] {
-    NFTLib.getByOwner(state, caller);
+  public shared ({ caller }) func getMyNFTs() : async [Types.NFTMetadataLite] {
+    NFTLib.getByOwnerLite(state, caller);
   };
 
   public query func getNFT(tokenId : Types.TokenId) : async ?Types.NFTMetadata {
@@ -56,20 +56,26 @@ mixin (state : NFTLib.State, factoryState : NFTLib.FactoryState) {
       case (?nft) ?nft.history;
     };
   };
-  public query func getAllPublicNFTs() : async [Types.NFTMetadata] {
-    NFTLib.getAllPublic(state);
+  public query func getAllPublicNFTs() : async [Types.NFTMetadataLite] {
+    NFTLib.getAllPublicLite(state);
   };
 
-  public query func getAllPublicNFTsPaginated(offset : Nat, limit : Nat) : async Types.NFTPage {
-    NFTLib.getAllPublicPaginated(state, offset, limit);
+  public query func getAllPublicNFTsPaginated(offset : Nat, limit : Nat) : async Types.NFTPageLite {
+    NFTLib.getAllPublicPaginatedLite(state, offset, limit);
   };
 
-  public shared ({ caller }) func getMyNFTsPaginated(offset : Nat, limit : Nat) : async Types.NFTPage {
-    NFTLib.getByOwnerPaginated(state, caller, offset, limit);
+  public shared ({ caller }) func getMyNFTsPaginated(offset : Nat, limit : Nat) : async Types.NFTPageLite {
+    NFTLib.getByOwnerPaginatedLite(state, caller, offset, limit);
   };
 
-  public query func getAllPublicNFTsByOwner(owner : Principal) : async [Types.NFTMetadata] {
-    NFTLib.getAllPublicByOwner(state, owner);
+  public query func getAllPublicNFTsByOwner(owner : Principal) : async [Types.NFTMetadataLite] {
+    NFTLib.getAllPublicByOwnerLite(state, owner);
+  };
+
+  /// Returns only the image Blob for a single NFT.
+  /// Use this after fetching the list — avoids the 2 MB response limit.
+  public query func getNFTImage(tokenId : Types.TokenId) : async ?Blob {
+    NFTLib.getImageById(state, tokenId);
   };
 
   public shared ({ caller }) func setNFTVisibility(

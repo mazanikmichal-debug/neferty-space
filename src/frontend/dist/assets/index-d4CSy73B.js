@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/GalleryPage-BuWCuOlR.js","assets/useAddressHistory-BogifUMq.js","assets/useQueries-CRRcsVdq.js","assets/utils-BsXaUsmB.js","assets/chevron-down-BNH9W-0P.js","assets/skeleton-Dl3FbxI0.js","assets/MintPage-C-hfN3_W.js","assets/RatingPage-BkhGw6Yz.js","assets/SettingsPage-EvshckRg.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["assets/GalleryPage-t-2XsNUJ.js","assets/useAddressHistory-Dws-voMY.js","assets/useQueries-eFwKLunX.js","assets/utils-CFaqURYB.js","assets/skeleton-B2rKExMY.js","assets/MintPage-IflHxGrg.js","assets/RatingPage-8EMQsZ5l.js","assets/SettingsPage-EgOVy6uK.js"])))=>i.map(i=>d[i]);
 var __defProp = Object.defineProperty;
 var __typeError = (msg) => {
   throw TypeError(msg);
@@ -38649,6 +38649,14 @@ function ThemeProvider({ children }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsx(ThemeContext.Provider, { value, children: /* @__PURE__ */ jsxRuntimeExports.jsx(RatingDisplayContext.Provider, { value: ratingValue, children }) });
 }
 const Value = Rec();
+const ProcessTopUpResult = Variant({
+  "ok": Record({
+    "platformFee": Nat64,
+    "icpUsed": Nat64,
+    "cyclesMinted": Nat
+  }),
+  "err": Text
+});
 const TokenId = Nat;
 const Time = Int;
 const TransactionEvent = Record({
@@ -38657,20 +38665,19 @@ const TransactionEvent = Record({
   "timestamp": Int,
   "eventType": Variant({ "Mint": Null, "Transfer": Null })
 });
-const NFTMetadata = Record({
+const NFTMetadataLite = Record({
   "tokenId": TokenId,
   "owner": Principal2,
   "name": Text,
   "createdAt": Time,
   "description": Text,
   "history": Vec(TransactionEvent),
-  "image": Vec(Nat8),
   "isPublic": Bool,
   "collectionName": Opt(Text)
 });
-const NFTPage = Record({
+const NFTPageLite = Record({
   "total": Nat,
-  "items": Vec(NFTMetadata)
+  "items": Vec(NFTMetadataLite)
 });
 const CollectionPhase = Variant({
   "Premium": Null,
@@ -38690,6 +38697,32 @@ const HealthStatus = Record({
   "healthColor": CycleHealth,
   "rawCycles": Nat,
   "daysRemaining": Nat
+});
+const TxStatus = Variant({
+  "pending": Null,
+  "completed": Null,
+  "failed": Null
+});
+const PendingTx = Record({
+  "status": TxStatus,
+  "lastAttemptAt": Int,
+  "collectionId": Principal2,
+  "createdAt": Int,
+  "retryCount": Nat,
+  "blockIndex": Nat64,
+  "caller": Principal2,
+  "amount": Nat64
+});
+const NFTMetadata = Record({
+  "tokenId": TokenId,
+  "owner": Principal2,
+  "name": Text,
+  "createdAt": Time,
+  "description": Text,
+  "history": Vec(TransactionEvent),
+  "image": Vec(Nat8),
+  "isPublic": Bool,
+  "collectionName": Opt(Text)
 });
 const Standard = Record({ "url": Text, "name": Text });
 const Account = Record({
@@ -38733,6 +38766,13 @@ const WithdrawResult = Variant({
   "err": Text
 });
 Service({
+  "addAdmin": Func(
+    [Principal2],
+    [Variant({ "ok": Null, "err": Text })],
+    []
+  ),
+  "adminRetryTopUp": Func([Nat64], [ProcessTopUpResult], []),
+  "cleanupCorruptedRegistry": Func([], [Nat], []),
   "createMyCollection": Func([], [Principal2], []),
   "estimateCycles": Func([Nat], [Nat], ["query"]),
   "estimateICPForImages": Func(
@@ -38746,18 +38786,30 @@ Service({
     ["query"]
   ),
   "getAdminPrincipal": Func([], [Principal2], ["query"]),
-  "getAllPublicNFTs": Func([], [Vec(NFTMetadata)], ["query"]),
+  "getAllPublicNFTs": Func([], [Vec(NFTMetadataLite)], ["query"]),
   "getAllPublicNFTsByOwner": Func(
     [Principal2],
-    [Vec(NFTMetadata)],
+    [Vec(NFTMetadataLite)],
     ["query"]
   ),
   "getAllPublicNFTsPaginated": Func(
     [Nat, Nat],
-    [NFTPage],
+    [NFTPageLite],
     ["query"]
   ),
+  "getCmcDepositAddress": Func([], [Text], []),
   "getCollectionPhase": Func([Principal2], [CollectionPhase], []),
+  "getCollectionStatus": Func(
+    [Principal2],
+    [
+      Record({
+        "ownerPrincipal": Principal2,
+        "imageCount": Nat,
+        "cycles": Nat
+      })
+    ],
+    []
+  ),
   "getFactoryAccountId": Func([], [Text], ["query"]),
   "getICPPrice": Func([], [Float64], []),
   "getMyCollection": Func(
@@ -38768,15 +38820,31 @@ Service({
   "getMyCollectionCycles": Func([], [Nat], []),
   "getMyHealthStatus": Func([], [HealthStatus], []),
   "getMyMintCount": Func([Principal2], [Nat], []),
-  "getMyNFTs": Func([], [Vec(NFTMetadata)], []),
-  "getMyNFTsPaginated": Func([Nat, Nat], [NFTPage], []),
+  "getMyNFTs": Func([], [Vec(NFTMetadataLite)], []),
+  "getMyNFTsPaginated": Func([Nat, Nat], [NFTPageLite], []),
+  "getMyPendingTransactions": Func([], [Vec(PendingTx)], ["query"]),
   "getNFT": Func([TokenId], [Opt(NFTMetadata)], ["query"]),
   "getNFTHistory": Func(
     [TokenId],
     [Opt(Vec(TransactionEvent))],
     ["query"]
   ),
-  "getPlatformFees": Func([], [Nat64], ["query"]),
+  "getNFTImage": Func([TokenId], [Opt(Vec(Nat8))], ["query"]),
+  "getPendingTransactions": Func([], [Vec(PendingTx)], ["query"]),
+  "getPlatformFees": Func([], [Nat64], []),
+  "getStatus": Func(
+    [],
+    [
+      Record({
+        "memory": Nat,
+        "cycles": Nat,
+        "heap_memory": Nat,
+        "estimate_days": Nat
+      })
+    ],
+    []
+  ),
+  "getUserRegistryEntry": Func([], [Opt(Principal2)], ["query"]),
   "icrc10_supported_standards": Func([], [Vec(Standard)], ["query"]),
   "icrc7_description": Func([], [Opt(Text)], ["query"]),
   "icrc7_name": Func([], [Text], ["query"]),
@@ -38799,6 +38867,8 @@ Service({
   ),
   "icrc7_total_supply": Func([], [Nat], ["query"]),
   "initSelf": Func([], [], []),
+  "isUsingDefaultCollection": Func([Principal2], [Bool], ["query"]),
+  "listAdmins": Func([], [Vec(Principal2)], ["query"]),
   "mintNFT": Func(
     [
       Text,
@@ -38811,6 +38881,17 @@ Service({
     [MintResult],
     []
   ),
+  "processTopUp": Func(
+    [Nat64, Principal2],
+    [ProcessTopUpResult],
+    []
+  ),
+  "removeAdmin": Func(
+    [Principal2],
+    [Variant({ "ok": Null, "err": Text })],
+    []
+  ),
+  "retryTopUp": Func([Nat64], [ProcessTopUpResult], []),
   "setNFTVisibility": Func([TokenId, Bool], [VisibilityResult], []),
   "topUpCollection": Func([Nat64], [TopUpResult], []),
   "transferNFT": Func([TokenId, Principal2], [TransferResult], []),
@@ -38818,6 +38899,14 @@ Service({
 });
 const idlFactory = ({ IDL: IDL2 }) => {
   const Value2 = IDL2.Rec();
+  const ProcessTopUpResult2 = IDL2.Variant({
+    "ok": IDL2.Record({
+      "platformFee": IDL2.Nat64,
+      "icpUsed": IDL2.Nat64,
+      "cyclesMinted": IDL2.Nat
+    }),
+    "err": IDL2.Text
+  });
   const TokenId2 = IDL2.Nat;
   const Time2 = IDL2.Int;
   const TransactionEvent2 = IDL2.Record({
@@ -38826,20 +38915,19 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "timestamp": IDL2.Int,
     "eventType": IDL2.Variant({ "Mint": IDL2.Null, "Transfer": IDL2.Null })
   });
-  const NFTMetadata2 = IDL2.Record({
+  const NFTMetadataLite2 = IDL2.Record({
     "tokenId": TokenId2,
     "owner": IDL2.Principal,
     "name": IDL2.Text,
     "createdAt": Time2,
     "description": IDL2.Text,
     "history": IDL2.Vec(TransactionEvent2),
-    "image": IDL2.Vec(IDL2.Nat8),
     "isPublic": IDL2.Bool,
     "collectionName": IDL2.Opt(IDL2.Text)
   });
-  const NFTPage2 = IDL2.Record({
+  const NFTPageLite2 = IDL2.Record({
     "total": IDL2.Nat,
-    "items": IDL2.Vec(NFTMetadata2)
+    "items": IDL2.Vec(NFTMetadataLite2)
   });
   const CollectionPhase2 = IDL2.Variant({
     "Premium": IDL2.Null,
@@ -38859,6 +38947,32 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "healthColor": CycleHealth2,
     "rawCycles": IDL2.Nat,
     "daysRemaining": IDL2.Nat
+  });
+  const TxStatus2 = IDL2.Variant({
+    "pending": IDL2.Null,
+    "completed": IDL2.Null,
+    "failed": IDL2.Null
+  });
+  const PendingTx2 = IDL2.Record({
+    "status": TxStatus2,
+    "lastAttemptAt": IDL2.Int,
+    "collectionId": IDL2.Principal,
+    "createdAt": IDL2.Int,
+    "retryCount": IDL2.Nat,
+    "blockIndex": IDL2.Nat64,
+    "caller": IDL2.Principal,
+    "amount": IDL2.Nat64
+  });
+  const NFTMetadata2 = IDL2.Record({
+    "tokenId": TokenId2,
+    "owner": IDL2.Principal,
+    "name": IDL2.Text,
+    "createdAt": Time2,
+    "description": IDL2.Text,
+    "history": IDL2.Vec(TransactionEvent2),
+    "image": IDL2.Vec(IDL2.Nat8),
+    "isPublic": IDL2.Bool,
+    "collectionName": IDL2.Opt(IDL2.Text)
   });
   const Standard2 = IDL2.Record({ "url": IDL2.Text, "name": IDL2.Text });
   const Account2 = IDL2.Record({
@@ -38893,6 +39007,13 @@ const idlFactory = ({ IDL: IDL2 }) => {
   const TransferResult2 = IDL2.Variant({ "ok": IDL2.Null, "err": IDL2.Text });
   const WithdrawResult2 = IDL2.Variant({ "ok": IDL2.Nat64, "err": IDL2.Text });
   return IDL2.Service({
+    "addAdmin": IDL2.Func(
+      [IDL2.Principal],
+      [IDL2.Variant({ "ok": IDL2.Null, "err": IDL2.Text })],
+      []
+    ),
+    "adminRetryTopUp": IDL2.Func([IDL2.Nat64], [ProcessTopUpResult2], []),
+    "cleanupCorruptedRegistry": IDL2.Func([], [IDL2.Nat], []),
     "createMyCollection": IDL2.Func([], [IDL2.Principal], []),
     "estimateCycles": IDL2.Func([IDL2.Nat], [IDL2.Nat], ["query"]),
     "estimateICPForImages": IDL2.Func(
@@ -38906,18 +39027,30 @@ const idlFactory = ({ IDL: IDL2 }) => {
       ["query"]
     ),
     "getAdminPrincipal": IDL2.Func([], [IDL2.Principal], ["query"]),
-    "getAllPublicNFTs": IDL2.Func([], [IDL2.Vec(NFTMetadata2)], ["query"]),
+    "getAllPublicNFTs": IDL2.Func([], [IDL2.Vec(NFTMetadataLite2)], ["query"]),
     "getAllPublicNFTsByOwner": IDL2.Func(
       [IDL2.Principal],
-      [IDL2.Vec(NFTMetadata2)],
+      [IDL2.Vec(NFTMetadataLite2)],
       ["query"]
     ),
     "getAllPublicNFTsPaginated": IDL2.Func(
       [IDL2.Nat, IDL2.Nat],
-      [NFTPage2],
+      [NFTPageLite2],
       ["query"]
     ),
+    "getCmcDepositAddress": IDL2.Func([], [IDL2.Text], []),
     "getCollectionPhase": IDL2.Func([IDL2.Principal], [CollectionPhase2], []),
+    "getCollectionStatus": IDL2.Func(
+      [IDL2.Principal],
+      [
+        IDL2.Record({
+          "ownerPrincipal": IDL2.Principal,
+          "imageCount": IDL2.Nat,
+          "cycles": IDL2.Nat
+        })
+      ],
+      []
+    ),
     "getFactoryAccountId": IDL2.Func([], [IDL2.Text], ["query"]),
     "getICPPrice": IDL2.Func([], [IDL2.Float64], []),
     "getMyCollection": IDL2.Func(
@@ -38928,15 +39061,35 @@ const idlFactory = ({ IDL: IDL2 }) => {
     "getMyCollectionCycles": IDL2.Func([], [IDL2.Nat], []),
     "getMyHealthStatus": IDL2.Func([], [HealthStatus2], []),
     "getMyMintCount": IDL2.Func([IDL2.Principal], [IDL2.Nat], []),
-    "getMyNFTs": IDL2.Func([], [IDL2.Vec(NFTMetadata2)], []),
-    "getMyNFTsPaginated": IDL2.Func([IDL2.Nat, IDL2.Nat], [NFTPage2], []),
+    "getMyNFTs": IDL2.Func([], [IDL2.Vec(NFTMetadataLite2)], []),
+    "getMyNFTsPaginated": IDL2.Func([IDL2.Nat, IDL2.Nat], [NFTPageLite2], []),
+    "getMyPendingTransactions": IDL2.Func([], [IDL2.Vec(PendingTx2)], ["query"]),
     "getNFT": IDL2.Func([TokenId2], [IDL2.Opt(NFTMetadata2)], ["query"]),
     "getNFTHistory": IDL2.Func(
       [TokenId2],
       [IDL2.Opt(IDL2.Vec(TransactionEvent2))],
       ["query"]
     ),
-    "getPlatformFees": IDL2.Func([], [IDL2.Nat64], ["query"]),
+    "getNFTImage": IDL2.Func(
+      [TokenId2],
+      [IDL2.Opt(IDL2.Vec(IDL2.Nat8))],
+      ["query"]
+    ),
+    "getPendingTransactions": IDL2.Func([], [IDL2.Vec(PendingTx2)], ["query"]),
+    "getPlatformFees": IDL2.Func([], [IDL2.Nat64], []),
+    "getStatus": IDL2.Func(
+      [],
+      [
+        IDL2.Record({
+          "memory": IDL2.Nat,
+          "cycles": IDL2.Nat,
+          "heap_memory": IDL2.Nat,
+          "estimate_days": IDL2.Nat
+        })
+      ],
+      []
+    ),
+    "getUserRegistryEntry": IDL2.Func([], [IDL2.Opt(IDL2.Principal)], ["query"]),
     "icrc10_supported_standards": IDL2.Func([], [IDL2.Vec(Standard2)], ["query"]),
     "icrc7_description": IDL2.Func([], [IDL2.Opt(IDL2.Text)], ["query"]),
     "icrc7_name": IDL2.Func([], [IDL2.Text], ["query"]),
@@ -38959,6 +39112,12 @@ const idlFactory = ({ IDL: IDL2 }) => {
     ),
     "icrc7_total_supply": IDL2.Func([], [IDL2.Nat], ["query"]),
     "initSelf": IDL2.Func([], [], []),
+    "isUsingDefaultCollection": IDL2.Func(
+      [IDL2.Principal],
+      [IDL2.Bool],
+      ["query"]
+    ),
+    "listAdmins": IDL2.Func([], [IDL2.Vec(IDL2.Principal)], ["query"]),
     "mintNFT": IDL2.Func(
       [
         IDL2.Text,
@@ -38971,6 +39130,17 @@ const idlFactory = ({ IDL: IDL2 }) => {
       [MintResult2],
       []
     ),
+    "processTopUp": IDL2.Func(
+      [IDL2.Nat64, IDL2.Principal],
+      [ProcessTopUpResult2],
+      []
+    ),
+    "removeAdmin": IDL2.Func(
+      [IDL2.Principal],
+      [IDL2.Variant({ "ok": IDL2.Null, "err": IDL2.Text })],
+      []
+    ),
+    "retryTopUp": IDL2.Func([IDL2.Nat64], [ProcessTopUpResult2], []),
     "setNFTVisibility": IDL2.Func([TokenId2, IDL2.Bool], [VisibilityResult2], []),
     "topUpCollection": IDL2.Func([IDL2.Nat64], [TopUpResult2], []),
     "transferNFT": IDL2.Func([TokenId2, IDL2.Principal], [TransferResult2], []),
@@ -38999,6 +39169,48 @@ class Backend {
     this._uploadFile = _uploadFile;
     this._downloadFile = _downloadFile;
     this.processError = processError2;
+  }
+  async addAdmin(arg0) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.addAdmin(arg0);
+        return from_candid_variant_n1(this._uploadFile, this._downloadFile, result);
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.addAdmin(arg0);
+      return from_candid_variant_n1(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async adminRetryTopUp(arg0) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.adminRetryTopUp(arg0);
+        return from_candid_ProcessTopUpResult_n2(this._uploadFile, this._downloadFile, result);
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.adminRetryTopUp(arg0);
+      return from_candid_ProcessTopUpResult_n2(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async cleanupCorruptedRegistry() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.cleanupCorruptedRegistry();
+        return result;
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.cleanupCorruptedRegistry();
+      return result;
+    }
   }
   async createMyCollection() {
     if (this.processError) {
@@ -39074,56 +39286,84 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.getAllPublicNFTs();
-        return from_candid_vec_n1(this._uploadFile, this._downloadFile, result);
+        return from_candid_vec_n4(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getAllPublicNFTs();
-      return from_candid_vec_n1(this._uploadFile, this._downloadFile, result);
+      return from_candid_vec_n4(this._uploadFile, this._downloadFile, result);
     }
   }
   async getAllPublicNFTsByOwner(arg0) {
     if (this.processError) {
       try {
         const result = await this.actor.getAllPublicNFTsByOwner(arg0);
-        return from_candid_vec_n1(this._uploadFile, this._downloadFile, result);
+        return from_candid_vec_n4(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getAllPublicNFTsByOwner(arg0);
-      return from_candid_vec_n1(this._uploadFile, this._downloadFile, result);
+      return from_candid_vec_n4(this._uploadFile, this._downloadFile, result);
     }
   }
   async getAllPublicNFTsPaginated(arg0, arg1) {
     if (this.processError) {
       try {
         const result = await this.actor.getAllPublicNFTsPaginated(arg0, arg1);
-        return from_candid_NFTPage_n10(this._uploadFile, this._downloadFile, result);
+        return from_candid_NFTPageLite_n13(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getAllPublicNFTsPaginated(arg0, arg1);
-      return from_candid_NFTPage_n10(this._uploadFile, this._downloadFile, result);
+      return from_candid_NFTPageLite_n13(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async getCmcDepositAddress() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getCmcDepositAddress();
+        return result;
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getCmcDepositAddress();
+      return result;
     }
   }
   async getCollectionPhase(arg0) {
     if (this.processError) {
       try {
         const result = await this.actor.getCollectionPhase(arg0);
-        return from_candid_CollectionPhase_n12(this._uploadFile, this._downloadFile, result);
+        return from_candid_CollectionPhase_n15(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getCollectionPhase(arg0);
-      return from_candid_CollectionPhase_n12(this._uploadFile, this._downloadFile, result);
+      return from_candid_CollectionPhase_n15(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async getCollectionStatus(arg0) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getCollectionStatus(arg0);
+        return result;
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getCollectionStatus(arg0);
+      return result;
     }
   }
   async getFactoryAccountId() {
@@ -39158,14 +39398,14 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.getMyCollection(arg0);
-        return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
+        return from_candid_opt_n10(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getMyCollection(arg0);
-      return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
+      return from_candid_opt_n10(this._uploadFile, this._downloadFile, result);
     }
   }
   async getMyCollectionCycles() {
@@ -39186,14 +39426,14 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.getMyHealthStatus();
-        return from_candid_HealthStatus_n14(this._uploadFile, this._downloadFile, result);
+        return from_candid_HealthStatus_n17(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getMyHealthStatus();
-      return from_candid_HealthStatus_n14(this._uploadFile, this._downloadFile, result);
+      return from_candid_HealthStatus_n17(this._uploadFile, this._downloadFile, result);
     }
   }
   async getMyMintCount(arg0) {
@@ -39214,56 +39454,98 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.getMyNFTs();
-        return from_candid_vec_n1(this._uploadFile, this._downloadFile, result);
+        return from_candid_vec_n4(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getMyNFTs();
-      return from_candid_vec_n1(this._uploadFile, this._downloadFile, result);
+      return from_candid_vec_n4(this._uploadFile, this._downloadFile, result);
     }
   }
   async getMyNFTsPaginated(arg0, arg1) {
     if (this.processError) {
       try {
         const result = await this.actor.getMyNFTsPaginated(arg0, arg1);
-        return from_candid_NFTPage_n10(this._uploadFile, this._downloadFile, result);
+        return from_candid_NFTPageLite_n13(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getMyNFTsPaginated(arg0, arg1);
-      return from_candid_NFTPage_n10(this._uploadFile, this._downloadFile, result);
+      return from_candid_NFTPageLite_n13(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async getMyPendingTransactions() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getMyPendingTransactions();
+        return from_candid_vec_n21(this._uploadFile, this._downloadFile, result);
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getMyPendingTransactions();
+      return from_candid_vec_n21(this._uploadFile, this._downloadFile, result);
     }
   }
   async getNFT(arg0) {
     if (this.processError) {
       try {
         const result = await this.actor.getNFT(arg0);
-        return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
+        return from_candid_opt_n26(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getNFT(arg0);
-      return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
+      return from_candid_opt_n26(this._uploadFile, this._downloadFile, result);
     }
   }
   async getNFTHistory(arg0) {
     if (this.processError) {
       try {
         const result = await this.actor.getNFTHistory(arg0);
-        return from_candid_opt_n19(this._uploadFile, this._downloadFile, result);
+        return from_candid_opt_n29(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.getNFTHistory(arg0);
-      return from_candid_opt_n19(this._uploadFile, this._downloadFile, result);
+      return from_candid_opt_n29(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async getNFTImage(arg0) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getNFTImage(arg0);
+        return from_candid_opt_n30(this._uploadFile, this._downloadFile, result);
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getNFTImage(arg0);
+      return from_candid_opt_n30(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async getPendingTransactions() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getPendingTransactions();
+        return from_candid_vec_n21(this._uploadFile, this._downloadFile, result);
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getPendingTransactions();
+      return from_candid_vec_n21(this._uploadFile, this._downloadFile, result);
     }
   }
   async getPlatformFees() {
@@ -39278,6 +39560,34 @@ class Backend {
     } else {
       const result = await this.actor.getPlatformFees();
       return result;
+    }
+  }
+  async getStatus() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getStatus();
+        return result;
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getStatus();
+      return result;
+    }
+  }
+  async getUserRegistryEntry() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.getUserRegistryEntry();
+        return from_candid_opt_n10(this._uploadFile, this._downloadFile, result);
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.getUserRegistryEntry();
+      return from_candid_opt_n10(this._uploadFile, this._downloadFile, result);
     }
   }
   async icrc10_supported_standards() {
@@ -39298,14 +39608,14 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.icrc7_description();
-        return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
+        return from_candid_opt_n12(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.icrc7_description();
-      return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
+      return from_candid_opt_n12(this._uploadFile, this._downloadFile, result);
     }
   }
   async icrc7_name() {
@@ -39326,14 +39636,14 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.icrc7_owner_of(arg0);
-        return from_candid_opt_n20(this._uploadFile, this._downloadFile, result);
+        return from_candid_opt_n31(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.icrc7_owner_of(arg0);
-      return from_candid_opt_n20(this._uploadFile, this._downloadFile, result);
+      return from_candid_opt_n31(this._uploadFile, this._downloadFile, result);
     }
   }
   async icrc7_symbol() {
@@ -39354,41 +39664,41 @@ class Backend {
     if (this.processError) {
       try {
         const result = await this.actor.icrc7_token_metadata(arg0);
-        return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
+        return from_candid_vec_n34(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.icrc7_token_metadata(arg0);
-      return from_candid_vec_n24(this._uploadFile, this._downloadFile, result);
+      return from_candid_vec_n34(this._uploadFile, this._downloadFile, result);
     }
   }
   async icrc7_tokens(arg0, arg1) {
     if (this.processError) {
       try {
-        const result = await this.actor.icrc7_tokens(to_candid_opt_n30(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n30(this._uploadFile, this._downloadFile, arg1));
+        const result = await this.actor.icrc7_tokens(to_candid_opt_n40(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n40(this._uploadFile, this._downloadFile, arg1));
         return result;
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
-      const result = await this.actor.icrc7_tokens(to_candid_opt_n30(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n30(this._uploadFile, this._downloadFile, arg1));
+      const result = await this.actor.icrc7_tokens(to_candid_opt_n40(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n40(this._uploadFile, this._downloadFile, arg1));
       return result;
     }
   }
   async icrc7_tokens_of(arg0, arg1, arg2) {
     if (this.processError) {
       try {
-        const result = await this.actor.icrc7_tokens_of(to_candid_Account_n31(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n30(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n30(this._uploadFile, this._downloadFile, arg2));
+        const result = await this.actor.icrc7_tokens_of(to_candid_Account_n41(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n40(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n40(this._uploadFile, this._downloadFile, arg2));
         return result;
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
-      const result = await this.actor.icrc7_tokens_of(to_candid_Account_n31(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n30(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n30(this._uploadFile, this._downloadFile, arg2));
+      const result = await this.actor.icrc7_tokens_of(to_candid_Account_n41(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n40(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n40(this._uploadFile, this._downloadFile, arg2));
       return result;
     }
   }
@@ -39420,200 +39730,330 @@ class Backend {
       return result;
     }
   }
-  async mintNFT(arg0, arg1, arg2, arg3, arg4, arg5) {
+  async isUsingDefaultCollection(arg0) {
     if (this.processError) {
       try {
-        const result = await this.actor.mintNFT(arg0, arg1, arg2, to_candid_opt_n33(this._uploadFile, this._downloadFile, arg3), arg4, to_candid_opt_n34(this._uploadFile, this._downloadFile, arg5));
-        return from_candid_MintResult_n35(this._uploadFile, this._downloadFile, result);
+        const result = await this.actor.isUsingDefaultCollection(arg0);
+        return result;
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
-      const result = await this.actor.mintNFT(arg0, arg1, arg2, to_candid_opt_n33(this._uploadFile, this._downloadFile, arg3), arg4, to_candid_opt_n34(this._uploadFile, this._downloadFile, arg5));
-      return from_candid_MintResult_n35(this._uploadFile, this._downloadFile, result);
+      const result = await this.actor.isUsingDefaultCollection(arg0);
+      return result;
+    }
+  }
+  async listAdmins() {
+    if (this.processError) {
+      try {
+        const result = await this.actor.listAdmins();
+        return result;
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.listAdmins();
+      return result;
+    }
+  }
+  async mintNFT(arg0, arg1, arg2, arg3, arg4, arg5) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.mintNFT(arg0, arg1, arg2, to_candid_opt_n43(this._uploadFile, this._downloadFile, arg3), arg4, to_candid_opt_n44(this._uploadFile, this._downloadFile, arg5));
+        return from_candid_MintResult_n45(this._uploadFile, this._downloadFile, result);
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.mintNFT(arg0, arg1, arg2, to_candid_opt_n43(this._uploadFile, this._downloadFile, arg3), arg4, to_candid_opt_n44(this._uploadFile, this._downloadFile, arg5));
+      return from_candid_MintResult_n45(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async processTopUp(arg0, arg1) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.processTopUp(arg0, arg1);
+        return from_candid_ProcessTopUpResult_n2(this._uploadFile, this._downloadFile, result);
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.processTopUp(arg0, arg1);
+      return from_candid_ProcessTopUpResult_n2(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async removeAdmin(arg0) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.removeAdmin(arg0);
+        return from_candid_variant_n1(this._uploadFile, this._downloadFile, result);
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.removeAdmin(arg0);
+      return from_candid_variant_n1(this._uploadFile, this._downloadFile, result);
+    }
+  }
+  async retryTopUp(arg0) {
+    if (this.processError) {
+      try {
+        const result = await this.actor.retryTopUp(arg0);
+        return from_candid_ProcessTopUpResult_n2(this._uploadFile, this._downloadFile, result);
+      } catch (e) {
+        this.processError(e);
+        throw new Error("unreachable");
+      }
+    } else {
+      const result = await this.actor.retryTopUp(arg0);
+      return from_candid_ProcessTopUpResult_n2(this._uploadFile, this._downloadFile, result);
     }
   }
   async setNFTVisibility(arg0, arg1) {
     if (this.processError) {
       try {
         const result = await this.actor.setNFTVisibility(arg0, arg1);
-        return from_candid_VisibilityResult_n37(this._uploadFile, this._downloadFile, result);
+        return from_candid_VisibilityResult_n47(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.setNFTVisibility(arg0, arg1);
-      return from_candid_VisibilityResult_n37(this._uploadFile, this._downloadFile, result);
+      return from_candid_VisibilityResult_n47(this._uploadFile, this._downloadFile, result);
     }
   }
   async topUpCollection(arg0) {
     if (this.processError) {
       try {
         const result = await this.actor.topUpCollection(arg0);
-        return from_candid_TopUpResult_n39(this._uploadFile, this._downloadFile, result);
+        return from_candid_TopUpResult_n48(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.topUpCollection(arg0);
-      return from_candid_TopUpResult_n39(this._uploadFile, this._downloadFile, result);
+      return from_candid_TopUpResult_n48(this._uploadFile, this._downloadFile, result);
     }
   }
   async transferNFT(arg0, arg1) {
     if (this.processError) {
       try {
         const result = await this.actor.transferNFT(arg0, arg1);
-        return from_candid_TransferResult_n41(this._uploadFile, this._downloadFile, result);
+        return from_candid_TransferResult_n49(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.transferNFT(arg0, arg1);
-      return from_candid_TransferResult_n41(this._uploadFile, this._downloadFile, result);
+      return from_candid_TransferResult_n49(this._uploadFile, this._downloadFile, result);
     }
   }
   async withdrawPlatformFees(arg0) {
     if (this.processError) {
       try {
         const result = await this.actor.withdrawPlatformFees(arg0);
-        return from_candid_WithdrawResult_n42(this._uploadFile, this._downloadFile, result);
+        return from_candid_WithdrawResult_n50(this._uploadFile, this._downloadFile, result);
       } catch (e) {
         this.processError(e);
         throw new Error("unreachable");
       }
     } else {
       const result = await this.actor.withdrawPlatformFees(arg0);
-      return from_candid_WithdrawResult_n42(this._uploadFile, this._downloadFile, result);
+      return from_candid_WithdrawResult_n50(this._uploadFile, this._downloadFile, result);
     }
   }
 }
-function from_candid_Account_n21(_uploadFile, _downloadFile, value) {
-  return from_candid_record_n22(_uploadFile, _downloadFile, value);
+function from_candid_Account_n32(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n33(_uploadFile, _downloadFile, value);
 }
-function from_candid_CollectionPhase_n12(_uploadFile, _downloadFile, value) {
-  return from_candid_variant_n13(_uploadFile, _downloadFile, value);
+function from_candid_CollectionPhase_n15(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n16(_uploadFile, _downloadFile, value);
 }
-function from_candid_CycleHealth_n16(_uploadFile, _downloadFile, value) {
-  return from_candid_variant_n17(_uploadFile, _downloadFile, value);
+function from_candid_CycleHealth_n19(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n20(_uploadFile, _downloadFile, value);
 }
-function from_candid_HealthStatus_n14(_uploadFile, _downloadFile, value) {
-  return from_candid_record_n15(_uploadFile, _downloadFile, value);
+function from_candid_HealthStatus_n17(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n18(_uploadFile, _downloadFile, value);
 }
-function from_candid_MintResult_n35(_uploadFile, _downloadFile, value) {
-  return from_candid_variant_n36(_uploadFile, _downloadFile, value);
+function from_candid_MintResult_n45(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n46(_uploadFile, _downloadFile, value);
 }
-function from_candid_NFTMetadata_n2(_uploadFile, _downloadFile, value) {
-  return from_candid_record_n3(_uploadFile, _downloadFile, value);
-}
-function from_candid_NFTPage_n10(_uploadFile, _downloadFile, value) {
-  return from_candid_record_n11(_uploadFile, _downloadFile, value);
-}
-function from_candid_TopUpResult_n39(_uploadFile, _downloadFile, value) {
-  return from_candid_variant_n40(_uploadFile, _downloadFile, value);
-}
-function from_candid_TransactionEvent_n5(_uploadFile, _downloadFile, value) {
+function from_candid_NFTMetadataLite_n5(_uploadFile, _downloadFile, value) {
   return from_candid_record_n6(_uploadFile, _downloadFile, value);
 }
-function from_candid_TransferResult_n41(_uploadFile, _downloadFile, value) {
-  return from_candid_variant_n38(_uploadFile, _downloadFile, value);
+function from_candid_NFTMetadata_n27(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n28(_uploadFile, _downloadFile, value);
 }
-function from_candid_Value_n28(_uploadFile, _downloadFile, value) {
-  return from_candid_variant_n29(_uploadFile, _downloadFile, value);
+function from_candid_NFTPageLite_n13(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n14(_uploadFile, _downloadFile, value);
 }
-function from_candid_VisibilityResult_n37(_uploadFile, _downloadFile, value) {
-  return from_candid_variant_n38(_uploadFile, _downloadFile, value);
+function from_candid_PendingTx_n22(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n23(_uploadFile, _downloadFile, value);
 }
-function from_candid_WithdrawResult_n42(_uploadFile, _downloadFile, value) {
-  return from_candid_variant_n43(_uploadFile, _downloadFile, value);
+function from_candid_ProcessTopUpResult_n2(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n3(_uploadFile, _downloadFile, value);
 }
-function from_candid_opt_n18(_uploadFile, _downloadFile, value) {
-  return value.length === 0 ? null : from_candid_NFTMetadata_n2(_uploadFile, _downloadFile, value[0]);
+function from_candid_TopUpResult_n48(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n3(_uploadFile, _downloadFile, value);
 }
-function from_candid_opt_n19(_uploadFile, _downloadFile, value) {
-  return value.length === 0 ? null : from_candid_vec_n4(_uploadFile, _downloadFile, value[0]);
+function from_candid_TransactionEvent_n8(_uploadFile, _downloadFile, value) {
+  return from_candid_record_n9(_uploadFile, _downloadFile, value);
 }
-function from_candid_opt_n20(_uploadFile, _downloadFile, value) {
-  return value.length === 0 ? null : from_candid_Account_n21(_uploadFile, _downloadFile, value[0]);
+function from_candid_TransferResult_n49(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n1(_uploadFile, _downloadFile, value);
 }
-function from_candid_opt_n23(_uploadFile, _downloadFile, value) {
+function from_candid_TxStatus_n24(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n25(_uploadFile, _downloadFile, value);
+}
+function from_candid_Value_n38(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n39(_uploadFile, _downloadFile, value);
+}
+function from_candid_VisibilityResult_n47(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n1(_uploadFile, _downloadFile, value);
+}
+function from_candid_WithdrawResult_n50(_uploadFile, _downloadFile, value) {
+  return from_candid_variant_n51(_uploadFile, _downloadFile, value);
+}
+function from_candid_opt_n10(_uploadFile, _downloadFile, value) {
   return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n25(_uploadFile, _downloadFile, value) {
-  return value.length === 0 ? null : from_candid_vec_n26(_uploadFile, _downloadFile, value[0]);
-}
-function from_candid_opt_n7(_uploadFile, _downloadFile, value) {
+function from_candid_opt_n12(_uploadFile, _downloadFile, value) {
   return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n9(_uploadFile, _downloadFile, value) {
+function from_candid_opt_n26(_uploadFile, _downloadFile, value) {
+  return value.length === 0 ? null : from_candid_NFTMetadata_n27(_uploadFile, _downloadFile, value[0]);
+}
+function from_candid_opt_n29(_uploadFile, _downloadFile, value) {
+  return value.length === 0 ? null : from_candid_vec_n7(_uploadFile, _downloadFile, value[0]);
+}
+function from_candid_opt_n30(_uploadFile, _downloadFile, value) {
   return value.length === 0 ? null : value[0];
 }
-function from_candid_record_n11(_uploadFile, _downloadFile, value) {
+function from_candid_opt_n31(_uploadFile, _downloadFile, value) {
+  return value.length === 0 ? null : from_candid_Account_n32(_uploadFile, _downloadFile, value[0]);
+}
+function from_candid_opt_n35(_uploadFile, _downloadFile, value) {
+  return value.length === 0 ? null : from_candid_vec_n36(_uploadFile, _downloadFile, value[0]);
+}
+function from_candid_record_n14(_uploadFile, _downloadFile, value) {
   return {
     total: value.total,
-    items: from_candid_vec_n1(_uploadFile, _downloadFile, value.items)
+    items: from_candid_vec_n4(_uploadFile, _downloadFile, value.items)
   };
 }
-function from_candid_record_n15(_uploadFile, _downloadFile, value) {
+function from_candid_record_n18(_uploadFile, _downloadFile, value) {
   return {
     status: value.status,
     daysPercentage: value.daysPercentage,
     imagesRemaining: value.imagesRemaining,
     estimatedStorageMB: value.estimatedStorageMB,
-    healthColor: from_candid_CycleHealth_n16(_uploadFile, _downloadFile, value.healthColor),
+    healthColor: from_candid_CycleHealth_n19(_uploadFile, _downloadFile, value.healthColor),
     rawCycles: value.rawCycles,
     daysRemaining: value.daysRemaining
   };
 }
-function from_candid_record_n22(_uploadFile, _downloadFile, value) {
+function from_candid_record_n23(_uploadFile, _downloadFile, value) {
   return {
-    owner: value.owner,
-    subaccount: record_opt_to_undefined(from_candid_opt_n23(_uploadFile, _downloadFile, value.subaccount))
+    status: from_candid_TxStatus_n24(_uploadFile, _downloadFile, value.status),
+    lastAttemptAt: value.lastAttemptAt,
+    collectionId: value.collectionId,
+    createdAt: value.createdAt,
+    retryCount: value.retryCount,
+    blockIndex: value.blockIndex,
+    caller: value.caller,
+    amount: value.amount
   };
 }
-function from_candid_record_n3(_uploadFile, _downloadFile, value) {
+function from_candid_record_n28(_uploadFile, _downloadFile, value) {
   return {
     tokenId: value.tokenId,
     owner: value.owner,
     name: value.name,
     createdAt: value.createdAt,
     description: value.description,
-    history: from_candid_vec_n4(_uploadFile, _downloadFile, value.history),
+    history: from_candid_vec_n7(_uploadFile, _downloadFile, value.history),
     image: value.image,
     isPublic: value.isPublic,
-    collectionName: record_opt_to_undefined(from_candid_opt_n9(_uploadFile, _downloadFile, value.collectionName))
+    collectionName: record_opt_to_undefined(from_candid_opt_n12(_uploadFile, _downloadFile, value.collectionName))
+  };
+}
+function from_candid_record_n33(_uploadFile, _downloadFile, value) {
+  return {
+    owner: value.owner,
+    subaccount: record_opt_to_undefined(from_candid_opt_n30(_uploadFile, _downloadFile, value.subaccount))
   };
 }
 function from_candid_record_n6(_uploadFile, _downloadFile, value) {
   return {
-    to: value.to,
-    from: record_opt_to_undefined(from_candid_opt_n7(_uploadFile, _downloadFile, value.from)),
-    timestamp: value.timestamp,
-    eventType: from_candid_variant_n8(_uploadFile, _downloadFile, value.eventType)
+    tokenId: value.tokenId,
+    owner: value.owner,
+    name: value.name,
+    createdAt: value.createdAt,
+    description: value.description,
+    history: from_candid_vec_n7(_uploadFile, _downloadFile, value.history),
+    isPublic: value.isPublic,
+    collectionName: record_opt_to_undefined(from_candid_opt_n12(_uploadFile, _downloadFile, value.collectionName))
   };
 }
-function from_candid_tuple_n27(_uploadFile, _downloadFile, value) {
+function from_candid_record_n9(_uploadFile, _downloadFile, value) {
+  return {
+    to: value.to,
+    from: record_opt_to_undefined(from_candid_opt_n10(_uploadFile, _downloadFile, value.from)),
+    timestamp: value.timestamp,
+    eventType: from_candid_variant_n11(_uploadFile, _downloadFile, value.eventType)
+  };
+}
+function from_candid_tuple_n37(_uploadFile, _downloadFile, value) {
   return [
     value[0],
-    from_candid_Value_n28(_uploadFile, _downloadFile, value[1])
+    from_candid_Value_n38(_uploadFile, _downloadFile, value[1])
   ];
 }
-function from_candid_variant_n13(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n1(_uploadFile, _downloadFile, value) {
+  return "ok" in value ? {
+    __kind__: "ok",
+    ok: value.ok
+  } : "err" in value ? {
+    __kind__: "err",
+    err: value.err
+  } : value;
+}
+function from_candid_variant_n11(_uploadFile, _downloadFile, value) {
+  return "Mint" in value ? "Mint" : "Transfer" in value ? "Transfer" : value;
+}
+function from_candid_variant_n16(_uploadFile, _downloadFile, value) {
   return "Premium" in value ? "Premium" : "Free" in value ? "Free" : "Bonus" in value ? "Bonus" : value;
 }
-function from_candid_variant_n17(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n20(_uploadFile, _downloadFile, value) {
   return "red" in value ? "red" : "orange" in value ? "orange" : "green" in value ? "green" : value;
 }
-function from_candid_variant_n29(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n25(_uploadFile, _downloadFile, value) {
+  return "pending" in value ? "pending" : "completed" in value ? "completed" : "failed" in value ? "failed" : value;
+}
+function from_candid_variant_n3(_uploadFile, _downloadFile, value) {
+  return "ok" in value ? {
+    __kind__: "ok",
+    ok: value.ok
+  } : "err" in value ? {
+    __kind__: "err",
+    err: value.err
+  } : value;
+}
+function from_candid_variant_n39(_uploadFile, _downloadFile, value) {
   return "Int" in value ? {
     __kind__: "Int",
     Int: value.Int
   } : "Map" in value ? {
     __kind__: "Map",
-    Map: from_candid_vec_n26(_uploadFile, _downloadFile, value.Map)
+    Map: from_candid_vec_n36(_uploadFile, _downloadFile, value.Map)
   } : "Nat" in value ? {
     __kind__: "Nat",
     Nat: value.Nat
@@ -39628,10 +40068,10 @@ function from_candid_variant_n29(_uploadFile, _downloadFile, value) {
     Text: value.Text
   } : "Array" in value ? {
     __kind__: "Array",
-    Array: from_candid_vec_n26(_uploadFile, _downloadFile, value.Array)
+    Array: from_candid_vec_n36(_uploadFile, _downloadFile, value.Array)
   } : value;
 }
-function from_candid_variant_n36(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n46(_uploadFile, _downloadFile, value) {
   return "ok" in value ? {
     __kind__: "ok",
     ok: value.ok
@@ -39643,7 +40083,7 @@ function from_candid_variant_n36(_uploadFile, _downloadFile, value) {
     paymentRequired: value.paymentRequired
   } : value;
 }
-function from_candid_variant_n38(_uploadFile, _downloadFile, value) {
+function from_candid_variant_n51(_uploadFile, _downloadFile, value) {
   return "ok" in value ? {
     __kind__: "ok",
     ok: value.ok
@@ -39652,52 +40092,34 @@ function from_candid_variant_n38(_uploadFile, _downloadFile, value) {
     err: value.err
   } : value;
 }
-function from_candid_variant_n40(_uploadFile, _downloadFile, value) {
-  return "ok" in value ? {
-    __kind__: "ok",
-    ok: value.ok
-  } : "err" in value ? {
-    __kind__: "err",
-    err: value.err
-  } : value;
+function from_candid_vec_n21(_uploadFile, _downloadFile, value) {
+  return value.map((x2) => from_candid_PendingTx_n22(_uploadFile, _downloadFile, x2));
 }
-function from_candid_variant_n43(_uploadFile, _downloadFile, value) {
-  return "ok" in value ? {
-    __kind__: "ok",
-    ok: value.ok
-  } : "err" in value ? {
-    __kind__: "err",
-    err: value.err
-  } : value;
+function from_candid_vec_n34(_uploadFile, _downloadFile, value) {
+  return value.map((x2) => from_candid_opt_n35(_uploadFile, _downloadFile, x2));
 }
-function from_candid_variant_n8(_uploadFile, _downloadFile, value) {
-  return "Mint" in value ? "Mint" : "Transfer" in value ? "Transfer" : value;
-}
-function from_candid_vec_n1(_uploadFile, _downloadFile, value) {
-  return value.map((x2) => from_candid_NFTMetadata_n2(_uploadFile, _downloadFile, x2));
-}
-function from_candid_vec_n24(_uploadFile, _downloadFile, value) {
-  return value.map((x2) => from_candid_opt_n25(_uploadFile, _downloadFile, x2));
-}
-function from_candid_vec_n26(_uploadFile, _downloadFile, value) {
-  return value.map((x2) => from_candid_tuple_n27(_uploadFile, _downloadFile, x2));
+function from_candid_vec_n36(_uploadFile, _downloadFile, value) {
+  return value.map((x2) => from_candid_tuple_n37(_uploadFile, _downloadFile, x2));
 }
 function from_candid_vec_n4(_uploadFile, _downloadFile, value) {
-  return value.map((x2) => from_candid_TransactionEvent_n5(_uploadFile, _downloadFile, x2));
+  return value.map((x2) => from_candid_NFTMetadataLite_n5(_uploadFile, _downloadFile, x2));
 }
-function to_candid_Account_n31(_uploadFile, _downloadFile, value) {
-  return to_candid_record_n32(_uploadFile, _downloadFile, value);
+function from_candid_vec_n7(_uploadFile, _downloadFile, value) {
+  return value.map((x2) => from_candid_TransactionEvent_n8(_uploadFile, _downloadFile, x2));
 }
-function to_candid_opt_n30(_uploadFile, _downloadFile, value) {
+function to_candid_Account_n41(_uploadFile, _downloadFile, value) {
+  return to_candid_record_n42(_uploadFile, _downloadFile, value);
+}
+function to_candid_opt_n40(_uploadFile, _downloadFile, value) {
   return value === null ? candid_none() : candid_some(value);
 }
-function to_candid_opt_n33(_uploadFile, _downloadFile, value) {
+function to_candid_opt_n43(_uploadFile, _downloadFile, value) {
   return value === null ? candid_none() : candid_some(value);
 }
-function to_candid_opt_n34(_uploadFile, _downloadFile, value) {
+function to_candid_opt_n44(_uploadFile, _downloadFile, value) {
   return value === null ? candid_none() : candid_some(value);
 }
-function to_candid_record_n32(_uploadFile, _downloadFile, value) {
+function to_candid_record_n42(_uploadFile, _downloadFile, value) {
   return {
     owner: value.owner,
     subaccount: value.subaccount ? candid_some(value.subaccount) : candid_none()
@@ -39852,12 +40274,12 @@ function LoginPage() {
     ] })
   ] });
 }
-const HomePage = reactExports.lazy(() => __vitePreload(() => import("./HomePage-CyNt8hpL.js"), true ? [] : void 0));
-const GalleryPage = reactExports.lazy(() => __vitePreload(() => import("./GalleryPage-BuWCuOlR.js"), true ? __vite__mapDeps([0,1,2,3,4,5]) : void 0));
-const MintPage = reactExports.lazy(() => __vitePreload(() => import("./MintPage-C-hfN3_W.js"), true ? __vite__mapDeps([6,1,2,3]) : void 0));
-const MarketplacePage = reactExports.lazy(() => __vitePreload(() => import("./MarketplacePage-CyLURbTm.js"), true ? [] : void 0));
-const RatingPage = reactExports.lazy(() => __vitePreload(() => import("./RatingPage-BkhGw6Yz.js"), true ? __vite__mapDeps([7,5,3,2]) : void 0));
-const SettingsPage = reactExports.lazy(() => __vitePreload(() => import("./SettingsPage-EvshckRg.js"), true ? __vite__mapDeps([8,2,4]) : void 0));
+const HomePage = reactExports.lazy(() => __vitePreload(() => import("./HomePage-DAV9ftFr.js"), true ? [] : void 0));
+const GalleryPage = reactExports.lazy(() => __vitePreload(() => import("./GalleryPage-t-2XsNUJ.js"), true ? __vite__mapDeps([0,1,2,3,4]) : void 0));
+const MintPage = reactExports.lazy(() => __vitePreload(() => import("./MintPage-IflHxGrg.js"), true ? __vite__mapDeps([5,1,2,3]) : void 0));
+const MarketplacePage = reactExports.lazy(() => __vitePreload(() => import("./MarketplacePage-DWPNanw-.js"), true ? [] : void 0));
+const RatingPage = reactExports.lazy(() => __vitePreload(() => import("./RatingPage-8EMQsZ5l.js"), true ? __vite__mapDeps([6,4,3,2]) : void 0));
+const SettingsPage = reactExports.lazy(() => __vitePreload(() => import("./SettingsPage-EgOVy6uK.js"), true ? __vite__mapDeps([7,2]) : void 0));
 const LoadingScreen = () => /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "min-h-screen bg-background flex items-center justify-center", children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-semibold uppercase tracking-widest text-muted-foreground animate-pulse", children: "Načítavam..." }) });
 function ProtectedLayout() {
   const { isAuthenticated, isInitializing } = useInternetIdentity();
@@ -39939,16 +40361,16 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   /* @__PURE__ */ jsxRuntimeExports.jsx(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ jsxRuntimeExports.jsx(InternetIdentityProvider, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) }) })
 );
 export {
-  focusManager as A,
-  fetchState as B,
+  timeoutManager as A,
+  focusManager as B,
   Check as C,
-  replaceData as D,
-  notifyManager as E,
-  hashKey as F,
-  getDefaultState as G,
-  shouldThrowError as H,
+  fetchState as D,
+  replaceData as E,
+  notifyManager as F,
+  hashKey as G,
+  getDefaultState as H,
   Images as I,
-  useQueryClient as J,
+  shouldThrowError as J,
   JSON_KEY_PRINCIPAL as K,
   Link as L,
   base32Decode as M,
@@ -39957,34 +40379,33 @@ export {
   Principal$1 as P,
   RATING_DISPLAY_PRESETS as R,
   Sparkles as S,
-  ThemeSettingsPanel as T,
   Variant_Mint_Transfer as V,
   X,
   __vitePreload as _,
   Store$1 as a,
   Star as b,
-  createLucideIcon as c,
-  useRatingDisplay as d,
-  reactDomExports as e,
-  useBackend as f,
-  useInternetIdentity as g,
-  Copy as h,
-  copyToClipboard as i,
+  useRatingDisplay as c,
+  reactDomExports as d,
+  createLucideIcon as e,
+  Copy as f,
+  copyToClipboard as g,
+  useAuth as h,
+  useInternetIdentity as i,
   jsxRuntimeExports as j,
-  useAuth as k,
-  React$4 as l,
-  Subscribable as m,
-  resolveEnabled as n,
+  React$4 as k,
+  useBackend as l,
+  useQueryClient as m,
+  Subscribable as n,
   o$1 as o,
   pendingThenable as p,
-  resolveStaleTime as q,
+  resolveEnabled as q,
   reactExports as r,
   shallowEqualObjects as s,
-  noop$5 as t,
+  resolveStaleTime as t,
   useTranslation as u,
   vt as v,
-  environmentManager as w,
-  isValidTimeout as x,
-  timeUntilStale as y,
-  timeoutManager as z
+  noop$5 as w,
+  environmentManager as x,
+  isValidTimeout as y,
+  timeUntilStale as z
 };

@@ -26,6 +26,18 @@ export interface NFTMetadata {
   collectionName?: string;
 }
 
+/** Lightweight NFT metadata — no image field. Used by list endpoints. */
+export interface NFTMetadataLite {
+  tokenId: TokenId;
+  owner: Principal;
+  name: string;
+  createdAt: Time;
+  description: string;
+  history: TransactionEvent[];
+  isPublic: boolean;
+  collectionName?: string;
+}
+
 export { Variant_Mint_Transfer };
 export type { TokenId, Time };
 export type { _TransactionEvent };

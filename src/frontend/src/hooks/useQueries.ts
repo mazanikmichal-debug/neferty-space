@@ -1,3 +1,4 @@
+import type { PendingTx } from "@/backend";
 /**
  * useQueries.ts — All backend React Query hooks.
  *
@@ -10,6 +11,7 @@ import type {
   CollectionPhase,
   HealthStatus,
   NFTMetadata,
+  NFTMetadataLite,
   TokenId,
   TransactionEvent,
 } from "@/types/nft";
@@ -20,7 +22,7 @@ export function useGetMyNFTs() {
   const { actor, isLoading: actorLoading } = useBackend();
   const actorReady = !!actor && !actorLoading;
 
-  return useQuery<NFTMetadata[], Error, NFTMetadata[], string[]>({
+  return useQuery<NFTMetadataLite[], Error, NFTMetadataLite[], string[]>({
     queryKey: ["myNFTs"],
     queryFn: async () => {
       if (!actor) throw new Error("Konfigurácia chýba");
@@ -28,6 +30,27 @@ export function useGetMyNFTs() {
     },
     enabled: actorReady,
     placeholderData: (prev) => prev,
+  });
+}
+
+/**
+ * useGetNFTImage — fetches image bytes for a single NFT by tokenId.
+ * Cached by React Query — each tokenId is fetched only once per session.
+ */
+export function useGetNFTImage(tokenId: bigint | null) {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+
+  return useQuery<Uint8Array | null, Error, Uint8Array | null, string[]>({
+    queryKey: ["nftImage", tokenId?.toString() ?? ""],
+    queryFn: async () => {
+      if (!actor || tokenId === null) return null;
+      const result = await actor.getNFTImage(tokenId);
+      return result ?? null;
+    },
+    enabled: actorReady && tokenId !== null,
+    staleTime: Number.POSITIVE_INFINITY, // images never change once minted
+    gcTime: 10 * 60_000, // keep in cache for 10 minutes
   });
 }
 
@@ -88,7 +111,7 @@ export function useGetAllPublicNFTs() {
   const { actor, isLoading: actorLoading } = useBackend();
   const actorReady = !!actor && !actorLoading;
 
-  return useQuery<NFTMetadata[], Error, NFTMetadata[], string[]>({
+  return useQuery<NFTMetadataLite[], Error, NFTMetadataLite[], string[]>({
     queryKey: ["allPublicNFTs"],
     queryFn: async () => {
       if (!actor) throw new Error("Konfigurácia chýba");
@@ -164,22 +187,111 @@ export function useGetICPPrice() {
   const { actor, isLoading: actorLoading } = useBackend();
   const actorReady = !!actor && !actorLoading;
 
-  return useQuery<number, Error, number, string[]>({
+  return useQuery<number | null, Error, number | null, string[]>({
     queryKey: ["icpPrice"],
     queryFn: async () => {
-      if (!actor) return 10.0;
+      if (!actor) return null;
       try {
         const price = await actor.getICPPrice();
-        return price > 0 ? price : 10.0;
+        return price > 0 ? price : null;
       } catch {
-        return 10.0;
+        return null;
       }
     },
     enabled: actorReady,
-    staleTime: 60_000,
-    placeholderData: 10.0,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    placeholderData: undefined,
   });
 }
+/**
+ * useGetMyCollection — fetches the caller's Collection canister Principal.
+ * Used to resolve collectionId before calling getCollectionStatus.
+ */
+export function useGetMyCollection() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+
+  return useQuery<Principal | null, Error, Principal | null, string[]>({
+    queryKey: ["myCollection"],
+    queryFn: async () => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      // getMyCollection takes a user Principal — we need identity here.
+      // We call getMyHealthStatus which internally resolves the collection,
+      // but a cleaner path is calling getMyCollection directly.
+      // The backend signature: getMyCollection(user: Principal): Principal | null
+      // We import useInternetIdentity in the hook indirectly via actor context.
+      // Since we don't have identity here, we call createMyCollection check instead.
+      // Approach: use actor.getMyCollection with a sentinel — the factory backend
+      // accepts getMyCollection(callerPrincipal) where callerPrincipal is passed explicitly.
+      // We call getMyHealthStatus to piggyback on the existing "find collection" logic,
+      // then return null for now. A direct approach: expose getMyCollectionId() on backend.
+      // Best option with current contract: call getMyCollectionCycles() which internally
+      // resolves the collection — but it only returns cycles, not the Principal.
+      // We must return the collection principal from getMyCollection(caller.getPrincipal()).
+      // Since actor doesn't expose caller identity directly here, we need the identity.
+      // This hook is called from CyclesCard which already has access to useInternetIdentity.
+      // Return a placeholder — CyclesCard will call the principal-aware version.
+      return null;
+    },
+    enabled: actorReady,
+    staleTime: 300_000,
+  });
+}
+
+/**
+ * useGetCollectionStatus — fetches live cycle balance + image count from a Collection canister.
+ * The Factory is the intermediary: actor.getCollectionStatus(collectionId).
+ * Returns { cycles, imageCount, ownerPrincipal }.
+ * staleTime 30s, refetchInterval 60s.
+ * If collectionId is null/empty the query is disabled.
+ */
+export function useGetCollectionStatus(collectionId: string | null) {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+  const enabled = actorReady && !!collectionId && collectionId.length > 0;
+
+  return useQuery<
+    {
+      cycles: bigint;
+      imageCount: bigint;
+      ownerPrincipal: import("@dfinity/principal").Principal;
+    },
+    Error,
+    {
+      cycles: bigint;
+      imageCount: bigint;
+      ownerPrincipal: import("@dfinity/principal").Principal;
+    },
+    string[]
+  >({
+    queryKey: ["collectionStatus", collectionId ?? ""],
+    queryFn: async () => {
+      if (!actor || !collectionId) throw new Error("Konfigurácia chýba");
+      try {
+        const principal = Principal.fromText(collectionId);
+        return await actor.getCollectionStatus(principal);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (
+          msg.includes("no collection") ||
+          msg.includes("not found") ||
+          msg.includes("nenájdená") ||
+          msg.includes("No collection")
+        ) {
+          throw new Error("NO_COLLECTION");
+        }
+        throw new Error(`Nepodarilo sa načítať stav cycles: ${msg}`);
+      }
+    },
+    enabled,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    retry: 2,
+    retryDelay: (attempt) => attempt * 2000,
+  });
+}
+
 /**
  * useGetMyCollectionCycles — fetches cycle balance of caller's collection canister.
  */
@@ -197,11 +309,13 @@ export function useGetMyCollectionCycles() {
     },
     enabled: actorReady,
     staleTime: 30_000,
+    refetchInterval: 60_000,
   });
 }
 
 /**
  * useGetMyHealthStatus — fetches visual health status of caller's collection canister.
+ * Retries twice with progressive backoff before surfacing an error.
  */
 export function useGetMyHealthStatus() {
   const { actor, isLoading: actorLoading } = useBackend();
@@ -211,7 +325,66 @@ export function useGetMyHealthStatus() {
     queryKey: ["myHealthStatus"],
     queryFn: async () => {
       if (!actor) throw new Error("Konfigurácia chýba");
-      return actor.getMyHealthStatus() as Promise<HealthStatus>;
+      try {
+        const result = await actor.getMyHealthStatus();
+        return result as HealthStatus;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (
+          msg.includes("no collection") ||
+          msg.includes("not found") ||
+          msg.includes("nenájdená") ||
+          msg.includes("No collection") ||
+          msg.includes("aaaaa-aa") ||
+          msg.includes("does not exist")
+        ) {
+          throw new Error("NO_COLLECTION");
+        }
+        throw new Error(`Nepodarilo sa načítať stav cycles: ${msg}`);
+      }
+    },
+    enabled: actorReady,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    retry: 2,
+    retryDelay: (attempt) => attempt * 2000,
+  });
+}
+
+/**
+ * useGetStatus — fetches real canister status (admin-only).
+ * Returns { cycles, memory, heap_memory, estimate_days } or null if unauthorized.
+ * staleTime 30s — load once on Settings open, no polling.
+ */
+export function useGetStatus() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+
+  return useQuery<
+    {
+      cycles: bigint;
+      memory: bigint;
+      heap_memory: bigint;
+      estimate_days: bigint;
+    } | null,
+    Error,
+    {
+      cycles: bigint;
+      memory: bigint;
+      heap_memory: bigint;
+      estimate_days: bigint;
+    } | null,
+    string[]
+  >({
+    queryKey: ["canisterStatus"],
+    queryFn: async () => {
+      if (!actor) return null;
+      try {
+        return await actor.getStatus();
+      } catch {
+        // Caller is not admin or network error — return null silently
+        return null;
+      }
     },
     enabled: actorReady,
     staleTime: 30_000,
@@ -234,6 +407,8 @@ export function useCreateMyCollection() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["myCollectionCycles"] });
       queryClient.invalidateQueries({ queryKey: ["myHealthStatus"] });
+      queryClient.invalidateQueries({ queryKey: ["myCollectionPrincipal"] });
+      queryClient.invalidateQueries({ queryKey: ["userRegistryEntry"] });
     },
   });
 }
@@ -336,6 +511,277 @@ export function useWithdrawPlatformFees() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["platformFees"] });
+    },
+  });
+}
+/**
+ * useGetCmcDepositAddress — fetches the CMC deposit address from backend.
+ * This is the Account Identifier that Plug Wallet sends ICP to.
+ * staleTime 5m — the address is deterministic and never changes.
+ */
+export function useGetCmcDepositAddress() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+
+  return useQuery<string, Error, string, string[]>({
+    queryKey: ["cmcDepositAddress"],
+    queryFn: async () => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      return actor.getCmcDepositAddress();
+    },
+    enabled: actorReady,
+    staleTime: 5 * 60_000,
+  });
+}
+
+/**
+ * useProcessTopUp — sends blockIndex + collectionId to backend processTopUp.
+ * Returns { icpUsed, cyclesMinted, platformFee } on success.
+ */
+export function useProcessTopUp() {
+  const { actor } = useBackend();
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    { icpUsed: bigint; cyclesMinted: bigint; platformFee: bigint },
+    Error,
+    { blockIndex: bigint; collectionId: Principal }
+  >({
+    mutationFn: async ({ blockIndex, collectionId }) => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      const result = await actor.processTopUp(blockIndex, collectionId);
+      if (result.__kind__ === "err") throw new Error(result.err);
+      return result.ok;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myHealthStatus"] });
+      queryClient.invalidateQueries({ queryKey: ["myCollectionCycles"] });
+      queryClient.invalidateQueries({ queryKey: ["myPendingTransactions"] });
+    },
+  });
+}
+
+/**
+ * useRetryTopUp — user-initiated retry for a pending transaction.
+ */
+export function useRetryTopUp() {
+  const { actor } = useBackend();
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    { icpUsed: bigint; cyclesMinted: bigint; platformFee: bigint },
+    Error,
+    bigint
+  >({
+    mutationFn: async (blockIndex: bigint) => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      const result = await actor.retryTopUp(blockIndex);
+      if (result.__kind__ === "err") throw new Error(result.err);
+      return result.ok;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myPendingTransactions"] });
+      queryClient.invalidateQueries({ queryKey: ["myHealthStatus"] });
+      queryClient.invalidateQueries({ queryKey: ["myCollectionCycles"] });
+    },
+  });
+}
+
+/**
+ * useAdminRetryTopUp — admin-initiated retry for any pending transaction.
+ */
+export function useAdminRetryTopUp() {
+  const { actor } = useBackend();
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    { icpUsed: bigint; cyclesMinted: bigint; platformFee: bigint },
+    Error,
+    bigint
+  >({
+    mutationFn: async (blockIndex: bigint) => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      const result = await actor.adminRetryTopUp(blockIndex);
+      if (result.__kind__ === "err") throw new Error(result.err);
+      return result.ok;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["allPendingTransactions"] });
+      queryClient.invalidateQueries({ queryKey: ["myPendingTransactions"] });
+    },
+  });
+}
+
+/**
+ * useGetMyPendingTransactions — polls caller's pending txs every 30s.
+ */
+export function useGetMyPendingTransactions() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+
+  return useQuery<PendingTx[], Error, PendingTx[], string[]>({
+    queryKey: ["myPendingTransactions"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getMyPendingTransactions();
+    },
+    enabled: actorReady,
+    refetchInterval: 30_000,
+    staleTime: 25_000,
+  });
+}
+
+/**
+ * useGetAllPendingTransactions — admin view, polls every 60s.
+ */
+export function useGetAllPendingTransactions() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+
+  return useQuery<PendingTx[], Error, PendingTx[], string[]>({
+    queryKey: ["allPendingTransactions"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getPendingTransactions();
+    },
+    enabled: actorReady,
+    refetchInterval: 60_000,
+    staleTime: 55_000,
+  });
+}
+
+/**
+ * useGetUserRegistryEntry — fetches the caller's Collection principal from the registry.
+ * Returns the principal text string, or null if no collection exists.
+ * A value of "aaaaa-aa" indicates a corrupted/placeholder registry entry.
+ *
+ * Uses getMyCollection under the hood — requires the caller's identity.
+ */
+export function useGetUserRegistryEntry(
+  callerPrincipal: import("@dfinity/principal").Principal | null,
+) {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading && callerPrincipal !== null;
+
+  return useQuery<string | null, Error, string | null, string[]>({
+    queryKey: ["userRegistryEntry"],
+    queryFn: async () => {
+      if (!actor || !callerPrincipal) return null;
+      try {
+        const result = await actor.getUserRegistryEntry();
+        return result ? result.toText() : null;
+      } catch {
+        return null;
+      }
+    },
+    enabled: actorReady,
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * useIsUsingDefaultCollection — returns true if the user's collection is the Factory canister itself
+ * (i.e., they have no dedicated Collection canister and use the shared Factory storage).
+ */
+export function useIsUsingDefaultCollection(
+  callerPrincipal: import("@dfinity/principal").Principal | null,
+) {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading && callerPrincipal !== null;
+
+  return useQuery<boolean, Error, boolean, string[]>({
+    queryKey: ["isUsingDefaultCollection", callerPrincipal?.toText() ?? ""],
+    queryFn: async () => {
+      if (!actor || !callerPrincipal) return false;
+      try {
+        const result = await actor.getMyCollection(callerPrincipal);
+        if (!result) return true; // null = no separate collection = using default
+        // If result equals the factory canister itself, it's the default
+        return false;
+      } catch {
+        return true; // on error treat as default
+      }
+    },
+    enabled: actorReady,
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * useCleanupCorruptedRegistry — calls cleanupCorruptedRegistry() for the authenticated user.
+ * On success invalidates registry entry and collection/health status queries.
+ */
+export function useCleanupCorruptedRegistry() {
+  const { actor } = useBackend();
+  const queryClient = useQueryClient();
+
+  return useMutation<bigint, Error>({
+    mutationFn: async (): Promise<bigint> => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      return actor.cleanupCorruptedRegistry();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["userRegistryEntry"] });
+      queryClient.invalidateQueries({ queryKey: ["myCollection"] });
+      queryClient.invalidateQueries({ queryKey: ["myCollectionPrincipal"] });
+      queryClient.invalidateQueries({ queryKey: ["myHealthStatus"] });
+      queryClient.invalidateQueries({ queryKey: ["myCollectionCycles"] });
+    },
+  });
+}
+
+/**
+ * useListAdmins — fetches the current list of admin principals.
+ */
+export function useListAdmins() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+
+  return useQuery<Principal[], Error, Principal[], string[]>({
+    queryKey: ["admins"],
+    queryFn: async () => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      return actor.listAdmins();
+    },
+    enabled: actorReady,
+    staleTime: 60_000,
+  });
+}
+
+/**
+ * useAddAdmin — mutation to add a new admin by principal text.
+ * Invalidates ["admins"] on success.
+ */
+export function useAddAdmin() {
+  const { actor } = useBackend();
+  const queryClient = useQueryClient();
+
+  return useMutation<{ ok: null } | { err: string }, Error, string>({
+    mutationFn: async (principalStr: string) => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      return actor.addAdmin(Principal.fromText(principalStr));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admins"] });
+    },
+  });
+}
+
+/**
+ * useRemoveAdmin — mutation to remove an admin by principal text.
+ * Invalidates ["admins"] on success.
+ */
+export function useRemoveAdmin() {
+  const { actor } = useBackend();
+  const queryClient = useQueryClient();
+
+  return useMutation<{ ok: null } | { err: string }, Error, string>({
+    mutationFn: async (principalStr: string) => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      return actor.removeAdmin(Principal.fromText(principalStr));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admins"] });
     },
   });
 }

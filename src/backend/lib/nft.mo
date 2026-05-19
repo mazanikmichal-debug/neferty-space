@@ -90,6 +90,85 @@ module {
     state.nfts.values().filter(func(nft) { Principal.equal(nft.owner, owner) }).toArray();
   };
 
+  /// Strip the image Blob from a single NFTMetadata record.
+  public func toLite(nft : Types.NFTMetadata) : Types.NFTMetadataLite {
+    {
+      tokenId       = nft.tokenId;
+      owner         = nft.owner;
+      name          = nft.name;
+      description   = nft.description;
+      createdAt     = nft.createdAt;
+      history       = nft.history;
+      isPublic      = nft.isPublic;
+      collectionName = nft.collectionName;
+    };
+  };
+
+  public func getByOwnerLite(
+    state : State,
+    owner : Principal,
+  ) : [Types.NFTMetadataLite] {
+    state.nfts.values()
+      .filter(func(nft) { Principal.equal(nft.owner, owner) })
+      .map<Types.NFTMetadata, Types.NFTMetadataLite>(toLite)
+      .toArray();
+  };
+
+  public func getAllPublicLite(
+    state : State,
+  ) : [Types.NFTMetadataLite] {
+    state.nfts.values()
+      .filter(func(nft) { nft.isPublic })
+      .map<Types.NFTMetadata, Types.NFTMetadataLite>(toLite)
+      .toArray();
+  };
+
+  public func getAllPublicByOwnerLite(
+    state : State,
+    owner : Principal,
+  ) : [Types.NFTMetadataLite] {
+    state.nfts.values()
+      .filter(func(nft) { nft.isPublic and Principal.equal(nft.owner, owner) })
+      .map<Types.NFTMetadata, Types.NFTMetadataLite>(toLite)
+      .toArray();
+  };
+
+  public func getAllPublicPaginatedLite(
+    state : State,
+    offset : Nat,
+    limit : Nat,
+  ) : Types.NFTPageLite {
+    let all = getAllPublicLite(state);
+    let total = all.size();
+    let start = if (offset >= total) total else offset;
+    let end_ = if (start + limit > total) total else start + limit;
+    { items = all.sliceToArray(start, end_); total };
+  };
+
+  public func getByOwnerPaginatedLite(
+    state : State,
+    owner : Principal,
+    offset : Nat,
+    limit : Nat,
+  ) : Types.NFTPageLite {
+    let all = getByOwnerLite(state, owner);
+    let total = all.size();
+    let start = if (offset >= total) total else offset;
+    let end_ = if (start + limit > total) total else start + limit;
+    { items = all.sliceToArray(start, end_); total };
+  };
+
+  /// Returns only the image Blob for a single NFT (for dedicated image fetches).
+  public func getImageById(
+    state : State,
+    tokenId : Types.TokenId,
+  ) : ?Blob {
+    switch (state.nfts.get(tokenId)) {
+      case null null;
+      case (?nft) ?nft.image;
+    };
+  };
+
   public func getById(
     state : State,
     tokenId : Types.TokenId,

@@ -1,13 +1,16 @@
 import CollectionTypes "../types/collection";
+import Cycles "mo:core/Cycles";
 import List "mo:core/List";
 import Principal "mo:core/Principal";
+import Runtime "mo:core/Runtime";
 import Time "mo:core/Time";
-import Cycles "mo:core/Cycles";
 
 /// actor class — each artist gets their own deployed instance.
-actor class Collection(initialOwner : Principal) {
 
-  let owner   : Principal                              = initialOwner;
+actor class Collection(initialOwner : Principal, factoryPrincipal : Principal) {
+
+  let owner          : Principal                              = initialOwner;
+  let factory        : Principal                              = factoryPrincipal;
   let nfts    : List.List<CollectionTypes.CollectionNFT> = List.empty();
   let counter : { var nextId : Nat }                   = { var nextId = 0 };
 
@@ -27,9 +30,20 @@ actor class Collection(initialOwner : Principal) {
     else #Premium;
   };
 
-  /// Returns raw cycle balance of this canister.
-  public query func getCycleBalance() : async Nat {
+  /// Returns this canister's cycle balance. Protected: only the Factory may call this.
+  public shared ({ caller }) func getCyclesBalance() : async Nat {
+    if (not Principal.equal(caller, factory)) {
+      Runtime.trap("Unauthorized: factory only");
+    };
     Cycles.balance();
+  };
+
+  /// Returns the current NFT count. Protected: only the Factory may call this.
+  public shared ({ caller }) func getImageCount() : async Nat {
+    if (not Principal.equal(caller, factory)) {
+      Runtime.trap("Unauthorized: factory only");
+    };
+    counter.nextId;
   };
 
   public query func getMyNFTs(offset : Nat, limit : Nat) : async CollectionTypes.NFTPage {

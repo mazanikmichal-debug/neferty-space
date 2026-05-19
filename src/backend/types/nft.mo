@@ -46,6 +46,27 @@ module {
     #err : Text;
   };
 
+  /// Result of processTopUp (includes cycles minted on success).
+  public type ProcessTopUpResult = {
+    #ok  : { cyclesMinted : Nat; icpUsed : Nat64; platformFee : Nat64 };
+    #err : Text;
+  };
+
+  /// Status of a pending top-up transaction.
+  public type TxStatus = { #pending; #completed; #failed };
+
+  /// Pending / completed transaction record stored in Factory.
+  public type PendingTx = {
+    caller        : Principal;
+    collectionId  : Principal;
+    amount        : Nat64;       // e8s verified from Ledger block
+    blockIndex    : Nat64;       // Ledger block index used for this top-up
+    status        : TxStatus;
+    retryCount    : Nat;
+    createdAt     : Int;
+    lastAttemptAt : Int;
+  };
+
   /// Admin withdrawal result.
   public type WithdrawResult = {
     #ok  : Nat64;
@@ -55,4 +76,19 @@ module {
   public type VisibilityResult = { #ok; #err : Text };
 
   public type NFTPage = { items : [NFTMetadata]; total : Nat };
+
+  /// Lightweight NFT metadata returned by list endpoints — NO image Blob.
+  /// Use getNFTImage(tokenId) to fetch the image separately.
+  public type NFTMetadataLite = {
+    tokenId : TokenId;
+    owner : Principal;
+    name : Text;
+    description : Text;
+    createdAt : Time.Time;
+    history : [TransactionEvent];
+    isPublic : Bool;
+    collectionName : ?Text;
+  };
+
+  public type NFTPageLite = { items : [NFTMetadataLite]; total : Nat };
 }

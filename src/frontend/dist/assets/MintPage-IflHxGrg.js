@@ -1,7 +1,7 @@
-import { g as useInternetIdentity, u as useTranslation, j as jsxRuntimeExports, r as reactExports, V as Variant_Mint_Transfer, l as React, P as Principal } from "./index-Dzz2Xx7E.js";
-import { C as Clock, I as ImageLightbox, u as useAddressHistory } from "./useAddressHistory-BogifUMq.js";
-import { j as useGetMyNFTs, k as useMintNFT } from "./useQueries-CRRcsVdq.js";
-import { n as nftImageUrl, c as cn } from "./utils-BsXaUsmB.js";
+import { i as useInternetIdentity, u as useTranslation, j as jsxRuntimeExports, r as reactExports, V as Variant_Mint_Transfer, k as React, P as Principal } from "./index-d4CSy73B.js";
+import { C as Clock, I as ImageLightbox, u as useAddressHistory } from "./useAddressHistory-Dws-voMY.js";
+import { e as useGetMyNFTs, a as useGetNFTImage, f as useMintNFT } from "./useQueries-eFwKLunX.js";
+import { n as nftImageUrlById, c as cn } from "./utils-CFaqURYB.js";
 function getSentStatus(nft, callerPrincipal) {
   const history = nft.history ?? [];
   for (let i = history.length - 1; i >= 0; i--) {
@@ -74,7 +74,8 @@ function HistoryEntryCard({
   const imgRef = reactExports.useRef(null);
   const status = getSentStatus(nft, callerPrincipal);
   const isSent = status === "sent";
-  const imageUrl = nftImageUrl(nft.image);
+  const { data: imageBytes } = useGetNFTImage(nft.tokenId);
+  const imageUrl = imageBytes ? nftImageUrlById(nft.tokenId, imageBytes) : "";
   const { t } = useTranslation();
   reactExports.useEffect(() => {
     const img = new Image();

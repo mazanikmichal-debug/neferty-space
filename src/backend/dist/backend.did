@@ -24,6 +24,12 @@ type Value =
    Nat: nat;
    Text: text;
  };
+type TxStatus = 
+ variant {
+   completed;
+   failed;
+   pending;
+ };
 type TransferResult = 
  variant {
    err: text;
@@ -55,10 +61,41 @@ type Standard =
    name: text;
    url: text;
  };
-type NFTPage = 
+type ProcessTopUpResult = 
+ variant {
+   err: text;
+   ok: record {
+         cyclesMinted: nat;
+         icpUsed: nat64;
+         platformFee: nat64;
+       };
+ };
+type PendingTx = 
  record {
-   items: vec NFTMetadata;
+   amount: nat64;
+   blockIndex: nat64;
+   caller: principal;
+   collectionId: principal;
+   createdAt: int;
+   lastAttemptAt: int;
+   retryCount: nat;
+   status: TxStatus;
+ };
+type NFTPageLite = 
+ record {
+   items: vec NFTMetadataLite;
    total: nat;
+ };
+type NFTMetadataLite = 
+ record {
+   collectionName: opt text;
+   createdAt: Time;
+   description: text;
+   history: vec TransactionEvent;
+   isPublic: bool;
+   name: text;
+   owner: principal;
+   tokenId: TokenId;
  };
 type NFTMetadata = 
  record {
@@ -106,6 +143,12 @@ type Account =
    subaccount: opt blob;
  };
 service : {
+  addAdmin: (newAdmin: principal) -> (variant {
+                                        err: text;
+                                        ok;
+                                      });
+  adminRetryTopUp: (blockIndex: nat64) -> (ProcessTopUpResult);
+  cleanupCorruptedRegistry: () -> (nat);
   createMyCollection: () -> (principal);
   estimateCycles: (imageCount: nat) -> (nat) query;
   estimateICPForImages: (imageCount: nat, icpPriceUSD: float64) ->
@@ -113,22 +156,41 @@ service : {
   estimateImagesForICP: (icpAmount: float64, icpPriceUSD: float64) ->
    (nat) query;
   getAdminPrincipal: () -> (principal) query;
-  getAllPublicNFTs: () -> (vec NFTMetadata) query;
-  getAllPublicNFTsByOwner: (owner: principal) -> (vec NFTMetadata) query;
-  getAllPublicNFTsPaginated: (offset: nat, limit: nat) -> (NFTPage) query;
+  getAllPublicNFTs: () -> (vec NFTMetadataLite) query;
+  getAllPublicNFTsByOwner: (owner: principal) -> (vec NFTMetadataLite) query;
+  getAllPublicNFTsPaginated: (offset: nat, limit: nat) -> (NFTPageLite) query;
+  getCmcDepositAddress: () -> (text);
   getCollectionPhase: (user: principal) -> (CollectionPhase);
+  getCollectionStatus: (collectionId: principal) ->
+   (record {
+      cycles: nat;
+      imageCount: nat;
+      ownerPrincipal: principal;
+    });
   getFactoryAccountId: () -> (text) query;
   getICPPrice: () -> (float64);
   getMyCollection: (user: principal) -> (opt principal) query;
   getMyCollectionCycles: () -> (nat);
   getMyHealthStatus: () -> (HealthStatus);
   getMyMintCount: (user: principal) -> (nat);
-  /// One-time init — call once after deploy to wire self-principal.
-  getMyNFTs: () -> (vec NFTMetadata);
-  getMyNFTsPaginated: (offset: nat, limit: nat) -> (NFTPage);
+  getMyNFTs: () -> (vec NFTMetadataLite);
+  getMyNFTsPaginated: (offset: nat, limit: nat) -> (NFTPageLite);
+  getMyPendingTransactions: () -> (vec PendingTx) query;
   getNFT: (tokenId: TokenId) -> (opt NFTMetadata) query;
+  /// Manual trigger — available for emergency use via Candid UI / frontend.
+  /// Also purges any corrupted aaaaa-aa registry entries left from failed createMyCollection calls.
   getNFTHistory: (tokenId: TokenId) -> (opt vec TransactionEvent) query;
-  getPlatformFees: () -> (nat64) query;
+  getNFTImage: (tokenId: TokenId) -> (opt blob) query;
+  getPendingTransactions: () -> (vec PendingTx) query;
+  getPlatformFees: () -> (nat64);
+  getStatus: () ->
+   (record {
+      cycles: nat;
+      estimate_days: nat;
+      heap_memory: nat;
+      memory: nat;
+    });
+  getUserRegistryEntry: () -> (opt principal) query;
   icrc10_supported_standards: () -> (vec Standard) query;
   icrc7_description: () -> (opt text) query;
   icrc7_name: () -> (text) query;
@@ -143,10 +205,20 @@ service : {
   icrc7_tokens_of: (account: Account, prev: opt nat, take: opt nat) ->
    (vec nat) query;
   icrc7_total_supply: () -> (nat) query;
-  /// One-time init — call once after deploy to wire self-principal.
+  /// Manual trigger — available for emergency use via Candid UI / frontend.
+  /// Also purges any corrupted aaaaa-aa registry entries left from failed createMyCollection calls.
   initSelf: () -> ();
+  isUsingDefaultCollection: (user: principal) -> (bool) query;
+  listAdmins: () -> (vec principal) query;
   mintNFT: (name: text, description: text, image: blob, recipientOpt:
    opt principal, isPublic: bool, collectionName: opt text) -> (MintResult);
+  processTopUp: (blockIndex: nat64, collectionId: principal) ->
+   (ProcessTopUpResult);
+  removeAdmin: (adminToRemove: principal) -> (variant {
+                                                err: text;
+                                                ok;
+                                              });
+  retryTopUp: (blockIndex: nat64) -> (ProcessTopUpResult);
   setNFTVisibility: (tokenId: TokenId, isPublic: bool) -> (VisibilityResult);
   topUpCollection: (blockIndex: nat64) -> (TopUpResult);
   transferNFT: (tokenId: TokenId, to: principal) -> (TransferResult);

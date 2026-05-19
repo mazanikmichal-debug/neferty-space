@@ -1,9 +1,16 @@
-import { c as createLucideIcon, r as reactExports, j as jsxRuntimeExports, C as Check, X, V as Variant_Mint_Transfer, P as Principal, h as Copy, i as copyToClipboard, k as useAuth, u as useTranslation } from "./index-Dzz2Xx7E.js";
-import { u as useAddressHistory, C as Clock, I as ImageLightbox } from "./useAddressHistory-BogifUMq.js";
-import { g as useTransferNFT, h as useSetNFTVisibility, i as useGetNFTHistory, j as useGetMyNFTs, u as useGetAllPublicNFTs } from "./useQueries-CRRcsVdq.js";
-import { n as nftImageUrl } from "./utils-BsXaUsmB.js";
-import { C as ChevronDown } from "./chevron-down-BNH9W-0P.js";
-import { S as Skeleton } from "./skeleton-Dl3FbxI0.js";
+import { e as createLucideIcon, r as reactExports, j as jsxRuntimeExports, C as Check, X, V as Variant_Mint_Transfer, P as Principal, f as Copy, g as copyToClipboard, h as useAuth, u as useTranslation } from "./index-d4CSy73B.js";
+import { u as useAddressHistory, C as Clock, I as ImageLightbox } from "./useAddressHistory-Dws-voMY.js";
+import { b as useTransferNFT, c as useSetNFTVisibility, a as useGetNFTImage, d as useGetNFTHistory, e as useGetMyNFTs, u as useGetAllPublicNFTs } from "./useQueries-eFwKLunX.js";
+import { n as nftImageUrlById } from "./utils-CFaqURYB.js";
+import { S as Skeleton } from "./skeleton-B2rKExMY.js";
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$5 = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
+const ChevronDown = createLucideIcon("chevron-down", __iconNode$5);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -151,6 +158,10 @@ function NFTCard({ nft, index }) {
   const [succeeded, setSucceeded] = reactExports.useState(false);
   const [sendInputFocused, setSendInputFocused] = reactExports.useState(false);
   const { addresses: savedAddresses, saveAddress } = useAddressHistory();
+  const { data: imageBytes, isLoading: imageLoading } = useGetNFTImage(
+    nft.tokenId
+  );
+  const imageSrc = imageBytes ? nftImageUrlById(nft.tokenId, imageBytes) : null;
   const filteredSuggestions = savedAddresses.filter(
     (a) => recipient.trim() ? a.toLowerCase().includes(recipient.trim().toLowerCase()) : true
   ).slice(0, 5);
@@ -234,11 +245,19 @@ function NFTCard({ nft, index }) {
                     "data-ocid": `nft.image.${index}`,
                     "aria-label": `Zobraziť ${nft.name}`,
                     className: "w-full h-full p-0 border-0 bg-transparent cursor-zoom-in block overflow-hidden rounded-tl-2xl rounded-bl-2xl",
-                    onClick: () => setLightboxOpen(true),
-                    children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    onClick: () => imageSrc && setLightboxOpen(true),
+                    children: imageLoading || !imageSrc ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "div",
+                      {
+                        "data-ocid": `nft.image_skeleton.${index}`,
+                        className: "w-full h-full animate-pulse",
+                        style: { background: "rgba(255,255,255,0.08)" },
+                        "aria-hidden": "true"
+                      }
+                    ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
                       "img",
                       {
-                        src: nftImageUrl(nft.image),
+                        src: imageSrc,
                         alt: nft.name,
                         className: "w-full h-full object-cover transition-all duration-300 group-hover:scale-[1.08]",
                         loading: "lazy"
@@ -344,10 +363,10 @@ function NFTCard({ nft, index }) {
             ] })
           ] })
         ] }),
-        lightboxOpen && /* @__PURE__ */ jsxRuntimeExports.jsx(
+        lightboxOpen && imageSrc && /* @__PURE__ */ jsxRuntimeExports.jsx(
           ImageLightbox,
           {
-            src: nftImageUrl(nft.image),
+            src: imageSrc,
             alt: nft.name,
             onClose: () => setLightboxOpen(false)
           }

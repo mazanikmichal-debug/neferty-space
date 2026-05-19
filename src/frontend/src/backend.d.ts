@@ -39,6 +39,20 @@ export interface HealthStatus {
     rawCycles: bigint;
     daysRemaining: bigint;
 }
+export interface NFTMetadataLite {
+    tokenId: TokenId;
+    owner: Principal;
+    name: string;
+    createdAt: Time;
+    description: string;
+    history: Array<TransactionEvent>;
+    isPublic: boolean;
+    collectionName?: string;
+}
+export interface NFTPageLite {
+    total: bigint;
+    items: Array<NFTMetadataLite>;
+}
 export type TopUpResult = {
     __kind__: "ok";
     ok: {
@@ -50,10 +64,17 @@ export type TopUpResult = {
     __kind__: "err";
     err: string;
 };
-export interface NFTPage {
-    total: bigint;
-    items: Array<NFTMetadata>;
-}
+export type ProcessTopUpResult = {
+    __kind__: "ok";
+    ok: {
+        platformFee: bigint;
+        icpUsed: bigint;
+        cyclesMinted: bigint;
+    };
+} | {
+    __kind__: "err";
+    err: string;
+};
 export type TransferResult = {
     __kind__: "ok";
     ok: null;
@@ -107,6 +128,16 @@ export type Value = {
     __kind__: "Array";
     Array: Array<[string, Value]>;
 };
+export interface PendingTx {
+    status: TxStatus;
+    lastAttemptAt: bigint;
+    collectionId: Principal;
+    createdAt: bigint;
+    retryCount: bigint;
+    blockIndex: bigint;
+    caller: Principal;
+    amount: bigint;
+}
 export interface Standard {
     url: string;
     name: string;
@@ -121,34 +152,65 @@ export enum CycleHealth {
     orange = "orange",
     green = "green"
 }
+export enum TxStatus {
+    pending = "pending",
+    completed = "completed",
+    failed = "failed"
+}
 export enum Variant_Mint_Transfer {
     Mint = "Mint",
     Transfer = "Transfer"
 }
 export interface backendInterface {
+    addAdmin(newAdmin: Principal): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    adminRetryTopUp(blockIndex: bigint): Promise<ProcessTopUpResult>;
+    cleanupCorruptedRegistry(): Promise<bigint>;
     createMyCollection(): Promise<Principal>;
     estimateCycles(imageCount: bigint): Promise<bigint>;
     estimateICPForImages(imageCount: bigint, icpPriceUSD: number): Promise<number>;
     estimateImagesForICP(icpAmount: number, icpPriceUSD: number): Promise<bigint>;
     getAdminPrincipal(): Promise<Principal>;
-    getAllPublicNFTs(): Promise<Array<NFTMetadata>>;
-    getAllPublicNFTsByOwner(owner: Principal): Promise<Array<NFTMetadata>>;
-    getAllPublicNFTsPaginated(offset: bigint, limit: bigint): Promise<NFTPage>;
+    getAllPublicNFTs(): Promise<Array<NFTMetadataLite>>;
+    getAllPublicNFTsByOwner(owner: Principal): Promise<Array<NFTMetadataLite>>;
+    getAllPublicNFTsPaginated(offset: bigint, limit: bigint): Promise<NFTPageLite>;
+    getCmcDepositAddress(): Promise<string>;
     getCollectionPhase(user: Principal): Promise<CollectionPhase>;
+    getCollectionStatus(collectionId: Principal): Promise<{
+        ownerPrincipal: Principal;
+        imageCount: bigint;
+        cycles: bigint;
+    }>;
     getFactoryAccountId(): Promise<string>;
     getICPPrice(): Promise<number>;
     getMyCollection(user: Principal): Promise<Principal | null>;
     getMyCollectionCycles(): Promise<bigint>;
     getMyHealthStatus(): Promise<HealthStatus>;
     getMyMintCount(user: Principal): Promise<bigint>;
-    /**
-     * / One-time init — call once after deploy to wire self-principal.
-     */
-    getMyNFTs(): Promise<Array<NFTMetadata>>;
-    getMyNFTsPaginated(offset: bigint, limit: bigint): Promise<NFTPage>;
+    getMyNFTs(): Promise<Array<NFTMetadataLite>>;
+    getMyNFTsPaginated(offset: bigint, limit: bigint): Promise<NFTPageLite>;
+    getMyPendingTransactions(): Promise<Array<PendingTx>>;
     getNFT(tokenId: TokenId): Promise<NFTMetadata | null>;
+    /**
+     * / Manual trigger — available for emergency use via Candid UI / frontend.
+     * / Also purges any corrupted aaaaa-aa registry entries left from failed createMyCollection calls.
+     */
     getNFTHistory(tokenId: TokenId): Promise<Array<TransactionEvent> | null>;
+    getNFTImage(tokenId: TokenId): Promise<Uint8Array | null>;
+    getPendingTransactions(): Promise<Array<PendingTx>>;
     getPlatformFees(): Promise<bigint>;
+    getStatus(): Promise<{
+        memory: bigint;
+        cycles: bigint;
+        heap_memory: bigint;
+        estimate_days: bigint;
+    }>;
+    getUserRegistryEntry(): Promise<Principal | null>;
     icrc10_supported_standards(): Promise<Array<Standard>>;
     icrc7_description(): Promise<string | null>;
     icrc7_name(): Promise<string>;
@@ -159,10 +221,22 @@ export interface backendInterface {
     icrc7_tokens_of(account: Account, prev: bigint | null, take: bigint | null): Promise<Array<bigint>>;
     icrc7_total_supply(): Promise<bigint>;
     /**
-     * / One-time init — call once after deploy to wire self-principal.
+     * / Manual trigger — available for emergency use via Candid UI / frontend.
+     * / Also purges any corrupted aaaaa-aa registry entries left from failed createMyCollection calls.
      */
     initSelf(): Promise<void>;
+    isUsingDefaultCollection(user: Principal): Promise<boolean>;
+    listAdmins(): Promise<Array<Principal>>;
     mintNFT(name: string, description: string, image: Uint8Array, recipientOpt: Principal | null, isPublic: boolean, collectionName: string | null): Promise<MintResult>;
+    processTopUp(blockIndex: bigint, collectionId: Principal): Promise<ProcessTopUpResult>;
+    removeAdmin(adminToRemove: Principal): Promise<{
+        __kind__: "ok";
+        ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    retryTopUp(blockIndex: bigint): Promise<ProcessTopUpResult>;
     setNFTVisibility(tokenId: TokenId, isPublic: boolean): Promise<VisibilityResult>;
     topUpCollection(blockIndex: bigint): Promise<TopUpResult>;
     transferNFT(tokenId: TokenId, to: Principal): Promise<TransferResult>;

@@ -2,13 +2,14 @@ import { ImageLightbox } from "@/components/ImageLightbox";
 import { useAddressHistory } from "@/hooks/useAddressHistory";
 import {
   useGetNFTHistory,
+  useGetNFTImage,
   useSetNFTVisibility,
   useTransferNFT,
 } from "@/hooks/useQueries";
 import { Variant_Mint_Transfer } from "@/types/nft";
-import type { NFTMetadata } from "@/types/nft";
+import type { NFTMetadataLite } from "@/types/nft";
 import { copyToClipboard } from "@/utils/clipboard";
-import { nftImageUrl } from "@/utils/nftImage";
+import { nftImageUrlById } from "@/utils/nftImage";
 import { Principal } from "@icp-sdk/core/principal";
 import {
   Check,
@@ -80,7 +81,7 @@ function PrincipalChip({ value }: { value: string }) {
 }
 
 interface NFTCardProps {
-  nft: NFTMetadata;
+  nft: NFTMetadataLite;
   index: number;
   /** @deprecated — inline send panel is used instead */
   onQuickTransfer?: (tokenId: bigint) => void;
@@ -98,6 +99,12 @@ export function NFTCard({ nft, index }: NFTCardProps) {
   const [succeeded, setSucceeded] = useState(false);
   const [sendInputFocused, setSendInputFocused] = useState(false);
   const { addresses: savedAddresses, saveAddress } = useAddressHistory();
+
+  // Lazy-load image separately — getMyNFTs no longer returns image bytes
+  const { data: imageBytes, isLoading: imageLoading } = useGetNFTImage(
+    nft.tokenId,
+  );
+  const imageSrc = imageBytes ? nftImageUrlById(nft.tokenId, imageBytes) : null;
 
   const filteredSuggestions = savedAddresses
     .filter((a) =>
@@ -200,14 +207,23 @@ export function NFTCard({ nft, index }: NFTCardProps) {
             data-ocid={`nft.image.${index}`}
             aria-label={`Zobraziť ${nft.name}`}
             className="w-full h-full p-0 border-0 bg-transparent cursor-zoom-in block overflow-hidden rounded-tl-2xl rounded-bl-2xl"
-            onClick={() => setLightboxOpen(true)}
+            onClick={() => imageSrc && setLightboxOpen(true)}
           >
-            <img
-              src={nftImageUrl(nft.image)}
-              alt={nft.name}
-              className="w-full h-full object-cover transition-all duration-300 group-hover:scale-[1.08]"
-              loading="lazy"
-            />
+            {imageLoading || !imageSrc ? (
+              <div
+                data-ocid={`nft.image_skeleton.${index}`}
+                className="w-full h-full animate-pulse"
+                style={{ background: "rgba(255,255,255,0.08)" }}
+                aria-hidden="true"
+              />
+            ) : (
+              <img
+                src={imageSrc}
+                alt={nft.name}
+                className="w-full h-full object-cover transition-all duration-300 group-hover:scale-[1.08]"
+                loading="lazy"
+              />
+            )}
           </button>
           {/* Visibility toggle — overlaid top-left on thumbnail */}
           <button
@@ -325,9 +341,9 @@ export function NFTCard({ nft, index }: NFTCardProps) {
       </div>
 
       {/* Full-screen lightbox */}
-      {lightboxOpen && (
+      {lightboxOpen && imageSrc && (
         <ImageLightbox
-          src={nftImageUrl(nft.image)}
+          src={imageSrc}
           alt={nft.name}
           onClose={() => setLightboxOpen(false)}
         />

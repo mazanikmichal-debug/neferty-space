@@ -1,7 +1,7 @@
-import { o, r as reactExports, v as vt, u as useTranslation, d as useRatingDisplay, j as jsxRuntimeExports, e as reactDomExports, R as RATING_DISPLAY_PRESETS } from "./index-Dzz2Xx7E.js";
-import { S as Skeleton } from "./skeleton-Dl3FbxI0.js";
-import { u as useGetAllPublicNFTs } from "./useQueries-CRRcsVdq.js";
-import { n as nftImageUrl } from "./utils-BsXaUsmB.js";
+import { o, r as reactExports, v as vt, u as useTranslation, c as useRatingDisplay, j as jsxRuntimeExports, d as reactDomExports, R as RATING_DISPLAY_PRESETS } from "./index-d4CSy73B.js";
+import { S as Skeleton } from "./skeleton-B2rKExMY.js";
+import { u as useGetAllPublicNFTs, a as useGetNFTImage } from "./useQueries-eFwKLunX.js";
+import { n as nftImageUrlById } from "./utils-CFaqURYB.js";
 var jt = (n) => {
   switch (n) {
     case "success":
@@ -377,6 +377,8 @@ function ActiveCard({
   settings
 }) {
   const ratedEmotion = EMOTIONS.find((e) => e.id === rating);
+  const { data: imageBytes } = useGetNFTImage(nft.tokenId);
+  const imageUrl = imageBytes ? nftImageUrlById(nft.tokenId, imageBytes) : "";
   const aspectStyle = settings.cardAspectRatio === "auto" ? {} : settings.cardAspectRatio === "portrait" ? { aspectRatio: "3/4" } : settings.cardAspectRatio === "landscape" ? { aspectRatio: "4/3" } : { aspectRatio: "1/1" };
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     "div",
@@ -392,7 +394,7 @@ function ActiveCard({
         /* @__PURE__ */ jsxRuntimeExports.jsx(
           "img",
           {
-            src: nftImageUrl(nft.image),
+            src: imageUrl,
             alt: nft.name,
             loading: "eager",
             draggable: false,
@@ -461,6 +463,8 @@ function PeekCard({
   const opacities = [1, 0.85, 0.65, 0.45, 0.28];
   const opacity = (opacities[pos] ?? 0.2) * settings.opacity;
   const [hovered, setHovered] = reactExports.useState(false);
+  const { data: imageBytes } = useGetNFTImage(nft.tokenId);
+  const imageUrl = imageBytes ? nftImageUrlById(nft.tokenId, imageBytes) : "";
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     "div",
     {
@@ -481,7 +485,7 @@ function PeekCard({
         /* @__PURE__ */ jsxRuntimeExports.jsx(
           "img",
           {
-            src: nftImageUrl(nft.image),
+            src: imageUrl,
             alt: nft.name,
             loading: "lazy",
             draggable: false,

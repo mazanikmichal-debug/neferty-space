@@ -1,11 +1,12 @@
-const cache = /* @__PURE__ */ new Map();
-function nftImageUrl(bytes) {
-  const cached = cache.get(bytes);
+const byTokenId = /* @__PURE__ */ new Map();
+function nftImageUrlById(tokenId, bytes) {
+  const key = tokenId.toString();
+  const cached = byTokenId.get(key);
   if (cached) return cached;
   const mime = detectMime(bytes);
   const blob = new Blob([bytes], { type: mime });
   const url = URL.createObjectURL(blob);
-  cache.set(bytes, url);
+  byTokenId.set(key, url);
   return url;
 }
 function detectMime(bytes) {
@@ -165,20 +166,20 @@ const createLruCache = (maxCacheSize) => {
     };
   }
   let cacheSize = 0;
-  let cache2 = /* @__PURE__ */ new Map();
+  let cache = /* @__PURE__ */ new Map();
   let previousCache = /* @__PURE__ */ new Map();
   const update = (key, value) => {
-    cache2.set(key, value);
+    cache.set(key, value);
     cacheSize++;
     if (cacheSize > maxCacheSize) {
       cacheSize = 0;
-      previousCache = cache2;
-      cache2 = /* @__PURE__ */ new Map();
+      previousCache = cache;
+      cache = /* @__PURE__ */ new Map();
     }
   };
   return {
     get(key) {
-      let value = cache2.get(key);
+      let value = cache.get(key);
       if (value !== void 0) {
         return value;
       }
@@ -188,8 +189,8 @@ const createLruCache = (maxCacheSize) => {
       }
     },
     set(key, value) {
-      if (cache2.has(key)) {
-        cache2.set(key, value);
+      if (cache.has(key)) {
+        cache.set(key, value);
       } else {
         update(key, value);
       }
@@ -2496,5 +2497,5 @@ function cn(...inputs) {
 }
 export {
   cn as c,
-  nftImageUrl as n
+  nftImageUrlById as n
 };

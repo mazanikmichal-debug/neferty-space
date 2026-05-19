@@ -30,4 +30,17 @@ module {
 
   /// Paginated response.
   public type NFTPage = { items : [CollectionNFT]; total : Nat };
+
+  /// Lightweight NFT record without image Blob for list endpoints.
+  public type CollectionNFTLite = {
+    tokenId   : Nat;
+    owner     : Principal;
+    name      : Text;
+    collectionName : Text;
+    isPublic  : Bool;
+    createdAt : Int;
+    history   : [TransactionEvent];
+  };
+
+  public type NFTPageLite = { items : [CollectionNFTLite]; total : Nat };
 }

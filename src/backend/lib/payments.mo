@@ -3,6 +3,12 @@ import Int "mo:core/Int";
 import Nat "mo:core/Nat";
 import Nat32 "mo:core/Nat32";
 import Nat64 "mo:core/Nat64";
+import Array "mo:core/Array";
+import Blob "mo:core/Blob";
+import Principal "mo:core/Principal";
+import Time "mo:core/Time";
+import Debug "mo:core/Debug";
+import Int64 "mo:core/Int64";
 
 module {
   // ── XRC type definitions ───────────────────────────────────────────────────
@@ -63,18 +69,39 @@ module {
     #Err : ExchangeRateError;
   };
 
+  // ── Treasury subaccount ──────────────────────────────────────────────────
+
+  /// Deterministic 32-byte Treasury subaccount: 31 zero bytes + 0x01.
+  /// Used for routing platform fees on-chain — identical in all three
+  /// places (fee routing, balance query, withdrawal).
+  public func treasurySubaccount() : Blob {
+    Blob.fromArray(Array.tabulate<Nat8>(32, func(i) = if (i == 31) 1 else 0));
+  };
+
+  /// Returns the AccountIdentifier for the Treasury subaccount under `p`.
+  public func treasuryAccountId(p : Principal) : Blob {
+    p.toLedgerAccount(?treasurySubaccount());
+  };
+
   // ── Constants ─────────────────────────────────────────────────────────────
 
   let CYCLES_PER_IMAGE : Nat = 20_000_000_000;        // 20 billion cycles
   let CYCLES_PER_TRILLION : Float = 1_000_000_000_000.0;
   let USD_PER_TRILLION : Float = 1.20;
   let PLATFORM_SURCHARGE : Float = 1.25;               // 25 % platform fee
-  let FALLBACK_ICP_PRICE_USD : Float = 10.0;
+  let FALLBACK_ICP_PRICE_USD : Float = 2.5;
 
-  // XRC canister
+  // XRC canister actor reference (used only in fetchICPPrice)
   let xrc : actor {
     get_exchange_rate : (GetExchangeRateRequest) -> async GetExchangeRateResult;
   } = actor ("uf6dk-hyaaa-aaaaq-qaaaq-cai");
+
+  // ── Price cache state type (mutable, lives in actor/mixin) ─────────────────
+  public type PriceCache = { var cachedIcpPrice : Float; var lastPriceFetchTime : Int };
+
+  public func newPriceCache() : PriceCache {
+    { var cachedIcpPrice = FALLBACK_ICP_PRICE_USD; var lastPriceFetchTime = 0 };
+  };
 
   // ── Public functions ──────────────────────────────────────────────────────
 
@@ -129,8 +156,16 @@ module {
   };
 
   /// Fetch current ICP/USD price from the Exchange Rate Canister.
-  /// Returns FALLBACK_ICP_PRICE_USD on any error.
-  public func getICPPrice() : async Float {
+  /// Caches the result for 60 seconds. Returns FALLBACK_ICP_PRICE_USD on any error.
+  /// Fetch current ICP/USD price from the Exchange Rate Canister.
+  /// Cache (60 s) is stored in caller-provided PriceCache record.
+  /// Returns FALLBACK_ICP_PRICE_USD on any error. Never attaches cycles.
+  public func getICPPrice(cache : PriceCache) : async Float {
+    let currentTime : Int = Time.now();
+    let sixtySeconds : Int = 60_000_000_000;
+    if (cache.lastPriceFetchTime > 0 and (currentTime - cache.lastPriceFetchTime) < sixtySeconds) {
+      return cache.cachedIcpPrice;
+    };
     let request : GetExchangeRateRequest = {
       base_asset  = { symbol = "ICP"; class_ = #Cryptocurrency };
       quote_asset = { symbol = "USD"; class_ = #FiatCurrency };
@@ -139,14 +174,21 @@ module {
     try {
       let result = await xrc.get_exchange_rate(request);
       switch (result) {
-        case (#Ok(rate)) {
-          let decimals : Float = rate.metadata.decimals.toNat().toFloat();
-          let divisor : Float = Float.pow(10.0, decimals);
-          rate.rate.toNat().toFloat() / divisor;
+        case (#Ok(exchangeRate)) {
+          let decimals = exchangeRate.metadata.decimals.toNat();
+          let price = Float.fromInt64(Int64.fromNat64(exchangeRate.rate)) / Float.pow(10.0, Float.fromInt64(Int64.fromIntWrap(decimals)));
+          Debug.print(debug_show({ raw_rate = exchangeRate.rate; raw_decimals = exchangeRate.metadata.decimals; computed_price = price }));
+          cache.cachedIcpPrice := price;
+          cache.lastPriceFetchTime := currentTime;
+          price;
         };
-        case (#Err(_)) FALLBACK_ICP_PRICE_USD;
+        case (#Err(e)) {
+          Debug.print("[getICPPrice] XRC returned error: " # debug_show(e));
+          FALLBACK_ICP_PRICE_USD;
+        };
       };
-    } catch (_) {
+    } catch (e) {
+      Debug.print("[getICPPrice] XRC call threw exception: " # e.message());
       FALLBACK_ICP_PRICE_USD;
     };
   };

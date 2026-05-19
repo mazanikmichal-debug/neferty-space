@@ -3,13 +3,24 @@ import FactoryLib "../lib/factory";
 import CollectionLib "../lib/collection";
 import Payments "../lib/payments";
 import Principal "mo:core/Principal";
-import Nat64 "mo:core/Nat64";
+import Int "mo:core/Int";
 import Runtime "mo:core/Runtime";
 import Nat8 "mo:core/Nat8";
 import Error "mo:core/Error";
+import Time "mo:core/Time";
+import NFTLib "../lib/nft";
+import Cycles "mo:core/Cycles";
+import Nat64 "mo:core/Nat64";
+import Prim "mo:⛔";
 
 // fees state is injected from main.mo so mixin mutations persist
-mixin (factory : FactoryLib.State, fees : { var platformFeesE8s : Nat64 }, selfRef : { var selfPrincipal : Principal }) {
+mixin (
+  factory : FactoryLib.State,
+  fees : { var platformFeesE8s : Nat64 },
+  selfRef : { var selfPrincipal : Principal },
+  cyclesSnap : { var lastCycles : Nat; var lastSnapshotTime : Int },
+  nftFactoryState : NFTLib.FactoryState
+) {
 
   // ── Collection lifecycle ──────────────────────────────────────────────────
 
@@ -18,7 +29,7 @@ mixin (factory : FactoryLib.State, fees : { var platformFeesE8s : Nat64 }, selfR
     switch (FactoryLib.getCollection(factory, caller)) {
       case (?cid) cid;
       case null {
-        let col = await (with cycles = 500_000_000_000) CollectionLib.Collection(caller);
+        let col = await (with cycles = 500_000_000_000) CollectionLib.Collection(caller, selfRef.selfPrincipal);
         let cid = Principal.fromActor(col);
         FactoryLib.addToRegistry(factory, caller, cid);
         cid;
@@ -26,59 +37,56 @@ mixin (factory : FactoryLib.State, fees : { var platformFeesE8s : Nat64 }, selfR
     };
   };
 
+  /// In the single-canister model the main canister IS the collection.
+  /// Returns the canister's own principal if the user has minted at least 1 NFT
+  /// (checked via mintCounts) OR has an entry in the factory registry.
+  /// In the single-canister model the main canister IS the collection.
+  /// Returns the canister's own principal if the user has minted at least 1 NFT
+  /// (checked via mintCounts) OR has an entry in the factory registry.
+  /// If registry has a corrupted aaaaa-aa entry, falls back to selfRef like null.
   public query func getMyCollection(user : Principal) : async ?Principal {
-    FactoryLib.getCollection(factory, user);
+    let zeroPrincipal = Principal.fromText("aaaaa-aa");
+    // First check the explicit registry (created via createMyCollection)
+    switch (FactoryLib.getCollection(factory, user)) {
+      case (?cid) {
+        // Treat zero principal as corrupted — fall through to mintCount check
+        if (not Principal.equal(cid, zeroPrincipal)) {
+          return ?cid;
+        };
+        // corrupted entry: fall through
+      };
+      case null {};
+    };
+    // Fall back: any minted NFT means the user has a collection in single-canister mode
+    let mintCount = NFTLib.getMintCount(nftFactoryState, user);
+    if (mintCount > 0) {
+      ?selfRef.selfPrincipal;
+    } else {
+      null;
+    };
   };
 
   // ── Delegated queries to the Collection canister ──────────────────────────
 
   public shared func getMyMintCount(user : Principal) : async Nat {
-    switch (FactoryLib.getCollection(factory, user)) {
-      case null 0;
-      case (?cid) {
-        let col = actor(cid.toText()) : actor { getMintCount : () -> async Nat };
-        await col.getMintCount();
-      };
-    };
+    // In single-canister mode, mintCounts tracks mints directly
+    NFTLib.getMintCount(nftFactoryState, user);
   };
 
   public shared func getCollectionPhase(user : Principal) : async Types.CollectionPhase {
-    switch (FactoryLib.getCollection(factory, user)) {
-      case null #Free;
-      case (?cid) {
-        let col = actor(cid.toText()) : actor { getPhase : () -> async Types.CollectionPhase };
-        await col.getPhase();
-      };
-    };
+    NFTLib.getCollectionPhase(nftFactoryState, user);
   };
 
   /// Returns the raw cycle balance of the caller's Collection canister.
+  /// In single-canister mode, returns the main canister's own cycle balance.
   public shared ({ caller }) func getMyCollectionCycles() : async Nat {
-    switch (FactoryLib.getCollection(factory, caller)) {
-      case null 0;
-      case (?cid) {
-        let col = actor(cid.toText()) : actor { getCycleBalance : () -> async Nat };
-        await col.getCycleBalance();
-      };
-    };
+    Cycles.balance();
   };
 
   /// Returns human-readable health with expert data for Settings dashboard.
   public shared ({ caller }) func getMyHealthStatus() : async Types.HealthStatus {
-    let mintCount = switch (FactoryLib.getCollection(factory, caller)) {
-      case null 0;
-      case (?cid) {
-        let col = actor(cid.toText()) : actor { getMintCount : () -> async Nat };
-        await col.getMintCount();
-      };
-    };
-    let cycles = switch (FactoryLib.getCollection(factory, caller)) {
-      case null 0;
-      case (?cid) {
-        let col = actor(cid.toText()) : actor { getCycleBalance : () -> async Nat };
-        await col.getCycleBalance();
-      };
-    };
+    let mintCount = NFTLib.getMintCount(nftFactoryState, caller);
+    let cycles = Cycles.balance();
     let days   = Payments.estimateDaysFromCycles(cycles);
     let images = Payments.estimateImagesFromCycles(cycles);
     let pct    = Payments.daysPercentage(days);
@@ -101,6 +109,162 @@ mixin (factory : FactoryLib.State, fees : { var platformFeesE8s : Nat64 }, selfR
     };
   };
 
+  /// Returns the cycle balance and image count of a Collection canister.
+  /// Factory calls both getCyclesBalance() and getImageCount() on the Collection.
+  public shared ({ caller }) func getCollectionStatus(collectionId : Principal) : async {
+    cycles      : Nat;
+    imageCount  : Nat;
+    ownerPrincipal : Principal;
+  } {
+    let zeroPrincipal = Principal.fromText("aaaaa-aa");
+    // Reject zero/null principal — corrupted or uninitialized collection ID
+    if (Principal.equal(collectionId, zeroPrincipal)) {
+      return { cycles = 0; imageCount = 0; ownerPrincipal = caller };
+    };
+    // In single-canister mode the collectionId IS this canister — avoid calling
+    // getCyclesBalance on ourselves (we don't export that method on main.mo).
+    if (Principal.equal(collectionId, selfRef.selfPrincipal)) {
+      let cycles     = Cycles.balance();
+      let imageCount = NFTLib.getMintCount(nftFactoryState, caller);
+      return { cycles; imageCount; ownerPrincipal = caller };
+    };
+    // Multi-canister mode: delegate to the Collection actor.
+    let collection = actor(collectionId.toText()) : actor {
+      getCyclesBalance : shared () -> async Nat;
+      getImageCount    : shared () -> async Nat;
+    };
+    let cycles     = await collection.getCyclesBalance();
+    let imageCount = await collection.getImageCount();
+    { cycles; imageCount; ownerPrincipal = caller };
+  };
+
+  // ── Dynamic admin management ─────────────────────────────────────────────
+
+  /// Public query: returns the current list of admin principals.
+  public query func listAdmins() : async [Principal] {
+    FactoryLib.getAdmins(factory);
+  };
+
+  /// Admin-only: add a new admin principal. Rejects duplicates.
+  public shared ({ caller }) func addAdmin(newAdmin : Principal) : async { #ok; #err : Text } {
+    if (not FactoryLib.isAdmin(factory, caller)) {
+      return #err("Not authorized: admin only");
+    };
+    FactoryLib.addAdmin(factory, newAdmin);
+  };
+
+  /// Admin-only: remove an admin principal. Refuses if it would leave 0 admins.
+  public shared ({ caller }) func removeAdmin(adminToRemove : Principal) : async { #ok; #err : Text } {
+    if (not FactoryLib.isAdmin(factory, caller)) {
+      return #err("Not authorized: admin only");
+    };
+    FactoryLib.removeAdmin(factory, adminToRemove);
+  };
+
+  // ── Admin registry cleanup ──────────────────────────────────────────────────
+
+  /// Admin-only: removes all registry entries whose collection canister ID is
+  /// the zero principal ("aaaaa-aa"). Returns the number of entries removed.
+  /// Call this once to purge any corrupted placeholder entries so affected
+  /// users can call createMyCollection() again.
+  /// Self-service cleanup: removes the caller's own registry entry if it equals
+  /// the zero/placeholder principal ("aaaaa-aa"). Returns 1 if removed, 0 otherwise.
+  /// Any authenticated (non-anonymous) user may call this for their own entry only.
+  public shared ({ caller }) func cleanupCorruptedRegistry() : async Nat {
+    if (caller.isAnonymous()) {
+      Runtime.trap("Must be authenticated");
+    };
+    FactoryLib.removeSingleCorruptedEntry(factory, caller);
+  };
+
+  /// Returns the caller's current collection canister ID from the registry,
+  /// or null if no entry exists. Treats the zero principal as null (corrupted).
+  public query ({ caller }) func getUserRegistryEntry() : async ?Principal {
+    let zeroPrincipal = Principal.fromText("aaaaa-aa");
+    switch (FactoryLib.getCollection(factory, caller)) {
+      case (?cid) {
+        if (Principal.equal(cid, zeroPrincipal)) null else ?cid;
+      };
+      case null null;
+    };
+  };
+
+  // ── Hybrid mode: default-collection detection ────────────────────────────
+
+  /// Returns true when the given principal is using the Factory canister itself
+  /// as their default collection (i.e. no separate dedicated Collection canister).
+  /// True when:
+  ///   - registry entry is null or aaaaa-aa (corrupted) AND mintCount > 0
+  ///   - registry entry IS selfRef.selfPrincipal (explicitly set to Factory)
+  /// False only when the user has a real, separate Collection canister ID.
+  public query func isUsingDefaultCollection(user : Principal) : async Bool {
+    let zeroPrincipal = Principal.fromText("aaaaa-aa");
+    switch (FactoryLib.getCollection(factory, user)) {
+      case (?cid) {
+        // corrupted placeholder → treat as default
+        if (Principal.equal(cid, zeroPrincipal)) return true;
+        // explicitly set to Factory's own principal → default
+        if (Principal.equal(cid, selfRef.selfPrincipal)) return true;
+        // real separate canister → NOT default
+        return false;
+      };
+      case null {
+        // no registry entry → using default if has minted
+        let mintCount = NFTLib.getMintCount(nftFactoryState, user);
+        mintCount > 0;
+      };
+    };
+  };
+
+  // ── Main-canister status (admin-only) ─────────────────────────────────────
+
+  /// Returns live cycles/memory stats and an estimated days-remaining figure.
+  /// Protected: only the registered admin principal may call this.
+  public shared ({ caller }) func getStatus() : async {
+    cycles       : Nat;
+    memory       : Nat;
+    heap_memory  : Nat;
+    estimate_days : Nat;
+  } {
+    if (not FactoryLib.isAdmin(factory, caller)) {
+      Runtime.trap("Unauthorized: admin only");
+    };
+
+    let currentCycles = Cycles.balance();
+    let memory        = Prim.rts_memory_size();
+    let heap_memory   = Prim.rts_heap_size();
+    let now           = Time.now(); // nanoseconds
+
+    let estimate_days : Nat = if (
+      cyclesSnap.lastSnapshotTime == 0 or
+      currentCycles >= cyclesSnap.lastCycles or
+      now <= cyclesSnap.lastSnapshotTime
+    ) {
+      9999; // first call or no net burn since last snapshot
+    } else {
+      let deltaCycles = Int.abs((cyclesSnap.lastCycles : Int) - (currentCycles : Int)).toNat() |> (if (cyclesSnap.lastCycles > currentCycles) _ else 0);
+      let deltaNs     = (now - cyclesSnap.lastSnapshotTime).toNat();
+      // burn rate per nanosecond → per day (86_400 seconds * 1_000_000_000 ns/s)
+      let nsPerDay : Nat = 86_400_000_000_000;
+      if (deltaCycles == 0) {
+        9999;
+      } else {
+        // estimate_days = currentCycles / burnRatePerDay
+        // burnRatePerDay = deltaCycles * nsPerDay / deltaNs
+        let numerator   = currentCycles * deltaNs;
+        let denominator = deltaCycles * nsPerDay;
+        if (denominator == 0) 9999
+        else numerator / denominator;
+      };
+    };
+
+    // Update snapshot
+    cyclesSnap.lastCycles       := currentCycles;
+    cyclesSnap.lastSnapshotTime := now;
+
+    { cycles = currentCycles; memory; heap_memory; estimate_days };
+  };
+
   // ── Admin treasury ────────────────────────────────────────────────────────
 
   /// Returns the admin principal (used for access control).
@@ -108,12 +272,22 @@ mixin (factory : FactoryLib.State, fees : { var platformFeesE8s : Nat64 }, selfR
     factory.admin.principal;
   };
 
-  /// Returns accumulated platform fees (25 %). Admin only.
-  public query ({ caller }) func getPlatformFees() : async Nat64 {
-    if (not Principal.equal(caller, factory.admin.principal)) {
+  /// Returns accumulated platform fees (25 %) by querying the actual
+  /// on-chain Treasury subaccount balance. Admin only.
+  public shared ({ caller }) func getPlatformFees() : async Nat64 {
+    if (not FactoryLib.isAdmin(factory, caller)) {
       Runtime.trap("Not authorized");
     };
-    fees.platformFeesE8s;
+    let ledgerBal : actor {
+      account_balance : ({ account : Blob }) -> async { e8s : Nat64 };
+    } = actor("ryjl3-tyaaa-aaaaa-aaaba-cai");
+    let treasuryId = Payments.treasuryAccountId(selfRef.selfPrincipal);
+    try {
+      let bal = await ledgerBal.account_balance({ account = treasuryId });
+      bal.e8s;
+    } catch (_) {
+      fees.platformFeesE8s; // fallback to in-memory counter on error
+    };
   };
 
   /// Returns the Factory canister's own ICP account identifier as hex Text.
@@ -122,15 +296,15 @@ mixin (factory : FactoryLib.State, fees : { var platformFeesE8s : Nat64 }, selfR
     blobToHex(accountBlob);
   };
 
-  /// Transfers accumulated platform fees to `toPrincipal`. Admin only.
+  /// Transfers accumulated platform fees from the Treasury subaccount
+  /// to `toPrincipal`. Admin only.
   public shared ({ caller }) func withdrawPlatformFees(toPrincipal : Principal) : async Types.WithdrawResult {
-    if (not Principal.equal(caller, factory.admin.principal)) {
+    if (not FactoryLib.isAdmin(factory, caller)) {
       return #err("Not authorized");
     };
-    let amount = fees.platformFeesE8s;
-    if (amount == 0) return #err("No fees to withdraw");
 
-    let ledger : actor {
+    let ledgerW : actor {
+      account_balance : ({ account : Blob }) -> async { e8s : Nat64 };
       transfer : ({
         memo        : Nat64;
         amount      : { e8s : Nat64 };
@@ -141,23 +315,31 @@ mixin (factory : FactoryLib.State, fees : { var platformFeesE8s : Nat64 }, selfR
       }) -> async { #Ok : Nat64; #Err : { #BadFee : { expected_fee : { e8s : Nat64 } }; #InsufficientFunds : { balance : { e8s : Nat64 } }; #TxTooOld : { allowed_window_nanos : Nat64 }; #TxCreatedInFuture; #TxDuplicate : { duplicate_of : Nat64 } } };
     } = actor("ryjl3-tyaaa-aaaaa-aaaba-cai");
 
+    let treasuryId = Payments.treasuryAccountId(selfRef.selfPrincipal);
+    let liveBalance = try {
+      let b = await ledgerW.account_balance({ account = treasuryId });
+      b.e8s;
+    } catch (e) {
+      return #err("Failed to query Treasury balance: " # e.message());
+    };
+
     let fee : Nat64 = 10_000;
-    if (amount <= fee) return #err("Amount too small to cover network fee");
-    let net = amount - fee;
+    if (liveBalance <= fee) return #err("Treasury balance too small to cover network fee (balance: " # liveBalance.toText() # " e8s)");
+    let net = liveBalance - fee;
     let toAccount = toPrincipal.toLedgerAccount(null);
 
     try {
-      let result = await ledger.transfer({
+      let result = await ledgerW.transfer({
         memo            = 0;
         amount          = { e8s = net };
         fee             = { e8s = fee };
-        from_subaccount = null;
+        from_subaccount = ?Payments.treasurySubaccount();  // withdraw FROM Treasury subaccount
         to              = toAccount;
         created_at_time = null;
       });
       switch (result) {
         case (#Ok(_)) {
-          fees.platformFeesE8s := 0;
+          fees.platformFeesE8s := 0; // reset audit counter
           #ok(net);
         };
         case (#Err(e)) #err("Ledger error: " # debug_show(e));

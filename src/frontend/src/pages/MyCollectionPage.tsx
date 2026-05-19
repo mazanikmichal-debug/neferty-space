@@ -219,7 +219,7 @@ function PaymentModal({
 
 // ---------- Main page ----------
 export default function MyCollectionPage() {
-  const { actor, isLoading: backendLoading } = useBackend();
+  const { actor, isLoading: backendLoading, canisterId } = useBackend();
   const { identity } = useInternetIdentity();
 
   // collection state
@@ -230,7 +230,7 @@ export default function MyCollectionPage() {
   const [collectionError, setCollectionError] = useState<string | null>(null);
 
   // create collection
-  const [creating, setCreating] = useState(false);
+  const [_creating, setCreating] = useState(false);
 
   // mint form
   const [mintName, setMintName] = useState("");
@@ -250,6 +250,11 @@ export default function MyCollectionPage() {
 
   const principal = identity?.getPrincipal() ?? null;
 
+  // Hybrid architecture: Factory IS the default collection.
+  // We always show the mint form — no "create collection first" gate.
+  // collectionId = Factory canister ID when using default, or explicit ID when Premium.
+  const FACTORY_CANISTER_ID = canisterId ?? "3shfw-daaaa-aaaag-aywla-cai";
+
   // Load collection info
   useEffect(() => {
     if (backendLoading || !actor || !principal) return;
@@ -261,18 +266,21 @@ export default function MyCollectionPage() {
       try {
         const cid = await actor.getMyCollection(principal);
         if (cancelled) return;
-        if (cid) {
-          setCollectionId(cid.toString());
-          const [ph, mc] = await Promise.all([
-            actor.getCollectionPhase(principal),
-            actor.getMyMintCount(principal),
-          ]);
-          if (!cancelled) {
-            setPhase(ph);
-            setMintCount(Number(mc));
-          }
+        // Always set a collectionId — Factory is the default when no explicit one exists
+        if (cid && cid.toText() !== "aaaaa-aa") {
+          setCollectionId(cid.toText());
         } else {
-          setCollectionId(null);
+          // Use Factory as default collection — minting always works
+          setCollectionId(FACTORY_CANISTER_ID);
+        }
+        // Load phase + mint count regardless
+        const [ph, mc] = await Promise.all([
+          actor.getCollectionPhase(principal),
+          actor.getMyMintCount(principal),
+        ]);
+        if (!cancelled) {
+          setPhase(ph);
+          setMintCount(Number(mc));
         }
       } catch (e) {
         if (!cancelled)
@@ -287,20 +295,19 @@ export default function MyCollectionPage() {
     return () => {
       cancelled = true;
     };
-  }, [actor, backendLoading, principal]);
+  }, [actor, backendLoading, principal, FACTORY_CANISTER_ID]);
 
-  const handleCreateCollection = async () => {
+  // No longer used for basic flow — kept for potential Premium upgrade path
+  const _handleCreateCollection = async () => {
     if (!actor) return;
     setCreating(true);
     setCollectionError(null);
     try {
       const result = await actor.createMyCollection();
-      // result is Text (success message or ID)
-      // Reload collection info
       if (principal) {
         const cid = await actor.getMyCollection(principal);
-        if (cid) {
-          setCollectionId(cid.toString());
+        if (cid && cid.toText() !== "aaaaa-aa") {
+          setCollectionId(cid.toText());
           const [ph, mc] = await Promise.all([
             actor.getCollectionPhase(principal),
             actor.getMyMintCount(principal),
@@ -319,10 +326,7 @@ export default function MyCollectionPage() {
     }
   };
 
-  const handleTopUp = (icpAmount: number) => {
-    alert(
-      `Funkcia dobíjania bude čoskoro dostupná. Potrebná suma: ${icpAmount.toFixed(4)} ICP`,
-    );
+  const handleTopUp = (_icpAmount: number) => {
     setShowPaymentModal(false);
   };
 
@@ -409,6 +413,7 @@ export default function MyCollectionPage() {
 
   return (
     <>
+      {/* Payment modal — always available since Factory is the default collection */}
       {showPaymentModal && (
         <PaymentModal
           onClose={() => setShowPaymentModal(false)}
@@ -470,52 +475,10 @@ export default function MyCollectionPage() {
           </div>
         )}
 
-        {/* Section 1 — No collection yet */}
-        {!isPageLoading && !collectionError && collectionId === null && (
-          <GlassCard>
-            <div className="flex flex-col items-center text-center gap-6 py-6">
-              <div
-                className="w-20 h-20 rounded-3xl flex items-center justify-center"
-                style={{
-                  background: "rgba(var(--theme-color-1-rgb,180,80,220),0.12)",
-                  border:
-                    "1px solid rgba(var(--theme-color-1-rgb,180,80,220),0.25)",
-                }}
-              >
-                <Layers
-                  className="w-9 h-9"
-                  style={{ color: "rgb(var(--theme-color-1-rgb,180,80,220))" }}
-                />
-              </div>
-              <div className="space-y-2">
-                <h2 className="font-display text-xl font-bold text-foreground">
-                  Ešte nemáš vlastnú zbierku
-                </h2>
-                <p className="text-sm text-muted-foreground max-w-sm">
-                  Vytvor si svoju vlastnú zbierku NFT na blockchaine ICP. Prvých
-                  10 NFT je zadarmo.
-                </p>
-              </div>
-              <GradientButton
-                dataOcid="mycollection.create_collection_button"
-                onClick={handleCreateCollection}
-                disabled={creating}
-              >
-                {creating ? (
-                  <>
-                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                    Vytváranie...
-                  </>
-                ) : (
-                  "Vytvoriť zbierku"
-                )}
-              </GradientButton>
-            </div>
-          </GlassCard>
-        )}
+        {/* Hybrid architecture: no "create collection" gate — Factory is always available */}
 
-        {/* Section 1 — Collection exists */}
-        {!isPageLoading && !collectionError && collectionId !== null && (
+        {/* Section 1 — Collection info (always shown after load, Factory = default) */}
+        {!isPageLoading && !collectionError && (
           <GlassCard>
             <div className="space-y-5">
               <div className="flex items-start justify-between gap-4">
@@ -537,13 +500,33 @@ export default function MyCollectionPage() {
               {/* Collection ID */}
               <div className="space-y-1">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  Canister ID
+                  {collectionId === FACTORY_CANISTER_ID
+                    ? "Predvolená zbierka · Canister ID"
+                    : "Canister ID"}
                 </p>
+                {collectionId === FACTORY_CANISTER_ID && (
+                  <p
+                    className="text-[10px]"
+                    style={{ color: "rgba(34,197,94,0.70)" }}
+                  >
+                    Tvoje NFT sú uložené v hlavnom canistri Neferty Space
+                  </p>
+                )}
                 <p
                   className="font-mono text-xs break-all px-3 py-2 rounded-xl"
                   style={{
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.10)",
+                    background:
+                      collectionId === FACTORY_CANISTER_ID
+                        ? "rgba(34,197,94,0.05)"
+                        : "rgba(255,255,255,0.05)",
+                    border:
+                      collectionId === FACTORY_CANISTER_ID
+                        ? "1px solid rgba(34,197,94,0.18)"
+                        : "1px solid rgba(255,255,255,0.10)",
+                    color:
+                      collectionId === FACTORY_CANISTER_ID
+                        ? "rgba(34,197,94,0.80)"
+                        : undefined,
                   }}
                 >
                   {collectionId}
@@ -588,8 +571,8 @@ export default function MyCollectionPage() {
           </GlassCard>
         )}
 
-        {/* Section 2 — Mint form (only when collection exists) */}
-        {!isPageLoading && !collectionError && collectionId !== null && (
+        {/* Section 2 — Mint form (always available, Factory is the default collection) */}
+        {!isPageLoading && !collectionError && (
           <GlassCard>
             <h2 className="font-display text-lg font-bold text-foreground mb-6">
               Vyraziť NFT do zbierky

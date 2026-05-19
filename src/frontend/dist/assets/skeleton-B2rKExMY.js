@@ -1,5 +1,5 @@
-import { j as jsxRuntimeExports } from "./index-Dzz2Xx7E.js";
-import { c as cn } from "./utils-BsXaUsmB.js";
+import { j as jsxRuntimeExports } from "./index-d4CSy73B.js";
+import { c as cn } from "./utils-CFaqURYB.js";
 function Skeleton({ className, ...props }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
     "div",

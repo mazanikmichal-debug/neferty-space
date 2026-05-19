@@ -9,6 +9,14 @@
 import { IDL } from '@icp-sdk/core/candid';
 
 export const Value = IDL.Rec();
+export const ProcessTopUpResult = IDL.Variant({
+  'ok' : IDL.Record({
+    'platformFee' : IDL.Nat64,
+    'icpUsed' : IDL.Nat64,
+    'cyclesMinted' : IDL.Nat,
+  }),
+  'err' : IDL.Text,
+});
 export const TokenId = IDL.Nat;
 export const Time = IDL.Int;
 export const TransactionEvent = IDL.Record({
@@ -17,20 +25,19 @@ export const TransactionEvent = IDL.Record({
   'timestamp' : IDL.Int,
   'eventType' : IDL.Variant({ 'Mint' : IDL.Null, 'Transfer' : IDL.Null }),
 });
-export const NFTMetadata = IDL.Record({
+export const NFTMetadataLite = IDL.Record({
   'tokenId' : TokenId,
   'owner' : IDL.Principal,
   'name' : IDL.Text,
   'createdAt' : Time,
   'description' : IDL.Text,
   'history' : IDL.Vec(TransactionEvent),
-  'image' : IDL.Vec(IDL.Nat8),
   'isPublic' : IDL.Bool,
   'collectionName' : IDL.Opt(IDL.Text),
 });
-export const NFTPage = IDL.Record({
+export const NFTPageLite = IDL.Record({
   'total' : IDL.Nat,
-  'items' : IDL.Vec(NFTMetadata),
+  'items' : IDL.Vec(NFTMetadataLite),
 });
 export const CollectionPhase = IDL.Variant({
   'Premium' : IDL.Null,
@@ -50,6 +57,32 @@ export const HealthStatus = IDL.Record({
   'healthColor' : CycleHealth,
   'rawCycles' : IDL.Nat,
   'daysRemaining' : IDL.Nat,
+});
+export const TxStatus = IDL.Variant({
+  'pending' : IDL.Null,
+  'completed' : IDL.Null,
+  'failed' : IDL.Null,
+});
+export const PendingTx = IDL.Record({
+  'status' : TxStatus,
+  'lastAttemptAt' : IDL.Int,
+  'collectionId' : IDL.Principal,
+  'createdAt' : IDL.Int,
+  'retryCount' : IDL.Nat,
+  'blockIndex' : IDL.Nat64,
+  'caller' : IDL.Principal,
+  'amount' : IDL.Nat64,
+});
+export const NFTMetadata = IDL.Record({
+  'tokenId' : TokenId,
+  'owner' : IDL.Principal,
+  'name' : IDL.Text,
+  'createdAt' : Time,
+  'description' : IDL.Text,
+  'history' : IDL.Vec(TransactionEvent),
+  'image' : IDL.Vec(IDL.Nat8),
+  'isPublic' : IDL.Bool,
+  'collectionName' : IDL.Opt(IDL.Text),
 });
 export const Standard = IDL.Record({ 'url' : IDL.Text, 'name' : IDL.Text });
 export const Account = IDL.Record({
@@ -94,6 +127,13 @@ export const WithdrawResult = IDL.Variant({
 });
 
 export const idlService = IDL.Service({
+  'addAdmin' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+      [],
+    ),
+  'adminRetryTopUp' : IDL.Func([IDL.Nat64], [ProcessTopUpResult], []),
+  'cleanupCorruptedRegistry' : IDL.Func([], [IDL.Nat], []),
   'createMyCollection' : IDL.Func([], [IDL.Principal], []),
   'estimateCycles' : IDL.Func([IDL.Nat], [IDL.Nat], ['query']),
   'estimateICPForImages' : IDL.Func(
@@ -107,18 +147,30 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getAdminPrincipal' : IDL.Func([], [IDL.Principal], ['query']),
-  'getAllPublicNFTs' : IDL.Func([], [IDL.Vec(NFTMetadata)], ['query']),
+  'getAllPublicNFTs' : IDL.Func([], [IDL.Vec(NFTMetadataLite)], ['query']),
   'getAllPublicNFTsByOwner' : IDL.Func(
       [IDL.Principal],
-      [IDL.Vec(NFTMetadata)],
+      [IDL.Vec(NFTMetadataLite)],
       ['query'],
     ),
   'getAllPublicNFTsPaginated' : IDL.Func(
       [IDL.Nat, IDL.Nat],
-      [NFTPage],
+      [NFTPageLite],
       ['query'],
     ),
+  'getCmcDepositAddress' : IDL.Func([], [IDL.Text], []),
   'getCollectionPhase' : IDL.Func([IDL.Principal], [CollectionPhase], []),
+  'getCollectionStatus' : IDL.Func(
+      [IDL.Principal],
+      [
+        IDL.Record({
+          'ownerPrincipal' : IDL.Principal,
+          'imageCount' : IDL.Nat,
+          'cycles' : IDL.Nat,
+        }),
+      ],
+      [],
+    ),
   'getFactoryAccountId' : IDL.Func([], [IDL.Text], ['query']),
   'getICPPrice' : IDL.Func([], [IDL.Float64], []),
   'getMyCollection' : IDL.Func(
@@ -129,15 +181,31 @@ export const idlService = IDL.Service({
   'getMyCollectionCycles' : IDL.Func([], [IDL.Nat], []),
   'getMyHealthStatus' : IDL.Func([], [HealthStatus], []),
   'getMyMintCount' : IDL.Func([IDL.Principal], [IDL.Nat], []),
-  'getMyNFTs' : IDL.Func([], [IDL.Vec(NFTMetadata)], []),
-  'getMyNFTsPaginated' : IDL.Func([IDL.Nat, IDL.Nat], [NFTPage], []),
+  'getMyNFTs' : IDL.Func([], [IDL.Vec(NFTMetadataLite)], []),
+  'getMyNFTsPaginated' : IDL.Func([IDL.Nat, IDL.Nat], [NFTPageLite], []),
+  'getMyPendingTransactions' : IDL.Func([], [IDL.Vec(PendingTx)], ['query']),
   'getNFT' : IDL.Func([TokenId], [IDL.Opt(NFTMetadata)], ['query']),
   'getNFTHistory' : IDL.Func(
       [TokenId],
       [IDL.Opt(IDL.Vec(TransactionEvent))],
       ['query'],
     ),
-  'getPlatformFees' : IDL.Func([], [IDL.Nat64], ['query']),
+  'getNFTImage' : IDL.Func([TokenId], [IDL.Opt(IDL.Vec(IDL.Nat8))], ['query']),
+  'getPendingTransactions' : IDL.Func([], [IDL.Vec(PendingTx)], ['query']),
+  'getPlatformFees' : IDL.Func([], [IDL.Nat64], []),
+  'getStatus' : IDL.Func(
+      [],
+      [
+        IDL.Record({
+          'memory' : IDL.Nat,
+          'cycles' : IDL.Nat,
+          'heap_memory' : IDL.Nat,
+          'estimate_days' : IDL.Nat,
+        }),
+      ],
+      [],
+    ),
+  'getUserRegistryEntry' : IDL.Func([], [IDL.Opt(IDL.Principal)], ['query']),
   'icrc10_supported_standards' : IDL.Func([], [IDL.Vec(Standard)], ['query']),
   'icrc7_description' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
   'icrc7_name' : IDL.Func([], [IDL.Text], ['query']),
@@ -160,6 +228,8 @@ export const idlService = IDL.Service({
     ),
   'icrc7_total_supply' : IDL.Func([], [IDL.Nat], ['query']),
   'initSelf' : IDL.Func([], [], []),
+  'isUsingDefaultCollection' : IDL.Func([IDL.Principal], [IDL.Bool], ['query']),
+  'listAdmins' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
   'mintNFT' : IDL.Func(
       [
         IDL.Text,
@@ -172,6 +242,17 @@ export const idlService = IDL.Service({
       [MintResult],
       [],
     ),
+  'processTopUp' : IDL.Func(
+      [IDL.Nat64, IDL.Principal],
+      [ProcessTopUpResult],
+      [],
+    ),
+  'removeAdmin' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+      [],
+    ),
+  'retryTopUp' : IDL.Func([IDL.Nat64], [ProcessTopUpResult], []),
   'setNFTVisibility' : IDL.Func([TokenId, IDL.Bool], [VisibilityResult], []),
   'topUpCollection' : IDL.Func([IDL.Nat64], [TopUpResult], []),
   'transferNFT' : IDL.Func([TokenId, IDL.Principal], [TransferResult], []),
@@ -182,6 +263,14 @@ export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
   const Value = IDL.Rec();
+  const ProcessTopUpResult = IDL.Variant({
+    'ok' : IDL.Record({
+      'platformFee' : IDL.Nat64,
+      'icpUsed' : IDL.Nat64,
+      'cyclesMinted' : IDL.Nat,
+    }),
+    'err' : IDL.Text,
+  });
   const TokenId = IDL.Nat;
   const Time = IDL.Int;
   const TransactionEvent = IDL.Record({
@@ -190,20 +279,19 @@ export const idlFactory = ({ IDL }) => {
     'timestamp' : IDL.Int,
     'eventType' : IDL.Variant({ 'Mint' : IDL.Null, 'Transfer' : IDL.Null }),
   });
-  const NFTMetadata = IDL.Record({
+  const NFTMetadataLite = IDL.Record({
     'tokenId' : TokenId,
     'owner' : IDL.Principal,
     'name' : IDL.Text,
     'createdAt' : Time,
     'description' : IDL.Text,
     'history' : IDL.Vec(TransactionEvent),
-    'image' : IDL.Vec(IDL.Nat8),
     'isPublic' : IDL.Bool,
     'collectionName' : IDL.Opt(IDL.Text),
   });
-  const NFTPage = IDL.Record({
+  const NFTPageLite = IDL.Record({
     'total' : IDL.Nat,
-    'items' : IDL.Vec(NFTMetadata),
+    'items' : IDL.Vec(NFTMetadataLite),
   });
   const CollectionPhase = IDL.Variant({
     'Premium' : IDL.Null,
@@ -223,6 +311,32 @@ export const idlFactory = ({ IDL }) => {
     'healthColor' : CycleHealth,
     'rawCycles' : IDL.Nat,
     'daysRemaining' : IDL.Nat,
+  });
+  const TxStatus = IDL.Variant({
+    'pending' : IDL.Null,
+    'completed' : IDL.Null,
+    'failed' : IDL.Null,
+  });
+  const PendingTx = IDL.Record({
+    'status' : TxStatus,
+    'lastAttemptAt' : IDL.Int,
+    'collectionId' : IDL.Principal,
+    'createdAt' : IDL.Int,
+    'retryCount' : IDL.Nat,
+    'blockIndex' : IDL.Nat64,
+    'caller' : IDL.Principal,
+    'amount' : IDL.Nat64,
+  });
+  const NFTMetadata = IDL.Record({
+    'tokenId' : TokenId,
+    'owner' : IDL.Principal,
+    'name' : IDL.Text,
+    'createdAt' : Time,
+    'description' : IDL.Text,
+    'history' : IDL.Vec(TransactionEvent),
+    'image' : IDL.Vec(IDL.Nat8),
+    'isPublic' : IDL.Bool,
+    'collectionName' : IDL.Opt(IDL.Text),
   });
   const Standard = IDL.Record({ 'url' : IDL.Text, 'name' : IDL.Text });
   const Account = IDL.Record({
@@ -258,6 +372,13 @@ export const idlFactory = ({ IDL }) => {
   const WithdrawResult = IDL.Variant({ 'ok' : IDL.Nat64, 'err' : IDL.Text });
   
   return IDL.Service({
+    'addAdmin' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+        [],
+      ),
+    'adminRetryTopUp' : IDL.Func([IDL.Nat64], [ProcessTopUpResult], []),
+    'cleanupCorruptedRegistry' : IDL.Func([], [IDL.Nat], []),
     'createMyCollection' : IDL.Func([], [IDL.Principal], []),
     'estimateCycles' : IDL.Func([IDL.Nat], [IDL.Nat], ['query']),
     'estimateICPForImages' : IDL.Func(
@@ -271,18 +392,30 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getAdminPrincipal' : IDL.Func([], [IDL.Principal], ['query']),
-    'getAllPublicNFTs' : IDL.Func([], [IDL.Vec(NFTMetadata)], ['query']),
+    'getAllPublicNFTs' : IDL.Func([], [IDL.Vec(NFTMetadataLite)], ['query']),
     'getAllPublicNFTsByOwner' : IDL.Func(
         [IDL.Principal],
-        [IDL.Vec(NFTMetadata)],
+        [IDL.Vec(NFTMetadataLite)],
         ['query'],
       ),
     'getAllPublicNFTsPaginated' : IDL.Func(
         [IDL.Nat, IDL.Nat],
-        [NFTPage],
+        [NFTPageLite],
         ['query'],
       ),
+    'getCmcDepositAddress' : IDL.Func([], [IDL.Text], []),
     'getCollectionPhase' : IDL.Func([IDL.Principal], [CollectionPhase], []),
+    'getCollectionStatus' : IDL.Func(
+        [IDL.Principal],
+        [
+          IDL.Record({
+            'ownerPrincipal' : IDL.Principal,
+            'imageCount' : IDL.Nat,
+            'cycles' : IDL.Nat,
+          }),
+        ],
+        [],
+      ),
     'getFactoryAccountId' : IDL.Func([], [IDL.Text], ['query']),
     'getICPPrice' : IDL.Func([], [IDL.Float64], []),
     'getMyCollection' : IDL.Func(
@@ -293,15 +426,35 @@ export const idlFactory = ({ IDL }) => {
     'getMyCollectionCycles' : IDL.Func([], [IDL.Nat], []),
     'getMyHealthStatus' : IDL.Func([], [HealthStatus], []),
     'getMyMintCount' : IDL.Func([IDL.Principal], [IDL.Nat], []),
-    'getMyNFTs' : IDL.Func([], [IDL.Vec(NFTMetadata)], []),
-    'getMyNFTsPaginated' : IDL.Func([IDL.Nat, IDL.Nat], [NFTPage], []),
+    'getMyNFTs' : IDL.Func([], [IDL.Vec(NFTMetadataLite)], []),
+    'getMyNFTsPaginated' : IDL.Func([IDL.Nat, IDL.Nat], [NFTPageLite], []),
+    'getMyPendingTransactions' : IDL.Func([], [IDL.Vec(PendingTx)], ['query']),
     'getNFT' : IDL.Func([TokenId], [IDL.Opt(NFTMetadata)], ['query']),
     'getNFTHistory' : IDL.Func(
         [TokenId],
         [IDL.Opt(IDL.Vec(TransactionEvent))],
         ['query'],
       ),
-    'getPlatformFees' : IDL.Func([], [IDL.Nat64], ['query']),
+    'getNFTImage' : IDL.Func(
+        [TokenId],
+        [IDL.Opt(IDL.Vec(IDL.Nat8))],
+        ['query'],
+      ),
+    'getPendingTransactions' : IDL.Func([], [IDL.Vec(PendingTx)], ['query']),
+    'getPlatformFees' : IDL.Func([], [IDL.Nat64], []),
+    'getStatus' : IDL.Func(
+        [],
+        [
+          IDL.Record({
+            'memory' : IDL.Nat,
+            'cycles' : IDL.Nat,
+            'heap_memory' : IDL.Nat,
+            'estimate_days' : IDL.Nat,
+          }),
+        ],
+        [],
+      ),
+    'getUserRegistryEntry' : IDL.Func([], [IDL.Opt(IDL.Principal)], ['query']),
     'icrc10_supported_standards' : IDL.Func([], [IDL.Vec(Standard)], ['query']),
     'icrc7_description' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
     'icrc7_name' : IDL.Func([], [IDL.Text], ['query']),
@@ -324,6 +477,12 @@ export const idlFactory = ({ IDL }) => {
       ),
     'icrc7_total_supply' : IDL.Func([], [IDL.Nat], ['query']),
     'initSelf' : IDL.Func([], [], []),
+    'isUsingDefaultCollection' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Bool],
+        ['query'],
+      ),
+    'listAdmins' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'mintNFT' : IDL.Func(
         [
           IDL.Text,
@@ -336,6 +495,17 @@ export const idlFactory = ({ IDL }) => {
         [MintResult],
         [],
       ),
+    'processTopUp' : IDL.Func(
+        [IDL.Nat64, IDL.Principal],
+        [ProcessTopUpResult],
+        [],
+      ),
+    'removeAdmin' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+        [],
+      ),
+    'retryTopUp' : IDL.Func([IDL.Nat64], [ProcessTopUpResult], []),
     'setNFTVisibility' : IDL.Func([TokenId, IDL.Bool], [VisibilityResult], []),
     'topUpCollection' : IDL.Func([IDL.Nat64], [TopUpResult], []),
     'transferNFT' : IDL.Func([TokenId, IDL.Principal], [TransferResult], []),

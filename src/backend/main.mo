@@ -1,4 +1,5 @@
 import Map "mo:core/Map";
+import Set "mo:core/Set";
 import NFTMixin "mixins/nft-api";
 import NFTLib "lib/nft";
 import NFTTypes "types/nft";
@@ -8,6 +9,9 @@ import FactoryLib "lib/factory";
 import PaymentsMixin "mixins/payments-api";
 import Principal "mo:core/Principal";
 import Nat64 "mo:core/Nat64";
+import Int "mo:core/Int";
+
+
 
 actor NefertyFactory {
   // ── NFT state (single-canister gallery) ─────────────────────────────────
@@ -20,23 +24,35 @@ actor NefertyFactory {
   let factoryState : NFTLib.FactoryState = { collectionRegistry; mintCounts };
 
   // ── Factory state (multi-canister registry) ──────────────────────────────
-  // admin is the anonymous principal by default; update after deploy
-  let factory : FactoryLib.State = FactoryLib.init([], Principal.fromText("aaaaa-aa"));
+  // admin is wired to the actor's own principal so it is always correct after deploy/upgrade
+  let factory : FactoryLib.State = FactoryLib.init([], Principal.fromActor(NefertyFactory));
 
   // ── Platform treasury: accumulates 25 % of all top-up payments ──────────
   let treasury = { var platformFeesE8s : Nat64 = 0 };
 
-  // ── Self-principal (set on first call, used for account ID derivation) ───
-  let selfRef = { var selfPrincipal : Principal = Principal.fromText("aaaaa-aa") };
+  // ── Self-principal — initialised at actor construction time so it is always
+  //    correct on first deploy and after every upgrade without manual initSelf(). ───
+  let selfRef = { var selfPrincipal : Principal = Principal.fromActor(NefertyFactory) };
+
+  // ── Cycles snapshot for burn-rate estimation in getStatus() ─────────────
+  let cyclesSnap = { var lastCycles : Nat = 0; var lastSnapshotTime : Int = 0 };
+
+  // ── Double-spend protection: tracks all processed Ledger block indexes ────
+  let usedBlockIndexes = Set.empty<Nat64>();
+
+  // ── Pending / completed top-up transaction log ────────────────────────────
+  let pendingTransactions = Map.empty<Nat64, NFTTypes.PendingTx>();
 
   include NFTMixin(nftState, factoryState);
   include ICRC7Mixin(nftState);
-  include FactoryMixin(factory, treasury, selfRef);
-  include PaymentsMixin(treasury, factory, selfRef);
+  include FactoryMixin(factory, treasury, selfRef, cyclesSnap, factoryState);
+  include PaymentsMixin(treasury, factory, selfRef, usedBlockIndexes, pendingTransactions);
 
-  /// One-time init — call once after deploy to wire self-principal.
+  /// Manual trigger — available for emergency use via Candid UI / frontend.
+  /// Also purges any corrupted aaaaa-aa registry entries left from failed createMyCollection calls.
   public func initSelf() : async () {
     selfRef.selfPrincipal := Principal.fromActor(NefertyFactory);
     factory.admin.principal := Principal.fromActor(NefertyFactory);
+    ignore FactoryLib.removeCorruptedEntries(factory);
   };
 }

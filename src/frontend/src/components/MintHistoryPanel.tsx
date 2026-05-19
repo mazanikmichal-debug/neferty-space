@@ -1,8 +1,8 @@
 import { ImageLightbox } from "@/components/ImageLightbox";
-import { useGetMyNFTs } from "@/hooks/useQueries";
-import type { NFTMetadata, TransactionEvent } from "@/types/nft";
+import { useGetMyNFTs, useGetNFTImage } from "@/hooks/useQueries";
+import type { NFTMetadataLite, TransactionEvent } from "@/types/nft";
 import { Variant_Mint_Transfer } from "@/types/nft";
-import { nftImageUrl } from "@/utils/nftImage";
+import { nftImageUrlById } from "@/utils/nftImage";
 import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { Clock } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 
 /** Determine whether an NFT is still owned by caller or was sent elsewhere */
 function getSentStatus(
-  nft: NFTMetadata,
+  nft: NFTMetadataLite,
   callerPrincipal: string,
 ): "minted" | "sent" {
   const history: TransactionEvent[] = nft.history ?? [];
@@ -61,7 +61,7 @@ function SkeletonCard() {
 }
 
 interface HistoryEntryCardProps {
-  nft: NFTMetadata;
+  nft: NFTMetadataLite;
   index: number;
   callerPrincipal: string;
 }
@@ -76,7 +76,8 @@ function HistoryEntryCard({
   const imgRef = useRef<HTMLImageElement>(null);
   const status = getSentStatus(nft, callerPrincipal);
   const isSent = status === "sent";
-  const imageUrl = nftImageUrl(nft.image);
+  const { data: imageBytes } = useGetNFTImage(nft.tokenId);
+  const imageUrl = imageBytes ? nftImageUrlById(nft.tokenId, imageBytes) : "";
   const { t } = useTranslation();
 
   useEffect(() => {

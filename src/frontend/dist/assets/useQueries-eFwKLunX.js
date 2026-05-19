@@ -7,7 +7,7 @@ var __privateAdd = (obj, member, value) => member.has(obj) ? __typeError("Cannot
 var __privateSet = (obj, member, value, setter) => (__accessCheck(obj, member, "write to private field"), setter ? setter.call(obj, value) : member.set(obj, value), value);
 var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "access private method"), method);
 var _client, _currentQuery, _currentQueryInitialState, _currentResult, _currentResultState, _currentResultOptions, _currentThenable, _selectError, _selectFn, _selectResult, _lastQueryWithDefinedData, _staleTimeoutId, _refetchIntervalId, _currentRefetchInterval, _trackedProps, _QueryObserver_instances, executeFetch_fn, updateStaleTimeout_fn, computeRefetchInterval_fn, updateRefetchInterval_fn, updateTimers_fn, clearStaleTimeout_fn, clearRefetchInterval_fn, updateQuery_fn, notify_fn, _a, _client2, _currentResult2, _currentMutation, _mutateOptions, _MutationObserver_instances, updateResult_fn, notify_fn2, _b;
-import { P as Principal, m as Subscribable, p as pendingThenable, n as resolveEnabled, s as shallowEqualObjects, q as resolveStaleTime, t as noop, w as environmentManager, x as isValidTimeout, y as timeUntilStale, z as timeoutManager, A as focusManager, B as fetchState, D as replaceData, E as notifyManager, F as hashKey, G as getDefaultState, r as reactExports, H as shouldThrowError, J as useQueryClient, f as useBackend, _ as __vitePreload, K as JSON_KEY_PRINCIPAL, M as base32Decode, N as base32Encode, O as getCrc32 } from "./index-Dzz2Xx7E.js";
+import { P as Principal, n as Subscribable, p as pendingThenable, q as resolveEnabled, s as shallowEqualObjects, t as resolveStaleTime, w as noop, x as environmentManager, y as isValidTimeout, z as timeUntilStale, A as timeoutManager, B as focusManager, D as fetchState, E as replaceData, F as notifyManager, G as hashKey, H as getDefaultState, r as reactExports, J as shouldThrowError, m as useQueryClient, l as useBackend, _ as __vitePreload, K as JSON_KEY_PRINCIPAL, M as base32Decode, N as base32Encode, O as getCrc32 } from "./index-d4CSy73B.js";
 const index = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   JSON_KEY_PRINCIPAL,
@@ -776,6 +776,23 @@ function useGetMyNFTs() {
     placeholderData: (prev) => prev
   });
 }
+function useGetNFTImage(tokenId) {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+  return useQuery({
+    queryKey: ["nftImage", (tokenId == null ? void 0 : tokenId.toString()) ?? ""],
+    queryFn: async () => {
+      if (!actor || tokenId === null) return null;
+      const result = await actor.getNFTImage(tokenId);
+      return result ?? null;
+    },
+    enabled: actorReady && tokenId !== null,
+    staleTime: Number.POSITIVE_INFINITY,
+    // images never change once minted
+    gcTime: 10 * 6e4
+    // keep in cache for 10 minutes
+  });
+}
 function useMintNFT() {
   const { actor, isLoading: actorLoading } = useBackend();
   const queryClient = useQueryClient();
@@ -875,6 +892,26 @@ function useGetNFTHistory(tokenId) {
     staleTime: 3e4
   });
 }
+function useGetICPPrice() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+  return useQuery({
+    queryKey: ["icpPrice"],
+    queryFn: async () => {
+      if (!actor) return null;
+      try {
+        const price = await actor.getICPPrice();
+        return price > 0 ? price : null;
+      } catch {
+        return null;
+      }
+    },
+    enabled: actorReady,
+    staleTime: 3e4,
+    refetchInterval: 6e4,
+    placeholderData: void 0
+  });
+}
 function useGetMyHealthStatus() {
   const { actor, isLoading: actorLoading } = useBackend();
   const actorReady = !!actor && !actorLoading;
@@ -882,54 +919,39 @@ function useGetMyHealthStatus() {
     queryKey: ["myHealthStatus"],
     queryFn: async () => {
       if (!actor) throw new Error("Konfigurácia chýba");
-      return actor.getMyHealthStatus();
+      try {
+        const result = await actor.getMyHealthStatus();
+        return result;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes("no collection") || msg.includes("not found") || msg.includes("nenájdená") || msg.includes("No collection") || msg.includes("aaaaa-aa") || msg.includes("does not exist")) {
+          throw new Error("NO_COLLECTION");
+        }
+        throw new Error(`Nepodarilo sa načítať stav cycles: ${msg}`);
+      }
+    },
+    enabled: actorReady,
+    staleTime: 3e4,
+    refetchInterval: 6e4,
+    retry: 2,
+    retryDelay: (attempt) => attempt * 2e3
+  });
+}
+function useGetStatus() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+  return useQuery({
+    queryKey: ["canisterStatus"],
+    queryFn: async () => {
+      if (!actor) return null;
+      try {
+        return await actor.getStatus();
+      } catch {
+        return null;
+      }
     },
     enabled: actorReady,
     staleTime: 3e4
-  });
-}
-function useGetFactoryAccountId() {
-  const { actor, isLoading: actorLoading } = useBackend();
-  const actorReady = !!actor && !actorLoading;
-  return useQuery({
-    queryKey: ["factoryAccountId"],
-    queryFn: async () => {
-      if (!actor) throw new Error("Konfigurácia chýba");
-      return actor.getFactoryAccountId();
-    },
-    enabled: actorReady,
-    staleTime: 3e5
-    // account ID doesn't change
-  });
-}
-function useTopUpCollection() {
-  const { actor } = useBackend();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (blockIndex) => {
-      if (!actor) throw new Error("Konfigurácia chýba");
-      const result = await actor.topUpCollection(blockIndex);
-      if (result.__kind__ === "err") throw new Error(result.err);
-      return result.ok;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["myHealthStatus"] });
-      queryClient.invalidateQueries({ queryKey: ["myCollectionCycles"] });
-    }
-  });
-}
-function useGetAdminPrincipal() {
-  const { actor, isLoading: actorLoading } = useBackend();
-  const actorReady = !!actor && !actorLoading;
-  return useQuery({
-    queryKey: ["adminPrincipal"],
-    queryFn: async () => {
-      if (!actor) throw new Error("Konfigurácia chýba");
-      const p = await actor.getAdminPrincipal();
-      return p.toText();
-    },
-    enabled: actorReady,
-    staleTime: 3e5
   });
 }
 function useGetPlatformFees() {
@@ -965,17 +987,143 @@ function useWithdrawPlatformFees() {
     }
   });
 }
+function useProcessTopUp() {
+  const { actor } = useBackend();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ blockIndex, collectionId }) => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      const result = await actor.processTopUp(blockIndex, collectionId);
+      if (result.__kind__ === "err") throw new Error(result.err);
+      return result.ok;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myHealthStatus"] });
+      queryClient.invalidateQueries({ queryKey: ["myCollectionCycles"] });
+      queryClient.invalidateQueries({ queryKey: ["myPendingTransactions"] });
+    }
+  });
+}
+function useRetryTopUp() {
+  const { actor } = useBackend();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (blockIndex) => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      const result = await actor.retryTopUp(blockIndex);
+      if (result.__kind__ === "err") throw new Error(result.err);
+      return result.ok;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myPendingTransactions"] });
+      queryClient.invalidateQueries({ queryKey: ["myHealthStatus"] });
+      queryClient.invalidateQueries({ queryKey: ["myCollectionCycles"] });
+    }
+  });
+}
+function useAdminRetryTopUp() {
+  const { actor } = useBackend();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (blockIndex) => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      const result = await actor.adminRetryTopUp(blockIndex);
+      if (result.__kind__ === "err") throw new Error(result.err);
+      return result.ok;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["allPendingTransactions"] });
+      queryClient.invalidateQueries({ queryKey: ["myPendingTransactions"] });
+    }
+  });
+}
+function useGetMyPendingTransactions() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+  return useQuery({
+    queryKey: ["myPendingTransactions"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getMyPendingTransactions();
+    },
+    enabled: actorReady,
+    refetchInterval: 3e4,
+    staleTime: 25e3
+  });
+}
+function useGetAllPendingTransactions() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+  return useQuery({
+    queryKey: ["allPendingTransactions"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getPendingTransactions();
+    },
+    enabled: actorReady,
+    refetchInterval: 6e4,
+    staleTime: 55e3
+  });
+}
+function useListAdmins() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const actorReady = !!actor && !actorLoading;
+  return useQuery({
+    queryKey: ["admins"],
+    queryFn: async () => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      return actor.listAdmins();
+    },
+    enabled: actorReady,
+    staleTime: 6e4
+  });
+}
+function useAddAdmin() {
+  const { actor } = useBackend();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (principalStr) => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      return actor.addAdmin(Principal.fromText(principalStr));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admins"] });
+    }
+  });
+}
+function useRemoveAdmin() {
+  const { actor } = useBackend();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (principalStr) => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      return actor.removeAdmin(Principal.fromText(principalStr));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admins"] });
+    }
+  });
+}
 export {
-  useGetMyHealthStatus as a,
-  useGetAdminPrincipal as b,
-  useGetPlatformFees as c,
-  useWithdrawPlatformFees as d,
-  useGetFactoryAccountId as e,
-  useTopUpCollection as f,
-  useTransferNFT as g,
-  useSetNFTVisibility as h,
-  useGetNFTHistory as i,
-  useGetMyNFTs as j,
-  useMintNFT as k,
+  useGetNFTImage as a,
+  useTransferNFT as b,
+  useSetNFTVisibility as c,
+  useGetNFTHistory as d,
+  useGetMyNFTs as e,
+  useMintNFT as f,
+  useGetICPPrice as g,
+  useQuery as h,
+  useGetMyHealthStatus as i,
+  useGetStatus as j,
+  useProcessTopUp as k,
+  useGetMyPendingTransactions as l,
+  useRetryTopUp as m,
+  useListAdmins as n,
+  useAddAdmin as o,
+  useRemoveAdmin as p,
+  useGetPlatformFees as q,
+  useWithdrawPlatformFees as r,
+  useGetAllPendingTransactions as s,
+  useAdminRetryTopUp as t,
   useGetAllPublicNFTs as u
 };

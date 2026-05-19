@@ -43,7 +43,38 @@ export interface NFTMetadata {
   'isPublic' : boolean,
   'collectionName' : [] | [string],
 }
-export interface NFTPage { 'total' : bigint, 'items' : Array<NFTMetadata> }
+export interface NFTMetadataLite {
+  'tokenId' : TokenId,
+  'owner' : Principal,
+  'name' : string,
+  'createdAt' : Time,
+  'description' : string,
+  'history' : Array<TransactionEvent>,
+  'isPublic' : boolean,
+  'collectionName' : [] | [string],
+}
+export interface NFTPageLite {
+  'total' : bigint,
+  'items' : Array<NFTMetadataLite>,
+}
+export interface PendingTx {
+  'status' : TxStatus,
+  'lastAttemptAt' : bigint,
+  'collectionId' : Principal,
+  'createdAt' : bigint,
+  'retryCount' : bigint,
+  'blockIndex' : bigint,
+  'caller' : Principal,
+  'amount' : bigint,
+}
+export type ProcessTopUpResult = {
+    'ok' : {
+      'platformFee' : bigint,
+      'icpUsed' : bigint,
+      'cyclesMinted' : bigint,
+    }
+  } |
+  { 'err' : string };
 export interface Standard { 'url' : string, 'name' : string }
 export type Time = bigint;
 export type TokenId = bigint;
@@ -64,6 +95,9 @@ export interface TransactionEvent {
 }
 export type TransferResult = { 'ok' : null } |
   { 'err' : string };
+export type TxStatus = { 'pending' : null } |
+  { 'completed' : null } |
+  { 'failed' : null };
 export type Value = { 'Int' : bigint } |
   { 'Map' : Array<[string, Value]> } |
   { 'Nat' : bigint } |
@@ -76,29 +110,51 @@ export type VisibilityResult = { 'ok' : null } |
 export type WithdrawResult = { 'ok' : bigint } |
   { 'err' : string };
 export interface _SERVICE {
+  'addAdmin' : ActorMethod<[Principal], { 'ok' : null } | { 'err' : string }>,
+  'adminRetryTopUp' : ActorMethod<[bigint], ProcessTopUpResult>,
+  'cleanupCorruptedRegistry' : ActorMethod<[], bigint>,
   'createMyCollection' : ActorMethod<[], Principal>,
   'estimateCycles' : ActorMethod<[bigint], bigint>,
   'estimateICPForImages' : ActorMethod<[bigint, number], number>,
   'estimateImagesForICP' : ActorMethod<[number, number], bigint>,
   'getAdminPrincipal' : ActorMethod<[], Principal>,
-  'getAllPublicNFTs' : ActorMethod<[], Array<NFTMetadata>>,
-  'getAllPublicNFTsByOwner' : ActorMethod<[Principal], Array<NFTMetadata>>,
-  'getAllPublicNFTsPaginated' : ActorMethod<[bigint, bigint], NFTPage>,
+  'getAllPublicNFTs' : ActorMethod<[], Array<NFTMetadataLite>>,
+  'getAllPublicNFTsByOwner' : ActorMethod<[Principal], Array<NFTMetadataLite>>,
+  'getAllPublicNFTsPaginated' : ActorMethod<[bigint, bigint], NFTPageLite>,
+  'getCmcDepositAddress' : ActorMethod<[], string>,
   'getCollectionPhase' : ActorMethod<[Principal], CollectionPhase>,
+  'getCollectionStatus' : ActorMethod<
+    [Principal],
+    { 'ownerPrincipal' : Principal, 'imageCount' : bigint, 'cycles' : bigint }
+  >,
   'getFactoryAccountId' : ActorMethod<[], string>,
   'getICPPrice' : ActorMethod<[], number>,
   'getMyCollection' : ActorMethod<[Principal], [] | [Principal]>,
   'getMyCollectionCycles' : ActorMethod<[], bigint>,
   'getMyHealthStatus' : ActorMethod<[], HealthStatus>,
   'getMyMintCount' : ActorMethod<[Principal], bigint>,
-  /**
-   * / One-time init — call once after deploy to wire self-principal.
-   */
-  'getMyNFTs' : ActorMethod<[], Array<NFTMetadata>>,
-  'getMyNFTsPaginated' : ActorMethod<[bigint, bigint], NFTPage>,
+  'getMyNFTs' : ActorMethod<[], Array<NFTMetadataLite>>,
+  'getMyNFTsPaginated' : ActorMethod<[bigint, bigint], NFTPageLite>,
+  'getMyPendingTransactions' : ActorMethod<[], Array<PendingTx>>,
   'getNFT' : ActorMethod<[TokenId], [] | [NFTMetadata]>,
+  /**
+   * / Manual trigger — available for emergency use via Candid UI / frontend.
+   * / Also purges any corrupted aaaaa-aa registry entries left from failed createMyCollection calls.
+   */
   'getNFTHistory' : ActorMethod<[TokenId], [] | [Array<TransactionEvent>]>,
+  'getNFTImage' : ActorMethod<[TokenId], [] | [Uint8Array]>,
+  'getPendingTransactions' : ActorMethod<[], Array<PendingTx>>,
   'getPlatformFees' : ActorMethod<[], bigint>,
+  'getStatus' : ActorMethod<
+    [],
+    {
+      'memory' : bigint,
+      'cycles' : bigint,
+      'heap_memory' : bigint,
+      'estimate_days' : bigint,
+    }
+  >,
+  'getUserRegistryEntry' : ActorMethod<[], [] | [Principal]>,
   'icrc10_supported_standards' : ActorMethod<[], Array<Standard>>,
   'icrc7_description' : ActorMethod<[], [] | [string]>,
   'icrc7_name' : ActorMethod<[], string>,
@@ -115,13 +171,23 @@ export interface _SERVICE {
   >,
   'icrc7_total_supply' : ActorMethod<[], bigint>,
   /**
-   * / One-time init — call once after deploy to wire self-principal.
+   * / Manual trigger — available for emergency use via Candid UI / frontend.
+   * / Also purges any corrupted aaaaa-aa registry entries left from failed createMyCollection calls.
    */
   'initSelf' : ActorMethod<[], undefined>,
+  'isUsingDefaultCollection' : ActorMethod<[Principal], boolean>,
+  'listAdmins' : ActorMethod<[], Array<Principal>>,
   'mintNFT' : ActorMethod<
     [string, string, Uint8Array, [] | [Principal], boolean, [] | [string]],
     MintResult
   >,
+  'processTopUp' : ActorMethod<[bigint, Principal], ProcessTopUpResult>,
+  'removeAdmin' : ActorMethod<
+    [Principal],
+    { 'ok' : null } |
+      { 'err' : string }
+  >,
+  'retryTopUp' : ActorMethod<[bigint], ProcessTopUpResult>,
   'setNFTVisibility' : ActorMethod<[TokenId, boolean], VisibilityResult>,
   'topUpCollection' : ActorMethod<[bigint], TopUpResult>,
   'transferNFT' : ActorMethod<[TokenId, Principal], TransferResult>,

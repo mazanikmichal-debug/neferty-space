@@ -1,25 +1,44 @@
 /**
  * nftImage.ts — Convert Uint8Array NFT image bytes to a displayable blob URL.
  *
- * Uses a simple in-memory cache (WeakMap-like approach keyed on array identity)
- * so the same URL is reused if the same Uint8Array reference is passed twice.
+ * Two caches:
+ * - byBytes: keyed on Uint8Array identity (for full NFTMetadata with inline image)
+ * - byTokenId: keyed on tokenId string (for lazy-loaded images from getNFTImage)
+ *
  * Returned URLs are never explicitly revoked — they live for the app session.
  */
 
-const cache = new Map<Uint8Array, string>();
+const byBytes = new Map<Uint8Array, string>();
+const byTokenId = new Map<string, string>();
 
 /**
- * Returns a stable blob URL for the given Uint8Array image bytes.
- * Detects image type from magic bytes (PNG, JPEG, GIF, WEBP); falls back to octet-stream.
+ * Returns a stable blob URL for the given Uint8Array image bytes (identity-cached).
+ * Used when the image bytes come directly from an NFTMetadata object.
  */
 export function nftImageUrl(bytes: Uint8Array): string {
-  const cached = cache.get(bytes);
+  const cached = byBytes.get(bytes);
   if (cached) return cached;
 
   const mime = detectMime(bytes);
   const blob = new Blob([bytes as BlobPart], { type: mime });
   const url = URL.createObjectURL(blob);
-  cache.set(bytes, url);
+  byBytes.set(bytes, url);
+  return url;
+}
+
+/**
+ * Returns a stable blob URL for separately-fetched image bytes, keyed by tokenId.
+ * Used when the image was loaded via getNFTImage(tokenId).
+ */
+export function nftImageUrlById(tokenId: bigint, bytes: Uint8Array): string {
+  const key = tokenId.toString();
+  const cached = byTokenId.get(key);
+  if (cached) return cached;
+
+  const mime = detectMime(bytes);
+  const blob = new Blob([bytes as BlobPart], { type: mime });
+  const url = URL.createObjectURL(blob);
+  byTokenId.set(key, url);
   return url;
 }
 

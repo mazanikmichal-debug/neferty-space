@@ -1,3 +1,4 @@
+import type { PendingTx } from "@/backend";
 /**
  * SettingsPage — Full-page settings at /settings
  *
@@ -8,22 +9,37 @@
  *  4. Theme Settings (inline accordion)
  */
 import { CyclesCalculator } from "@/components/CyclesCalculator";
-import { ThemeSettingsPanel } from "@/components/ThemeSettings";
+import { useBackend } from "@/context/BackendContext";
 import {
-  useGetAdminPrincipal,
-  useGetFactoryAccountId,
+  useAddAdmin,
+  useAdminRetryTopUp,
+  useCleanupCorruptedRegistry,
+  useCreateMyCollection,
+  useGetAllPendingTransactions,
   useGetMyHealthStatus,
+  useGetMyPendingTransactions,
   useGetPlatformFees,
-  useTopUpCollection,
+  useGetStatus,
+  useGetUserRegistryEntry,
+  useListAdmins,
+  useProcessTopUp,
+  useRemoveAdmin,
+  useRetryTopUp,
   useWithdrawPlatformFees,
 } from "@/hooks/useQueries";
 import type { CycleHealth } from "@/types/nft";
+import { copyToClipboard } from "@/utils/clipboard";
 import { useInternetIdentity } from "@caffeineai/core-infrastructure";
+
+import { Principal } from "@dfinity/principal";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
+  AlertTriangle,
   Check,
   ChevronDown,
   Copy,
+  HardDrive,
   Loader2,
   ShieldCheck,
   Zap,
@@ -80,64 +96,6 @@ function HealthBar({
   );
 }
 
-// ─── StatCard ────────────────────────────────────────────────────────────────
-
-function StatCard({
-  label,
-  value,
-  unit,
-  color,
-  ocid,
-  expertLine,
-}: {
-  label: string;
-  value: bigint | number;
-  unit: string;
-  color: string;
-  ocid: string;
-  expertLine?: string;
-}) {
-  return (
-    <div
-      data-ocid={ocid}
-      className="flex-1 rounded-2xl p-4 flex flex-col gap-1.5"
-      style={{
-        background: "rgba(255,255,255,0.05)",
-        border: "1px solid rgba(255,255,255,0.09)",
-      }}
-    >
-      <span
-        className="text-[10px] font-semibold uppercase tracking-widest leading-tight"
-        style={{ color: "rgba(255,255,255,0.42)" }}
-      >
-        {label}
-      </span>
-      <div className="flex items-end gap-1.5 mt-0.5">
-        <span
-          className="text-4xl font-bold font-mono leading-none"
-          style={{ color }}
-        >
-          {value.toString()}
-        </span>
-        <span
-          className="text-xs pb-0.5"
-          style={{ color: "rgba(255,255,255,0.40)" }}
-        >
-          {unit}
-        </span>
-      </div>
-      {expertLine && (
-        <span
-          className="text-xs mt-1"
-          style={{ color: "rgba(255,255,255,0.28)" }}
-        >
-          {expertLine}
-        </span>
-      )}
-    </div>
-  );
-}
-
 // ─── SectionCard ─────────────────────────────────────────────────────────────
 
 function SectionCard({
@@ -176,326 +134,290 @@ function SectionCard({
   );
 }
 
-// ─── TopUpModal — 3-step flow ─────────────────────────────────────────────────
+// ─── CorruptedRegistryBanner ────────────────────────────────────────────────
 
-type TopUpStep = "address" | "confirm" | "success";
-
-interface TopUpSuccess {
-  icpUsed: bigint;
-  cyclesMinted: bigint;
+function CorruptedRegistryBanner() {
+  return null;
 }
 
-function TopUpFlow({
-  icpAmount,
-  onClose,
-}: {
-  icpAmount: number;
-  onClose: () => void;
-}) {
-  const [step, setStep] = useState<TopUpStep>("address");
-  const [blockIndex, setBlockIndex] = useState("");
-  const [copied, setCopied] = useState(false);
-  const [successData, setSuccessData] = useState<TopUpSuccess | null>(null);
+// ─── PendingTransactionsSection ─────────────────────────────────────────────
 
-  const { data: factoryAccount, isLoading: accountLoading } =
-    useGetFactoryAccountId();
-  const topUp = useTopUpCollection();
+function PendingTransactionsSection() {
+  const { data: pending } = useGetMyPendingTransactions();
+  const retryTopUp = useRetryTopUp();
+  const queryClient = useQueryClient();
 
-  const handleCopy = () => {
-    if (factoryAccount) {
-      navigator.clipboard.writeText(factoryAccount).catch(() => {});
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
+  if (!pending || pending.length === 0) return null;
 
-  const handleConfirm = async () => {
-    const idx = blockIndex.trim();
-    if (!idx) return;
-    try {
-      const result = await topUp.mutateAsync(BigInt(idx));
-      setSuccessData({
-        icpUsed: result.icpUsed,
-        cyclesMinted: result.cyclesMinted,
-      });
-      setStep("success");
-    } catch {
-      // error displayed via topUp.error
-    }
+  const handleRetry = (tx: PendingTx) => {
+    retryTopUp.mutate(tx.blockIndex, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["myPendingTransactions"] });
+        queryClient.invalidateQueries({ queryKey: ["myHealthStatus"] });
+      },
+    });
   };
 
   return (
-    <div
-      data-ocid="settings.topup_flow"
-      className="rounded-2xl p-5 space-y-4"
-      style={{
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.12)",
-      }}
+    <SectionCard
+      title="Problematické platby"
+      icon={<AlertTriangle size={14} style={{ color: "#f97316" }} />}
     >
-      {/* Step indicators */}
-      <div className="flex items-center gap-2 mb-1">
-        {(["address", "confirm", "success"] as TopUpStep[]).map((s, i) => (
-          <div key={s} className="flex items-center gap-1.5">
+      <div className="space-y-2">
+        {pending.map((tx, i) => {
+          const amountIcp = (Number(tx.amount) / 100_000_000).toFixed(4);
+          const retryCount = Number(tx.retryCount);
+          const date = new Date(
+            Number(tx.createdAt / 1_000_000n),
+          ).toLocaleString("sk-SK");
+          const maxed = retryCount >= 3;
+
+          return (
             <div
-              className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors duration-300"
+              key={tx.blockIndex.toString()}
+              data-ocid={`settings.pending_tx.item.${i + 1}`}
+              className="rounded-xl px-4 py-3 flex flex-col gap-2"
               style={{
-                background:
-                  step === s
-                    ? "rgba(139,92,246,0.8)"
-                    : s === "success" && step === "success"
-                      ? "rgba(34,197,94,0.7)"
-                      : "rgba(255,255,255,0.10)",
-                color:
-                  step === s || (s === "success" && step === "success")
-                    ? "white"
-                    : "rgba(255,255,255,0.35)",
+                background: "rgba(251,191,36,0.07)",
+                border: "1px solid rgba(251,191,36,0.22)",
               }}
             >
-              {i + 1}
-            </div>
-            {i < 2 && (
-              <div
-                className="h-px w-6"
-                style={{ background: "rgba(255,255,255,0.12)" }}
-              />
-            )}
-          </div>
-        ))}
-        <button
-          type="button"
-          data-ocid="settings.topup_close_button"
-          onClick={onClose}
-          className="ml-auto text-white/40 hover:text-white/70 transition-colors"
-          aria-label="Zatvoriť"
-        >
-          ×
-        </button>
-      </div>
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-0.5 min-w-0">
+                  <p
+                    className="text-sm font-mono font-semibold"
+                    style={{ color: "rgba(255,255,255,0.85)" }}
+                  >
+                    {amountIcp} ICP
+                  </p>
+                  <p
+                    className="text-[10px]"
+                    style={{ color: "rgba(255,255,255,0.38)" }}
+                  >
+                    {date}
+                  </p>
+                </div>
+                <span
+                  className="flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                  style={{
+                    background: "rgba(251,191,36,0.15)",
+                    color: "rgba(251,191,36,0.90)",
+                    border: "1px solid rgba(251,191,36,0.28)",
+                  }}
+                >
+                  Čaká na spracovanie
+                </span>
+              </div>
 
-      {/* Step 1 — Address */}
-      {step === "address" && (
-        <div className="space-y-3">
-          <p
-            className="text-xs leading-relaxed"
-            style={{ color: "rgba(255,255,255,0.55)" }}
-          >
-            Pošlite{" "}
-            <span className="font-bold text-white/80">
-              {icpAmount > 0 ? icpAmount.toFixed(4) : "??"} ICP
-            </span>{" "}
-            na túto adresu zo svojej peňaženky (Plug, Bitfinity alebo NNS)
-          </p>
-
-          {accountLoading ? (
-            <div
-              className="h-10 rounded-xl animate-pulse"
-              style={{ background: "rgba(255,255,255,0.07)" }}
-            />
-          ) : factoryAccount ? (
-            <div
-              className="flex items-center gap-2 rounded-xl px-3 py-2"
-              style={{
-                background: "rgba(255,255,255,0.07)",
-                border: "1px solid rgba(255,255,255,0.12)",
-              }}
-            >
-              <span
-                className="flex-1 text-xs font-mono truncate"
-                style={{ color: "rgba(255,255,255,0.80)" }}
-              >
-                {factoryAccount}
-              </span>
-              <button
-                type="button"
-                data-ocid="settings.copy_address_button"
-                onClick={handleCopy}
-                className="flex-shrink-0 flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-colors duration-200"
-                style={{
-                  background: copied
-                    ? "rgba(34,197,94,0.2)"
-                    : "rgba(255,255,255,0.10)",
-                  color: copied ? "#22c55e" : "rgba(255,255,255,0.65)",
-                }}
-                aria-label="Kopírovať adresu"
-              >
-                {copied ? <Check size={10} /> : <Copy size={10} />}
-                {copied ? "Skopírované" : "Kopírovať"}
-              </button>
-            </div>
-          ) : (
-            <p className="text-xs" style={{ color: "rgba(255,80,80,0.8)" }}>
-              Nepodarilo sa načítať adresu. Skúste neskôr.
-            </p>
-          )}
-
-          <button
-            type="button"
-            data-ocid="settings.topup_next_button"
-            onClick={() => setStep("confirm")}
-            disabled={!factoryAccount}
-            className="w-full rounded-xl py-2.5 text-sm font-semibold transition-all duration-200 hover:scale-[1.01] disabled:opacity-40"
-            style={{
-              background:
-                "linear-gradient(135deg, rgb(var(--theme-color-1-rgb,120,50,200)), rgb(var(--theme-color-2-rgb,60,80,220)))",
-              color: "white",
-            }}
-          >
-            Potvrdenie platby →
-          </button>
-        </div>
-      )}
-
-      {/* Step 2 — Block Index */}
-      {step === "confirm" && (
-        <div className="space-y-3">
-          <p
-            className="text-xs leading-relaxed"
-            style={{ color: "rgba(255,255,255,0.55)" }}
-          >
-            Po odoslaní ICP zadajte číslo bloku transakcie z histórie vašej
-            peňaženky.
-          </p>
-          <div className="space-y-1.5">
-            <label
-              htmlFor="block-index"
-              className="text-[10px] font-semibold uppercase tracking-widest"
-              style={{ color: "rgba(255,255,255,0.45)" }}
-            >
-              Číslo bloku transakcie
-            </label>
-            <input
-              id="block-index"
-              data-ocid="settings.block_index_input"
-              type="number"
-              min={0}
-              step={1}
-              value={blockIndex}
-              onChange={(e) => setBlockIndex(e.target.value)}
-              placeholder="napr. 12345678"
-              className="w-full rounded-xl px-3 py-2.5 text-sm text-white/90 placeholder:text-white/25 outline-none focus:ring-1 focus:ring-white/25 transition-all"
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.14)",
-              }}
-            />
-          </div>
-
-          {topUp.error && (
-            <p
-              data-ocid="settings.topup_error_state"
-              className="text-xs rounded-lg px-3 py-2"
-              style={{
-                background: "rgba(239,68,68,0.12)",
-                color: "rgba(239,68,68,0.90)",
-                border: "1px solid rgba(239,68,68,0.25)",
-              }}
-            >
-              {topUp.error.message}
-            </p>
-          )}
-
-          <div className="flex gap-2">
-            <button
-              type="button"
-              data-ocid="settings.topup_back_button"
-              onClick={() => setStep("address")}
-              className="flex-1 rounded-xl py-2.5 text-sm font-semibold transition-colors"
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                color: "rgba(255,255,255,0.60)",
-              }}
-            >
-              ← Späť
-            </button>
-            <button
-              type="button"
-              data-ocid="settings.topup_confirm_button"
-              onClick={handleConfirm}
-              disabled={!blockIndex.trim() || topUp.isPending}
-              className="flex-[2] rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.01] disabled:opacity-40"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgb(var(--theme-color-1-rgb,120,50,200)), rgb(var(--theme-color-2-rgb,60,80,220)))",
-                color: "white",
-              }}
-            >
-              {topUp.isPending ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  Spracovávam...
-                </>
+              {maxed ? (
+                <p
+                  className="text-[10px]"
+                  style={{ color: "rgba(239,68,68,0.80)" }}
+                >
+                  Maximálny počet pokusov. Kontaktujte podporu.
+                </p>
               ) : (
-                "Potvrdiť platbu"
+                <div className="flex items-center justify-between gap-2">
+                  <span
+                    className="text-[10px]"
+                    style={{ color: "rgba(255,255,255,0.35)" }}
+                  >
+                    Pokus {retryCount}/3
+                  </span>
+                  <button
+                    type="button"
+                    data-ocid={`settings.pending_tx_retry_button.${i + 1}`}
+                    onClick={() => handleRetry(tx)}
+                    disabled={retryTopUp.isPending}
+                    className="text-[10px] font-semibold px-3 py-1 rounded-lg transition-all hover:scale-[1.02] disabled:opacity-40"
+                    style={{
+                      background: "rgba(251,191,36,0.15)",
+                      color: "rgba(251,191,36,0.90)",
+                      border: "1px solid rgba(251,191,36,0.28)",
+                    }}
+                  >
+                    {retryTopUp.isPending ? (
+                      <span className="flex items-center gap-1">
+                        <Loader2 size={10} className="animate-spin" />
+                        Spracovávam...
+                      </span>
+                    ) : (
+                      "Skúsiť znova"
+                    )}
+                  </button>
+                </div>
               )}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 3 — Success */}
-      {step === "success" && successData && (
-        <div
-          data-ocid="settings.topup_success_state"
-          className="space-y-3 text-center"
-        >
-          <div
-            className="w-12 h-12 rounded-full flex items-center justify-center mx-auto"
-            style={{ background: "rgba(34,197,94,0.15)" }}
-          >
-            <Check size={22} style={{ color: "#22c55e" }} />
-          </div>
-          <p
-            className="text-sm font-semibold leading-relaxed"
-            style={{ color: "rgba(255,255,255,0.85)" }}
-          >
-            Úspešne sme premenili{" "}
-            <span style={{ color: "#22c55e" }}>
-              {(Number(successData.icpUsed) / 100_000_000).toFixed(3)} ICP
-            </span>{" "}
-            na{" "}
-            <span style={{ color: "#38bdf8" }}>
-              {(Number(successData.cyclesMinted) / 1_000_000_000_000).toFixed(
-                1,
-              )}{" "}
-              Trillion Cycles
-            </span>{" "}
-            pre tvoj trezor.
-          </p>
-          <button
-            type="button"
-            data-ocid="settings.topup_done_button"
-            onClick={onClose}
-            className="w-full rounded-xl py-2.5 text-sm font-semibold transition-all hover:scale-[1.01]"
-            style={{
-              background: "rgba(34,197,94,0.20)",
-              color: "#22c55e",
-              border: "1px solid rgba(34,197,94,0.30)",
-            }}
-          >
-            Zatvoriť
-          </button>
-        </div>
-      )}
-    </div>
+            </div>
+          );
+        })}
+      </div>
+    </SectionCard>
   );
 }
 
-// ─── CyclesCard ──────────────────────────────────────────────────────────────
+// ─── AdminPaymentMonitor ─────────────────────────────────────────────────────
 
-function CyclesCard({
-  onTopUpClick,
-  calculatedIcp,
-  showTopUp,
-  setShowTopUp,
-}: {
-  onTopUpClick: () => void;
-  calculatedIcp: number;
-  showTopUp: boolean;
-  setShowTopUp: (v: boolean) => void;
-}) {
+function AdminPaymentMonitor() {
+  const { identity } = useInternetIdentity();
+  const { data: allPending } = useGetAllPendingTransactions();
+  const adminRetryTopUp = useAdminRetryTopUp();
+
+  const { data: adminList } = useListAdmins();
+  const userPrincipal = identity?.getPrincipal().toText();
+  const isAdmin =
+    !!userPrincipal &&
+    (adminList ?? []).some((p) => p.toText() === userPrincipal);
+
+  if (!isAdmin) return null;
+
+  const txList = allPending ?? [];
+
+  return (
+    <SectionCard title="Platobný monitoring" icon={<ShieldCheck size={14} />}>
+      {txList.length === 0 ? (
+        <div
+          data-ocid="settings.admin_payments_empty_state"
+          className="flex items-center gap-2 py-2"
+          style={{ color: "rgba(34,197,94,0.75)" }}
+        >
+          <Check size={14} />
+          <span className="text-sm">Všetky platby spracované</span>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr
+                style={{
+                  borderBottom: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                {["Principal", "Suma ICP", "Dátum", "Stav", "Pokusy", ""].map(
+                  (h) => (
+                    <th
+                      key={h}
+                      className="pb-2 text-left font-semibold uppercase tracking-wider"
+                      style={{ color: "rgba(255,255,255,0.35)" }}
+                    >
+                      {h}
+                    </th>
+                  ),
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {txList.map((tx, i) => {
+                const amountIcp = (Number(tx.amount) / 100_000_000).toFixed(2);
+                const callerText = tx.caller.toText();
+                const shortCaller =
+                  callerText.length > 12
+                    ? `${callerText.slice(0, 12)}...`
+                    : callerText;
+                const date = new Date(
+                  Number(tx.createdAt / 1_000_000n),
+                ).toLocaleDateString("sk-SK");
+                const retryCount = Number(tx.retryCount);
+
+                return (
+                  <tr
+                    key={tx.blockIndex.toString()}
+                    data-ocid={`settings.admin_payment_row.${i + 1}`}
+                    style={{
+                      borderBottom: "1px solid rgba(255,255,255,0.05)",
+                    }}
+                  >
+                    <td
+                      className="py-2 pr-3 font-mono"
+                      style={{ color: "rgba(255,255,255,0.70)" }}
+                    >
+                      {shortCaller}
+                    </td>
+                    <td
+                      className="py-2 pr-3 font-mono"
+                      style={{ color: "rgba(255,255,255,0.80)" }}
+                    >
+                      {amountIcp}
+                    </td>
+                    <td
+                      className="py-2 pr-3"
+                      style={{ color: "rgba(255,255,255,0.50)" }}
+                    >
+                      {date}
+                    </td>
+                    <td className="py-2 pr-3">
+                      <span
+                        className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                        style={{
+                          background: "rgba(251,191,36,0.15)",
+                          color: "rgba(251,191,36,0.90)",
+                        }}
+                      >
+                        Čaká
+                      </span>
+                    </td>
+                    <td
+                      className="py-2 pr-3 text-center"
+                      style={{ color: "rgba(255,255,255,0.45)" }}
+                    >
+                      {retryCount}
+                    </td>
+                    <td className="py-2">
+                      <button
+                        type="button"
+                        data-ocid={`settings.admin_retry_button.${i + 1}`}
+                        onClick={() => adminRetryTopUp.mutate(tx.blockIndex)}
+                        disabled={adminRetryTopUp.isPending}
+                        className="text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:scale-[1.02] disabled:opacity-40"
+                        style={{
+                          background: "rgba(139,92,246,0.18)",
+                          color: "rgba(167,139,250,0.90)",
+                          border: "1px solid rgba(139,92,246,0.30)",
+                        }}
+                      >
+                        Retry
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
+// ─── Helper: compute % and color from cycles bigint ─────────────────────────
+
+const MAX_CYCLES = 10_000_000_000_000n; // 10T = 100%
+// Zero principal = aaaaa-aa — returned when collection does not exist yet
+const ZERO_PRINCIPAL_TEXT = "aaaaa-aa";
+function isZeroPrincipal(p: Principal | null | undefined): boolean {
+  if (!p) return false;
+  try {
+    return p.toText() === ZERO_PRINCIPAL_TEXT;
+  } catch {
+    return false;
+  }
+}
+
+function cyclesPercent(cycles: bigint): number {
+  return Math.min(100, Math.round(Number((cycles * 100n) / MAX_CYCLES)));
+}
+
+function cyclesColor(pct: number): CycleHealth {
+  if (pct > 50) return "green";
+  if (pct >= 20) return "orange";
+  return "red";
+}
+
+// ─── CanisterStatusCard (admin — getStatus()) ─────────────────────────────────
+
+function CanisterStatusCard() {
   const { t } = useTranslation();
-  const { data: health, isLoading, isError } = useGetMyHealthStatus();
+  const [expertMode, setExpertMode] = useState(false);
+  const { data: status, isLoading, isError } = useGetStatus();
 
   if (isLoading) {
     return (
@@ -518,16 +440,285 @@ function CyclesCard({
               style={{ background: "rgba(255,255,255,0.06)" }}
             />
           </div>
-          <div
-            className="h-12 rounded-2xl w-full"
-            style={{ background: "rgba(255,255,255,0.06)" }}
-          />
         </div>
       </SectionCard>
     );
   }
 
-  if (isError || !health) {
+  if (isError || status === null || status === undefined) {
+    return (
+      <SectionCard
+        title={t("settings.cyclesManagement")}
+        icon={<Activity size={14} />}
+      >
+        <p
+          data-ocid="settings.cycles_error_state"
+          className="text-sm text-center py-4"
+          style={{ color: "rgba(255,255,255,0.38)" }}
+        >
+          Štatistiky nedostupné
+        </p>
+      </SectionCard>
+    );
+  }
+
+  const { cycles, memory, heap_memory } = status;
+  const pct = cyclesPercent(cycles);
+  const color = cyclesColor(pct);
+  const hex = HEALTH_HEX[color];
+  const isCritical = pct < 20;
+  const trillionCycles = (Number(cycles) / 1e12).toFixed(2);
+  const memoryMB = (Number(memory) / (1024 * 1024)).toFixed(1);
+  const heapMB = (Number(heap_memory) / (1024 * 1024)).toFixed(1);
+  const prepaidMB = Math.round((Number(cycles) / 4_000_000_000_000) * 1024);
+  const usedMB = Math.round(Number(memory) / 1_048_576);
+
+  return (
+    <SectionCard
+      title={t("settings.cyclesManagement")}
+      icon={
+        isCritical ? (
+          <AlertTriangle size={14} style={{ color: "#ef4444" }} />
+        ) : (
+          <Activity size={14} />
+        )
+      }
+    >
+      <HealthBar color={color} fillPct={pct} />
+      {isCritical && (
+        <div
+          data-ocid="settings.cycles_critical_alert"
+          className="flex items-center gap-2.5 rounded-xl px-4 py-3"
+          style={{
+            background: "rgba(239,68,68,0.13)",
+            border: "1px solid rgba(239,68,68,0.35)",
+          }}
+        >
+          <AlertTriangle
+            size={15}
+            style={{ color: "#ef4444", flexShrink: 0 }}
+          />
+          <p
+            className="text-xs font-semibold"
+            style={{ color: "rgba(239,68,68,0.92)" }}
+          >
+            Pozor: Zásoby cycles sú kriticky nízke! Doplňte čo najskôr.
+          </p>
+        </div>
+      )}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span
+            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+            style={{
+              background: hex,
+              boxShadow: `0 0 8px ${HEALTH_GLOW[color]}`,
+            }}
+          />
+          <span
+            data-ocid="settings.health_status_text"
+            className="text-sm font-semibold"
+            style={{ color: hex }}
+          >
+            {color === "green"
+              ? t("settings.cyclesCard.healthGreen")
+              : color === "orange"
+                ? t("settings.cyclesCard.healthYellow")
+                : t("settings.cyclesCard.healthRed")}
+          </span>
+          <span className="text-xs" style={{ color: "rgba(255,255,255,0.30)" }}>
+            {pct}%
+          </span>
+        </div>
+        <button
+          type="button"
+          data-ocid="settings.expert_mode_toggle"
+          onClick={() => setExpertMode((v) => !v)}
+          className="text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-colors duration-200"
+          style={{
+            background: expertMode
+              ? "rgba(139,92,246,0.25)"
+              : "rgba(255,255,255,0.07)",
+            color: expertMode
+              ? "rgba(167,139,250,0.90)"
+              : "rgba(255,255,255,0.38)",
+            border: expertMode
+              ? "1px solid rgba(139,92,246,0.35)"
+              : "1px solid rgba(255,255,255,0.10)",
+          }}
+        >
+          Expert
+        </button>
+      </div>
+      <div
+        className="rounded-xl overflow-hidden"
+        style={{
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
+        <table className="w-full text-xs">
+          <tbody>
+            <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <td
+                className="px-3 py-2"
+                style={{ color: "rgba(255,255,255,0.38)", width: "35%" }}
+              >
+                Cycles
+              </td>
+              <td
+                className="px-3 py-2 font-mono font-semibold"
+                style={{ color: hex }}
+              >
+                {trillionCycles} T
+              </td>
+              <td
+                className="px-3 py-2"
+                style={{ color: "rgba(255,255,255,0.38)" }}
+              >
+                {expertMode ? "Heap" : "Pamäť"}
+              </td>
+              <td
+                className="px-3 py-2 font-mono font-semibold"
+                style={{ color: "rgba(255,255,255,0.75)" }}
+              >
+                {expertMode ? heapMB : memoryMB} MB
+              </td>
+            </tr>
+            <tr>
+              <td
+                className="px-3 py-2"
+                style={{ color: "rgba(255,255,255,0.38)" }}
+              >
+                Využité MB
+              </td>
+              <td
+                className="px-3 py-2 font-mono font-semibold"
+                style={{ color: "rgba(255,255,255,0.75)" }}
+              >
+                {usedMB} MB
+              </td>
+              <td
+                className="px-3 py-2"
+                style={{ color: "rgba(255,255,255,0.38)" }}
+              >
+                Predplatené MB
+              </td>
+              <td
+                className="px-3 py-2 font-mono font-semibold"
+                style={{ color: "rgba(255,255,255,0.75)" }}
+              >
+                {prepaidMB} MB
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div
+        style={{
+          borderTop: "1px solid rgba(255,255,255,0.07)",
+          paddingTop: "1rem",
+        }}
+      >
+        <p
+          className="text-[10px] font-semibold uppercase tracking-widest mb-3"
+          style={{ color: "rgba(255,255,255,0.35)" }}
+        >
+          Dobiť cycles
+        </p>
+        <CyclesCalculator onTopUp={() => {}} onClose={() => {}} />
+      </div>
+    </SectionCard>
+  );
+}
+
+// ─── CyclesCard (per-user collection — getMyHealthStatus()) ───────────────────
+
+function CyclesCard() {
+  const { t } = useTranslation();
+  const { actor } = useBackend();
+  const { identity } = useInternetIdentity();
+
+  const { data: collectionPrincipal, isLoading: collectionLoading } = useQuery<
+    Principal | null,
+    Error,
+    Principal | null,
+    string[]
+  >({
+    queryKey: ["myCollectionPrincipal"],
+    queryFn: async () => {
+      if (!actor || !identity) return null;
+      const callerPrincipal = identity.getPrincipal();
+      try {
+        const result = await actor.getMyCollection(callerPrincipal);
+        return result ?? null;
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!actor && !!identity,
+    staleTime: 300_000,
+  });
+
+  const collectionIsZero = isZeroPrincipal(collectionPrincipal);
+
+  const {
+    data: health,
+    isLoading: healthLoading,
+    isError: healthError,
+    error: healthErrorObj,
+    refetch: healthRefetch,
+  } = useGetMyHealthStatus();
+
+  const { data: status, isError: statusAdminError } = useGetStatus();
+
+  const [emergencyBlockIndex, setEmergencyBlockIndex] = useState("");
+  const [emergencyBlockIndexError, setEmergencyBlockIndexError] = useState("");
+  const [syncOpen, setSyncOpen] = useState(false);
+  const [emergencyResult, setEmergencyResult] = useState<{
+    ok?: string;
+    err?: string;
+  } | null>(null);
+  const processTopUpEmergency = useProcessTopUp();
+
+  const isAdmin = !statusAdminError && status !== null && status !== undefined;
+  if (isAdmin) {
+    return <CanisterStatusCard />;
+  }
+
+  const isLoading = collectionLoading || healthLoading;
+
+  if (isLoading) {
+    return (
+      <SectionCard
+        title={t("settings.cyclesManagement")}
+        icon={<Activity size={14} />}
+      >
+        <div
+          data-ocid="settings.cycles_loading_state"
+          className="flex flex-col items-center gap-3 py-6"
+        >
+          <Loader2
+            size={28}
+            className="animate-spin"
+            style={{ color: "rgba(167,139,250,0.80)" }}
+          />
+          <p
+            className="text-sm text-center"
+            style={{ color: "rgba(255,255,255,0.55)" }}
+          >
+            Načítavam živé dáta z blockchainu...
+          </p>
+        </div>
+      </SectionCard>
+    );
+  }
+
+  const isNoCollection =
+    (!collectionLoading && (!collectionPrincipal || collectionIsZero)) ||
+    (healthError && healthErrorObj?.message === "NO_COLLECTION");
+
+  if (isNoCollection && !health) {
     return (
       <SectionCard
         title={t("settings.cyclesManagement")}
@@ -535,40 +726,172 @@ function CyclesCard({
       >
         <div
           data-ocid="settings.cycles_empty_state"
-          className="rounded-2xl p-6 text-center"
+          className="rounded-2xl p-6 text-center space-y-4"
           style={{
             background: "rgba(255,255,255,0.03)",
             border: "1px solid rgba(255,255,255,0.07)",
           }}
         >
-          <p className="text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>
-            {t("settings.cyclesCard.noCollection")}
-          </p>
+          <div
+            className="w-12 h-12 rounded-full flex items-center justify-center mx-auto"
+            style={{ background: "rgba(34,197,94,0.12)" }}
+          >
+            <Zap size={20} style={{ color: "rgba(34,197,94,0.70)" }} />
+          </div>
+          <div className="space-y-1">
+            <p
+              className="text-sm font-semibold"
+              style={{ color: "rgba(34,197,94,0.85)" }}
+            >
+              Predvolená zbierka Neferty Space
+            </p>
+            <p
+              className="text-xs leading-relaxed"
+              style={{ color: "rgba(255,255,255,0.38)" }}
+            >
+              Tvoje NFT sú uložené v hlavnom canistri. Načítavam stav cycles...
+            </p>
+          </div>
         </div>
       </SectionCard>
     );
   }
 
-  const color = health.healthColor as CycleHealth;
+  if (healthError && healthErrorObj?.message !== "NO_COLLECTION" && !health) {
+    return (
+      <SectionCard
+        title={t("settings.cyclesManagement")}
+        icon={<Activity size={14} />}
+      >
+        <div
+          data-ocid="settings.cycles_error_state"
+          className="rounded-2xl p-6 text-center space-y-3"
+          style={{
+            background: "rgba(239,68,68,0.07)",
+            border: "1px solid rgba(239,68,68,0.20)",
+          }}
+        >
+          <p className="text-sm" style={{ color: "rgba(239,68,68,0.85)" }}>
+            Nepodarilo sa načítať stav cycles
+          </p>
+          <button
+            type="button"
+            data-ocid="settings.cycles_retry_button"
+            onClick={() => healthRefetch()}
+            className="text-xs px-4 py-1.5 rounded-full transition-colors"
+            style={{
+              background: "rgba(239,68,68,0.15)",
+              color: "rgba(239,68,68,0.9)",
+              border: "1px solid rgba(239,68,68,0.30)",
+            }}
+          >
+            Skúsiť znova
+          </button>
+        </div>
+      </SectionCard>
+    );
+  }
+
+  const displayHealth = health
+    ? {
+        rawCycles: health.rawCycles,
+        estimatedStorageMB: health.estimatedStorageMB,
+        healthColor: health.healthColor as CycleHealth,
+      }
+    : null;
+
+  if (!displayHealth) {
+    return (
+      <SectionCard
+        title={t("settings.cyclesManagement")}
+        icon={<Activity size={14} />}
+      >
+        <div
+          data-ocid="settings.cycles_empty_state"
+          className="rounded-2xl p-6 text-center space-y-4"
+          style={{
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.07)",
+          }}
+        >
+          <div
+            className="w-12 h-12 rounded-full flex items-center justify-center mx-auto"
+            style={{ background: "rgba(34,197,94,0.12)" }}
+          >
+            <Zap size={20} style={{ color: "rgba(34,197,94,0.70)" }} />
+          </div>
+          <div className="space-y-1">
+            <p
+              className="text-sm font-semibold"
+              style={{ color: "rgba(34,197,94,0.85)" }}
+            >
+              Predvolená zbierka Neferty Space
+            </p>
+            <p
+              className="text-xs leading-relaxed"
+              style={{ color: "rgba(255,255,255,0.38)" }}
+            >
+              Tvoje NFT sú uložené v hlavnom canistri.
+            </p>
+          </div>
+        </div>
+      </SectionCard>
+    );
+  }
+
+  // ── Derived display values ────────────────────────────────────────────
+  const rawCyclesNum = Number(displayHealth.rawCycles);
+  const usedMB = Math.round(Number(displayHealth.estimatedStorageMB));
+  // Cycles remaining as storage: 1 GB/year = 4T cycles
+  const prepaidMB = Math.round((rawCyclesNum / 4_000_000_000_000) * 1024);
+  const color = displayHealth.healthColor;
   const hex = HEALTH_HEX[color] ?? HEALTH_HEX.green;
-  // Use daysPercentage from backend (already capped at 100)
-  const fillPct = Math.min(100, Math.max(5, Number(health.daysPercentage)));
-  const healthText =
-    color === "green"
-      ? t("settings.cyclesCard.healthGreen")
-      : color === "orange"
-        ? t("settings.cyclesCard.healthYellow")
-        : t("settings.cyclesCard.healthRed");
 
-  // Expert mode lines
-  const trillionCycles = (Number(health.rawCycles) / 1_000_000_000_000).toFixed(
-    2,
-  );
-  const storageMB = Number(health.estimatedStorageMB);
+  // Format cycles with T/B/M suffix
+  function formatCycles(n: number): string {
+    if (n >= 1_000_000_000_000) return `${(n / 1_000_000_000_000).toFixed(2)}T`;
+    if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(2)}B`;
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+    return n.toLocaleString("sk-SK");
+  }
 
-  const handleTopUpClick = () => {
-    setShowTopUp(true);
-    onTopUpClick();
+  const cyclesDisplay = formatCycles(rawCyclesNum);
+
+  // ── Glass card style matching nav menu ────────────────────────────────
+  const glassCard = {
+    background: "rgba(255,255,255,0.07)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    backdropFilter: "blur(12px)",
+  } as const;
+
+  const handleEmergencySync = async () => {
+    const trimmed = emergencyBlockIndex.trim();
+    setEmergencyBlockIndexError("");
+    setEmergencyResult(null);
+    if (!trimmed) {
+      setEmergencyBlockIndexError("Zadaj číslo bloku");
+      return;
+    }
+    if (!/^\d+$/.test(trimmed)) {
+      setEmergencyBlockIndexError(
+        "Číslo bloku musí byť celé číslo (napr. 36503278)",
+      );
+      return;
+    }
+    try {
+      const result = await processTopUpEmergency.mutateAsync({
+        blockIndex: BigInt(trimmed),
+        collectionId: Principal.fromText("3shfw-daaaa-aaaag-aywla-cai"),
+      });
+      setEmergencyResult({
+        ok: `Platba synchronizovaná! +${result.cyclesMinted.toLocaleString()} cycles`,
+      });
+      setEmergencyBlockIndex("");
+    } catch (e: unknown) {
+      setEmergencyResult({
+        err: e instanceof Error ? e.message : "Neznáma chyba",
+      });
+    }
   };
 
   return (
@@ -576,80 +899,196 @@ function CyclesCard({
       title={t("settings.cyclesManagement")}
       icon={<Activity size={14} />}
     >
-      {/* Health bar — width driven by daysPercentage */}
-      <HealthBar color={color} fillPct={fillPct} />
-
-      {/* Status badge row */}
-      <div className="flex items-center gap-2">
-        <span
-          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-          style={{
-            background: hex,
-            boxShadow: `0 0 8px ${HEALTH_GLOW[color]}`,
-          }}
-        />
-        <span
-          data-ocid="settings.health_status_text"
-          className="text-sm font-semibold"
-          style={{ color: hex }}
+      {/* ── Two large status cards ── */}
+      <div
+        data-ocid="settings.cycles_stats_grid"
+        className="grid grid-cols-2 gap-3 mb-2"
+      >
+        {/* Cycles card */}
+        <div
+          className="flex flex-col items-center justify-center gap-2 rounded-2xl px-4 py-6 min-h-[120px]"
+          style={glassCard}
         >
-          {healthText}
-        </span>
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{
+              background: `rgba(${color === "green" ? "34,197,94" : color === "orange" ? "249,115,22" : "239,68,68"},0.15)`,
+            }}
+          >
+            <Zap size={22} strokeWidth={1.5} style={{ color: hex }} />
+          </div>
+          <span
+            data-ocid="settings.cycles_value"
+            className="text-2xl font-bold font-mono leading-none tracking-tight"
+            style={{ color: hex }}
+          >
+            {cyclesDisplay}
+          </span>
+          <span
+            className="text-[10px] font-bold uppercase tracking-widest"
+            style={{ color: "rgba(255,255,255,0.38)" }}
+          >
+            CYCLES
+          </span>
+        </div>
+
+        {/* Storage card */}
+        <div
+          className="flex flex-col items-center justify-center gap-2 rounded-2xl px-4 py-6 min-h-[120px]"
+          style={glassCard}
+        >
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ background: "rgba(56,189,248,0.15)" }}
+          >
+            <HardDrive
+              size={22}
+              strokeWidth={1.5}
+              style={{ color: "#38bdf8" }}
+            />
+          </div>
+          <span
+            data-ocid="settings.storage_value"
+            className="text-2xl font-bold font-mono leading-none tracking-tight"
+            style={{ color: "rgba(255,255,255,0.90)" }}
+          >
+            {prepaidMB}{" "}
+            <span
+              className="text-base font-semibold"
+              style={{ color: "rgba(255,255,255,0.45)" }}
+            >
+              MB
+            </span>
+          </span>
+          <span
+            className="text-[10px] font-bold uppercase tracking-widest"
+            style={{ color: "rgba(255,255,255,0.38)" }}
+          >
+            STORAGE
+          </span>
+        </div>
       </div>
 
-      {/* Stats with expert mode lines */}
-      <div className="flex gap-3">
-        <StatCard
-          ocid="settings.days_remaining_card"
-          label={t("settings.cyclesCard.daysRemaining")}
-          value={health.daysRemaining}
-          unit={t("settings.cyclesCard.days")}
-          color={hex}
-          expertLine={`${trillionCycles} Trillion Cycles`}
-        />
-        <StatCard
-          ocid="settings.images_remaining_card"
-          label={t("settings.cyclesCard.imagesRemaining")}
-          value={health.imagesRemaining}
-          unit={t("settings.cyclesCard.images")}
-          color="rgba(255,255,255,0.85)"
-          expertLine={`${storageMB} MB voľného miesta`}
-        />
-      </div>
-
-      {/* Human-readable status text */}
-      {health.status && (
+      {/* Used MB sub-line */}
+      {usedMB > 0 && (
         <p
-          className="text-sm leading-relaxed"
-          style={{ color: "rgba(255,255,255,0.48)" }}
+          className="text-center text-[10px] mb-4"
+          style={{ color: "rgba(255,255,255,0.28)" }}
         >
-          {health.status}
+          Využité:{" "}
+          <span style={{ color: "rgba(255,255,255,0.55)" }}>{usedMB} MB</span>
         </p>
       )}
 
-      {/* Top-up flow (inline) */}
-      {showTopUp ? (
-        <TopUpFlow
-          icpAmount={calculatedIcp}
-          onClose={() => setShowTopUp(false)}
-        />
-      ) : (
-        /* Top-up CTA */
-        <button
-          type="button"
-          data-ocid="settings.topup_open_button"
-          onClick={handleTopUpClick}
-          className="relative overflow-hidden w-full rounded-2xl py-3.5 font-display font-bold text-sm uppercase tracking-widest text-white transition-all duration-200 hover:scale-[1.02] flex items-center justify-center gap-2"
-          style={{
-            background:
-              "linear-gradient(135deg, rgb(var(--theme-color-1-rgb,120,50,200)), rgb(var(--theme-color-2-rgb,60,80,220)))",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.30)",
-          }}
+      {/* ── Top-up form ── */}
+      <div
+        style={{
+          borderTop: "1px solid rgba(255,255,255,0.07)",
+          paddingTop: "1rem",
+        }}
+      >
+        <p
+          className="text-[10px] font-bold uppercase tracking-widest mb-3"
+          style={{ color: "rgba(255,255,255,0.35)" }}
         >
-          <Zap size={16} />
-          {t("settings.cyclesCard.topUpButton")}
-          <ChevronDown size={14} className="opacity-60" />
-        </button>
+          Doplniť cycles
+        </p>
+        <CyclesCalculator onTopUp={() => {}} onClose={() => {}} />
+      </div>
+
+      {/* ── Synchronizácia platby — hidden by default ── */}
+      {actor && (
+        <div data-ocid="settings.emergency_sync_section" className="mt-2">
+          <button
+            type="button"
+            data-ocid="settings.emergency_sync_toggle"
+            onClick={() => setSyncOpen((v) => !v)}
+            className="text-[11px] transition-opacity hover:opacity-80"
+            style={{ color: "rgba(255,255,255,0.28)" }}
+          >
+            Zasekla sa platba? →
+          </button>
+
+          {syncOpen && (
+            <div
+              className="mt-3 rounded-2xl p-4 space-y-3"
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.09)",
+              }}
+            >
+              <p
+                className="text-xs"
+                style={{ color: "rgba(255,255,255,0.45)" }}
+              >
+                Zadaj číslo bloku z tvojej peňaženky a klikni Synchronizovať.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  data-ocid="settings.emergency_block_index_input"
+                  type="text"
+                  value={emergencyBlockIndex}
+                  onChange={(e) => {
+                    setEmergencyBlockIndex(e.target.value);
+                    setEmergencyBlockIndexError("");
+                    setEmergencyResult(null);
+                  }}
+                  placeholder="napr. 36503278"
+                  className="flex-1 px-3 py-2 text-sm rounded-xl text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-white/20"
+                  style={{
+                    background: "rgba(255,255,255,0.07)",
+                    border: emergencyBlockIndexError
+                      ? "1px solid rgba(239,68,68,0.70)"
+                      : "1px solid rgba(255,255,255,0.12)",
+                  }}
+                />
+                <button
+                  type="button"
+                  data-ocid="settings.emergency_sync_button"
+                  onClick={handleEmergencySync}
+                  disabled={processTopUpEmergency.isPending}
+                  className="px-4 py-2 text-xs font-bold rounded-xl whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  style={{
+                    background: "rgba(251,191,36,0.15)",
+                    border: "1px solid rgba(251,191,36,0.35)",
+                    color: "rgba(251,191,36,0.90)",
+                  }}
+                >
+                  {processTopUpEmergency.isPending
+                    ? "Spracovávam..."
+                    : "Synchronizovať"}
+                </button>
+              </div>
+              {emergencyBlockIndexError && (
+                <p
+                  data-ocid="settings.emergency_block_index_error"
+                  className="text-xs"
+                  style={{ color: "rgba(239,68,68,0.85)" }}
+                >
+                  {emergencyBlockIndexError}
+                </p>
+              )}
+              {emergencyResult?.ok && (
+                <p
+                  data-ocid="settings.emergency_sync_success_state"
+                  className="text-xs font-medium"
+                  style={{ color: "rgba(34,197,94,0.85)" }}
+                >
+                  ✓ {emergencyResult.ok}
+                </p>
+              )}
+              {emergencyResult?.err && (
+                <p
+                  data-ocid="settings.emergency_sync_error_state"
+                  className="text-xs"
+                  style={{ color: "rgba(239,68,68,0.85)" }}
+                >
+                  Chyba: {emergencyResult.err}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </SectionCard>
   );
@@ -657,32 +1096,294 @@ function CyclesCard({
 
 // ─── CalculatorCard ──────────────────────────────────────────────────────────
 
-function CalculatorCard({
-  calcRef,
-  onIcpChange,
-  onTopUpRequest,
-}: {
-  calcRef: React.RefObject<HTMLDivElement | null>;
-  onIcpChange: (icp: number) => void;
-  onTopUpRequest: () => void;
-}) {
-  const { t } = useTranslation();
+// CalculatorCard removed — calculator is now inline in CyclesCard
+
+// ─── AdminManagementCard ────────────────────────────────────────────────────
+
+function AdminManagementCard() {
+  const { identity } = useInternetIdentity();
+  const { data: adminList, isLoading: adminsLoading } = useListAdmins();
+  const addAdmin = useAddAdmin();
+  const removeAdmin = useRemoveAdmin();
+
+  const userPrincipal = identity?.getPrincipal().toText();
+  const isAdmin =
+    !!userPrincipal &&
+    (adminList ?? []).some((p) => p.toText() === userPrincipal);
+
+  const [newPrincipal, setNewPrincipal] = useState("");
+  const [addError, setAddError] = useState("");
+  const [addSuccess, setAddSuccess] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+  const [removeErrors, setRemoveErrors] = useState<Record<string, string>>({});
+
+  if (!isAdmin) return null;
+
+  const handleAdd = async () => {
+    setAddError("");
+    setAddSuccess(false);
+    if (!newPrincipal.trim()) {
+      setAddError("Zadajte Principal ID");
+      return;
+    }
+    try {
+      const result = await addAdmin.mutateAsync(newPrincipal.trim());
+      if ("err" in result) {
+        setAddError(result.err);
+      } else {
+        setAddSuccess(true);
+        setNewPrincipal("");
+        setTimeout(() => setAddSuccess(false), 3000);
+      }
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : "Neznáma chyba");
+    }
+  };
+
+  const handleRemoveConfirm = async (principalText: string) => {
+    setRemoveErrors((prev) => ({ ...prev, [principalText]: "" }));
+    try {
+      const result = await removeAdmin.mutateAsync(principalText);
+      if ("err" in result) {
+        setRemoveErrors((prev) => ({ ...prev, [principalText]: result.err }));
+      }
+    } catch (err) {
+      setRemoveErrors((prev) => ({
+        ...prev,
+        [principalText]: err instanceof Error ? err.message : "Neznáma chyba",
+      }));
+    } finally {
+      setConfirmRemove(null);
+    }
+  };
 
   return (
-    <div ref={calcRef}>
-      <SectionCard
-        title={t("settings.calculator.title")}
-        icon={<Zap size={14} />}
-      >
-        <CyclesCalculator
-          onTopUp={(icp) => {
-            onIcpChange(icp);
-            onTopUpRequest();
-          }}
-          onIcpChange={onIcpChange}
-        />
-      </SectionCard>
-    </div>
+    <SectionCard title="Správa adminov" icon={<ShieldCheck size={14} />}>
+      {/* Current admins list */}
+      <div className="space-y-2">
+        <p
+          className="text-[10px] font-semibold uppercase tracking-widest mb-3"
+          style={{ color: "rgba(255,255,255,0.35)" }}
+        >
+          Aktuálni admini
+        </p>
+        {adminsLoading ? (
+          <div
+            data-ocid="settings.admin_list_loading_state"
+            className="flex items-center gap-2 py-2"
+            style={{ color: "rgba(255,255,255,0.40)" }}
+          >
+            <Loader2 size={12} className="animate-spin" />
+            <span className="text-xs">Načítavam...</span>
+          </div>
+        ) : (adminList ?? []).length === 0 ? (
+          <p
+            data-ocid="settings.admin_list_empty_state"
+            className="text-xs py-2"
+            style={{ color: "rgba(255,255,255,0.35)" }}
+          >
+            Žiadni admini nenájdení
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {(adminList ?? []).map((admin, i) => {
+              const txt = admin.toText();
+              const short = txt.length > 16 ? `${txt.slice(0, 16)}...` : txt;
+              const isRemoving = removeAdmin.isPending && confirmRemove === txt;
+              return (
+                <div
+                  key={txt}
+                  data-ocid={`settings.admin_item.${i + 1}`}
+                  className="flex items-center justify-between gap-2 rounded-xl px-3 py-2"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                  }}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="text-xs font-mono truncate"
+                      style={{ color: "rgba(255,255,255,0.70)" }}
+                      title={txt}
+                    >
+                      {short}
+                    </span>
+                    <button
+                      type="button"
+                      data-ocid={`settings.admin_copy_button.${i + 1}`}
+                      onClick={() => copyToClipboard(txt)}
+                      className="flex-shrink-0 p-1 rounded-lg transition-colors hover:bg-white/10"
+                      aria-label="Kopírovať Principal ID"
+                      style={{ color: "rgba(255,255,255,0.35)" }}
+                    >
+                      <Copy size={11} />
+                    </button>
+                  </div>
+
+                  {removeErrors[txt] && (
+                    <span
+                      className="text-[10px] px-2 py-0.5 rounded-lg"
+                      style={{
+                        color: "rgba(239,68,68,0.90)",
+                        background: "rgba(239,68,68,0.10)",
+                        border: "1px solid rgba(239,68,68,0.20)",
+                      }}
+                    >
+                      {removeErrors[txt]}
+                    </span>
+                  )}
+
+                  {confirmRemove === txt ? (
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span
+                        className="text-[10px]"
+                        style={{ color: "rgba(255,255,255,0.45)" }}
+                      >
+                        Ste si istý?
+                      </span>
+                      <button
+                        type="button"
+                        data-ocid={`settings.admin_remove_confirm_button.${i + 1}`}
+                        onClick={() => handleRemoveConfirm(txt)}
+                        disabled={isRemoving}
+                        className="text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:scale-[1.02] disabled:opacity-40"
+                        style={{
+                          background: "rgba(239,68,68,0.18)",
+                          color: "rgba(239,68,68,0.90)",
+                          border: "1px solid rgba(239,68,68,0.30)",
+                        }}
+                      >
+                        {isRemoving ? (
+                          <Loader2 size={10} className="animate-spin" />
+                        ) : (
+                          "Áno"
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        data-ocid={`settings.admin_remove_cancel_button.${i + 1}`}
+                        onClick={() => setConfirmRemove(null)}
+                        className="text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:scale-[1.02]"
+                        style={{
+                          background: "rgba(255,255,255,0.06)",
+                          color: "rgba(255,255,255,0.55)",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                        }}
+                      >
+                        Nie
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      data-ocid={`settings.admin_remove_button.${i + 1}`}
+                      onClick={() => {
+                        setConfirmRemove(txt);
+                        setRemoveErrors((prev) => ({ ...prev, [txt]: "" }));
+                      }}
+                      disabled={removeAdmin.isPending}
+                      className="flex-shrink-0 text-[10px] font-semibold px-2.5 py-1 rounded-lg transition-all hover:scale-[1.02] disabled:opacity-40"
+                      style={{
+                        background: "rgba(239,68,68,0.10)",
+                        color: "rgba(239,68,68,0.75)",
+                        border: "1px solid rgba(239,68,68,0.20)",
+                      }}
+                    >
+                      Odstrániť
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Divider */}
+      <div
+        className="my-1"
+        style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+      />
+
+      {/* Add new admin */}
+      <div className="space-y-2">
+        <p
+          className="text-[10px] font-semibold uppercase tracking-widest"
+          style={{ color: "rgba(255,255,255,0.35)" }}
+        >
+          Pridať admina
+        </p>
+        <div className="flex gap-2">
+          <input
+            data-ocid="settings.add_admin_input"
+            type="text"
+            value={newPrincipal}
+            onChange={(e) => {
+              setNewPrincipal(e.target.value);
+              setAddError("");
+              setAddSuccess(false);
+            }}
+            placeholder="Principal ID nového admina"
+            className="flex-1 rounded-xl px-3 py-2 text-xs font-mono outline-none transition-all"
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              border: addError
+                ? "1px solid rgba(239,68,68,0.50)"
+                : "1px solid rgba(255,255,255,0.12)",
+              color: "rgba(255,255,255,0.80)",
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleAdd();
+            }}
+          />
+          <button
+            type="button"
+            data-ocid="settings.add_admin_button"
+            onClick={handleAdd}
+            disabled={addAdmin.isPending || !newPrincipal.trim()}
+            className="flex-shrink-0 rounded-xl px-4 py-2 text-xs font-semibold flex items-center gap-1.5 transition-all hover:scale-[1.02] disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              background: "rgba(139,92,246,0.20)",
+              color: "rgba(167,139,250,0.90)",
+              border: "1px solid rgba(139,92,246,0.35)",
+            }}
+          >
+            {addAdmin.isPending ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : null}
+            Pridať admina
+          </button>
+        </div>
+
+        {addError && (
+          <p
+            data-ocid="settings.add_admin_error_state"
+            className="text-xs rounded-lg px-3 py-2"
+            style={{
+              background: "rgba(239,68,68,0.12)",
+              color: "rgba(239,68,68,0.90)",
+              border: "1px solid rgba(239,68,68,0.25)",
+            }}
+          >
+            {addError}
+          </p>
+        )}
+        {addSuccess && (
+          <p
+            data-ocid="settings.add_admin_success_state"
+            className="text-xs rounded-lg px-3 py-2 flex items-center gap-1.5"
+            style={{
+              background: "rgba(34,197,94,0.12)",
+              color: "rgba(34,197,94,0.90)",
+              border: "1px solid rgba(34,197,94,0.25)",
+            }}
+          >
+            <Check size={12} />
+            Admin úspešne pridaný
+          </p>
+        )}
+      </div>
+    </SectionCard>
   );
 }
 
@@ -690,13 +1391,15 @@ function CalculatorCard({
 
 function AdminTreasuryCard() {
   const { identity } = useInternetIdentity();
-  const { data: adminPrincipal } = useGetAdminPrincipal();
   const { data: platformFees, refetch: refetchFees } = useGetPlatformFees();
   const withdraw = useWithdrawPlatformFees();
   const [withdrawSuccess, setWithdrawSuccess] = useState<bigint | null>(null);
 
+  const { data: adminList } = useListAdmins();
   const userPrincipal = identity?.getPrincipal().toText();
-  const isAdmin = !!userPrincipal && userPrincipal === adminPrincipal;
+  const isAdmin =
+    !!userPrincipal &&
+    (adminList ?? []).some((p) => p.toText() === userPrincipal);
 
   if (!isAdmin) return null;
 
@@ -807,81 +1510,10 @@ function AdminTreasuryCard() {
   );
 }
 
-// ─── ThemeAccordion ──────────────────────────────────────────────────────────
-
-function ThemeAccordion() {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div
-      className="rounded-3xl overflow-hidden"
-      style={{
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        backdropFilter: "blur(16px)",
-      }}
-    >
-      <button
-        type="button"
-        data-ocid="settings.theme_toggle_button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-3 px-6 py-5 transition-colors duration-200 hover:bg-white/[0.03]"
-        aria-expanded={open}
-      >
-        <span
-          className="font-display text-[10px] font-bold uppercase tracking-[0.14em]"
-          style={{ color: "rgba(255,255,255,0.50)" }}
-        >
-          {t("aria.designSettings")}
-        </span>
-        <ChevronDown
-          size={16}
-          className="transition-transform duration-200 flex-shrink-0"
-          style={{
-            color: "rgba(255,255,255,0.38)",
-            transform: open ? "rotate(180deg)" : "rotate(0deg)",
-          }}
-        />
-      </button>
-
-      {open && (
-        <div
-          className="px-6 pb-6"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
-        >
-          <div className="pt-5">
-            <ThemeSettingsInline />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── ThemeSettingsInline ────────────────────────────────────────────────────────
-function ThemeSettingsInline() {
-  return (
-    <ThemeSettingsPanel
-      isOpen
-      setIsOpen={() => {
-        // no-op: inline usage
-      }}
-    />
-  );
-}
-
 // ─── SettingsPage ─────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
   const { t } = useTranslation();
-  const calcRef = useRef<HTMLDivElement>(null);
-  const [calculatedIcp, setCalculatedIcp] = useState<number>(0);
-  const [showTopUp, setShowTopUp] = useState(false);
-
-  function scrollToCalc() {
-    calcRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
 
   return (
     <div
@@ -889,7 +1521,6 @@ export default function SettingsPage() {
       className="min-h-screen bg-background px-4 py-8"
     >
       <div className="max-w-2xl mx-auto space-y-6">
-        {/* Page heading */}
         <div className="mb-2">
           <h1
             className="font-display text-2xl font-bold tracking-tight"
@@ -905,36 +1536,28 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* Section 1: Cycles Management */}
+        <section data-ocid="settings.corrupted_registry_section">
+          <CorruptedRegistryBanner />
+        </section>
+
         <section data-ocid="settings.cycles_section">
-          <CyclesCard
-            onTopUpClick={scrollToCalc}
-            calculatedIcp={calculatedIcp}
-            showTopUp={showTopUp}
-            setShowTopUp={setShowTopUp}
-          />
+          <CyclesCard />
         </section>
 
-        {/* Section 2: Calculator */}
-        <section data-ocid="settings.calculator_section">
-          <CalculatorCard
-            calcRef={calcRef}
-            onIcpChange={setCalculatedIcp}
-            onTopUpRequest={() => {
-              setShowTopUp(true);
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-          />
+        <section data-ocid="settings.pending_transactions_section">
+          <PendingTransactionsSection />
         </section>
 
-        {/* Section 3: Admin Treasury (renders null for non-admins) */}
+        <section data-ocid="settings.admin_management_section">
+          <AdminManagementCard />
+        </section>
+
         <section data-ocid="settings.treasury_section">
           <AdminTreasuryCard />
         </section>
 
-        {/* Section 4: Theme Settings */}
-        <section data-ocid="settings.theme_section">
-          <ThemeAccordion />
+        <section data-ocid="settings.admin_payments_section">
+          <AdminPaymentMonitor />
         </section>
       </div>
     </div>

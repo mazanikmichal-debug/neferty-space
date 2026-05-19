@@ -1,10 +1,22 @@
 // Version: 1.0.0
+type AccountIdentifier__111791924 = Blob;
+type Block__131935534 =
+  {
+    parent_hash : ?Blob;
+    timestamp : {timestamp_nanos : Nat64};
+    transaction : Transaction__445159725
+  };
+type Data__159895909<T> = {var count : Nat__490723111; elements : [var ?T]};
 type Data__791452850<K, V> =
   {var count : Nat__490723111; kvs : [var ?(K, V)]};
+type GetBlocksArgs__923704682 = {length : Nat64; start : Nat64};
 type Int__270357528 = Int__616954475;
 type Int__616954475 = Int;
+type Internal__667636161<T> =
+  {children : [var ?Node__92254746<T>]; data : Data__159895909<T>};
 type Internal__8484328<K, V> =
   {children : [var ?Node__46230540<K, V>]; data : Data__791452850<K, V>};
+type Leaf__520550824<T> = {data : Data__159895909<T>};
 type Leaf__809889148<K, V> = {data : Data__791452850<K, V>};
 type List__415060402<T> = List__790383201<T>;
 type List__790383201<T> =
@@ -33,10 +45,55 @@ type Nat__490723111 = Nat__920180692;
 type Nat__920180692 = Nat;
 type Node__46230540<K, V> =
   {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
+type Node__92254746<T> =
+  {#internal : Internal__667636161<T>; #leaf : Leaf__520550824<T>};
+type NotifyTopUpArg__244678045 =
+  {block_index : Nat64; canister_id : Principal};
+type NotifyTopUpResult__692205259 =
+  {
+    #Err :
+      {
+        #CanisterNotFound;
+        #InvalidTransaction : Text;
+        #NotificationAlreadyProcessed;
+        #Other : {error_code : Nat64; error_message : Text};
+        #OutOfCycles;
+        #Processing;
+        #Refunded : {block_index : ?Nat64; reason : Text};
+        #TransactionTooOld : Nat64
+      };
+    #Ok : Nat
+  };
+type Operation__133027646 =
+  {
+    #Burn : {amount : Tokens__608103407; from : AccountIdentifier__111791924};
+    #Mint : {amount : Tokens__608103407; to : AccountIdentifier__111791924};
+    #Transfer :
+      {
+        amount : Tokens__608103407;
+        fee : Tokens__608103407;
+        from : AccountIdentifier__111791924;
+        to : AccountIdentifier__111791924
+      }
+  };
+type PendingTx__255155918 =
+  {
+    amount : Nat64;
+    blockIndex : Nat64;
+    caller : Principal;
+    collectionId : Principal;
+    createdAt : Int;
+    lastAttemptAt : Int;
+    retryCount : Nat;
+    status : TxStatus__66887850
+  };
+type QueryBlocksResponse__920313293 =
+  {blocks : [Block__131935534]; first_block_index : Nat64};
 type RegistryEntry__388643836 = (Principal, Principal);
 type Time__796480547 = Int__270357528;
 type Time__900049286 = Time__796480547;
 type TokenId__283674492 = Nat;
+type Tokens__608103407 = {e8s : Nat64};
 type TransactionEvent__62591470 =
   {
     eventType : {#Mint; #Transfer};
@@ -44,22 +101,64 @@ type TransactionEvent__62591470 =
     timestamp : Int;
     to : Principal
   };
+type Transaction__445159725 =
+  {
+    created_at_time : ?{timestamp_nanos : Nat64};
+    memo : Nat64;
+    operation : ?Operation__133027646
+  };
+type TxStatus__66887850 = {#completed; #failed; #pending};
 actor {
+  stable cmc :
+    actor {
+      notify_top_up :
+        shared NotifyTopUpArg__244678045 ->
+          async NotifyTopUpResult__692205259
+    };
   stable collectionRegistry :
     {
       var root : Node__46230540<Principal, Principal>;
       var size : Nat__490723111
     };
   stable counter : {var nextId : Nat};
+  stable cyclesSnap : {var lastCycles : Nat; var lastSnapshotTime : Int};
   stable factory :
     {
       admin : {var principal : Principal};
+      admins : List__415060402<Principal>;
       registry : List__415060402<RegistryEntry__388643836>
     };
   stable factoryState :
     {
       collectionRegistry : Map__605269027<Principal, Principal>;
       mintCounts : Map__605269027<Principal, Nat>
+    };
+  stable ledger :
+    actor {
+      query_blocks :
+        shared GetBlocksArgs__923704682 ->
+          async QueryBlocksResponse__920313293;
+      transfer :
+        shared {
+                 amount : Tokens__608103407;
+                 created_at_time : ?{timestamp_nanos : Nat64};
+                 fee : Tokens__608103407;
+                 from_subaccount : ?Blob;
+                 memo : Nat64;
+                 to : AccountIdentifier__111791924
+               } ->
+          async
+            {
+              #Err :
+                {
+                  #BadFee : {expected_fee : Tokens__608103407};
+                  #InsufficientFunds : {balance : Tokens__608103407};
+                  #TxCreatedInFuture;
+                  #TxDuplicate : {duplicate_of : Nat64};
+                  #TxTooOld : {allowed_window_nanos : Nat64}
+                };
+              #Ok : Nat64
+            }
     };
   stable mintCounts :
     {var root : Node__46230540<Principal, Nat>; var size : Nat__490723111};
@@ -73,6 +172,15 @@ actor {
       var root : Node__46230540<TokenId__283674492, NFTMetadata__266438664>;
       var size : Nat__490723111
     };
+  stable pendingTransactions :
+    {
+      var root : Node__46230540<Nat64, PendingTx__255155918>;
+      var size : Nat__490723111
+    };
+  stable priceCache :
+    {var cachedIcpPrice : Float; var lastPriceFetchTime : Int};
   stable selfRef : {var selfPrincipal : Principal};
-  stable treasury : {var platformFeesE8s : Nat64}
+  stable treasury : {var platformFeesE8s : Nat64};
+  stable usedBlockIndexes :
+    {var root : Node__92254746<Nat64>; var size : Nat__490723111}
 };
