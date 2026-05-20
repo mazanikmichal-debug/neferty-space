@@ -46,6 +46,7 @@ export interface NFTMetadataLite {
     createdAt: Time;
     description: string;
     history: Array<TransactionEvent>;
+    collectionCanisterId?: string;
     isPublic: boolean;
     collectionName?: string;
 }
@@ -171,7 +172,13 @@ export interface backendInterface {
     }>;
     adminRetryTopUp(blockIndex: bigint): Promise<ProcessTopUpResult>;
     cleanupCorruptedRegistry(): Promise<bigint>;
-    createMyCollection(): Promise<Principal>;
+    createMyCollection(): Promise<{
+        __kind__: "ok";
+        ok: Principal;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
     estimateCycles(imageCount: bigint): Promise<bigint>;
     estimateICPForImages(imageCount: bigint, icpPriceUSD: number): Promise<number>;
     estimateImagesForICP(icpAmount: number, icpPriceUSD: number): Promise<bigint>;
@@ -188,18 +195,15 @@ export interface backendInterface {
     }>;
     getFactoryAccountId(): Promise<string>;
     getICPPrice(): Promise<number>;
-    getMyCollection(user: Principal): Promise<Principal | null>;
+    getMyCollection(user: Principal): Promise<Array<Principal>>;
     getMyCollectionCycles(): Promise<bigint>;
+    getMyCollections(user: Principal): Promise<Array<Principal>>;
     getMyHealthStatus(): Promise<HealthStatus>;
     getMyMintCount(user: Principal): Promise<bigint>;
     getMyNFTs(): Promise<Array<NFTMetadataLite>>;
     getMyNFTsPaginated(offset: bigint, limit: bigint): Promise<NFTPageLite>;
     getMyPendingTransactions(): Promise<Array<PendingTx>>;
     getNFT(tokenId: TokenId): Promise<NFTMetadata | null>;
-    /**
-     * / Manual trigger — available for emergency use via Candid UI / frontend.
-     * / Also purges any corrupted aaaaa-aa registry entries left from failed createMyCollection calls.
-     */
     getNFTHistory(tokenId: TokenId): Promise<Array<TransactionEvent> | null>;
     getNFTImage(tokenId: TokenId): Promise<Uint8Array | null>;
     getPendingTransactions(): Promise<Array<PendingTx>>;
@@ -210,7 +214,7 @@ export interface backendInterface {
         heap_memory: bigint;
         estimate_days: bigint;
     }>;
-    getUserRegistryEntry(): Promise<Principal | null>;
+    getUserRegistryEntry(): Promise<Array<Principal>>;
     icrc10_supported_standards(): Promise<Array<Standard>>;
     icrc7_description(): Promise<string | null>;
     icrc7_name(): Promise<string>;
@@ -232,6 +236,13 @@ export interface backendInterface {
     removeAdmin(adminToRemove: Principal): Promise<{
         __kind__: "ok";
         ok: null;
+    } | {
+        __kind__: "err";
+        err: string;
+    }>;
+    removeMyCollection(collectionId: Principal): Promise<{
+        __kind__: "ok";
+        ok: boolean;
     } | {
         __kind__: "err";
         err: string;

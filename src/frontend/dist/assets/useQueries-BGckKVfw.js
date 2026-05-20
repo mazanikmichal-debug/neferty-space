@@ -7,7 +7,7 @@ var __privateAdd = (obj, member, value) => member.has(obj) ? __typeError("Cannot
 var __privateSet = (obj, member, value, setter) => (__accessCheck(obj, member, "write to private field"), setter ? setter.call(obj, value) : member.set(obj, value), value);
 var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "access private method"), method);
 var _client, _currentQuery, _currentQueryInitialState, _currentResult, _currentResultState, _currentResultOptions, _currentThenable, _selectError, _selectFn, _selectResult, _lastQueryWithDefinedData, _staleTimeoutId, _refetchIntervalId, _currentRefetchInterval, _trackedProps, _QueryObserver_instances, executeFetch_fn, updateStaleTimeout_fn, computeRefetchInterval_fn, updateRefetchInterval_fn, updateTimers_fn, clearStaleTimeout_fn, clearRefetchInterval_fn, updateQuery_fn, notify_fn, _a, _client2, _currentResult2, _currentMutation, _mutateOptions, _MutationObserver_instances, updateResult_fn, notify_fn2, _b;
-import { P as Principal, m as Subscribable, p as pendingThenable, n as resolveEnabled, s as shallowEqualObjects, q as resolveStaleTime, t as noop, w as environmentManager, x as isValidTimeout, y as timeUntilStale, z as timeoutManager, A as focusManager, B as fetchState, D as replaceData, E as notifyManager, F as hashKey, G as getDefaultState, r as reactExports, H as shouldThrowError, i as useQueryClient, h as useBackend, _ as __vitePreload, J as JSON_KEY_PRINCIPAL, K as base32Decode, M as base32Encode, N as getCrc32 } from "./index-brzfvpFf.js";
+import { P as Principal, m as Subscribable, p as pendingThenable, n as resolveEnabled, s as shallowEqualObjects, q as resolveStaleTime, t as noop, w as environmentManager, x as isValidTimeout, y as timeUntilStale, z as timeoutManager, A as focusManager, B as fetchState, D as replaceData, E as notifyManager, F as hashKey, G as getDefaultState, r as reactExports, H as shouldThrowError, h as useQueryClient, g as useBackend, f as useInternetIdentity, _ as __vitePreload, J as JSON_KEY_PRINCIPAL, K as base32Decode, M as base32Encode, N as getCrc32 } from "./index-CuZWHZ-E.js";
 const index = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   JSON_KEY_PRINCIPAL,
@@ -863,6 +863,28 @@ function useGetICPPrice() {
     placeholderData: void 0
   });
 }
+function useGetMyCollection() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const { identity } = useInternetIdentity();
+  const actorReady = !!actor && !actorLoading;
+  return useQuery({
+    queryKey: ["myCollection"],
+    queryFn: async () => {
+      if (!actor) throw new Error("Konfigurácia chýba");
+      const callerPrincipal = (identity == null ? void 0 : identity.getPrincipal()) ?? Principal.anonymous();
+      try {
+        const result = await actor.getMyCollection(callerPrincipal);
+        if (Array.isArray(result)) return result;
+        if (result) return [result];
+        return [];
+      } catch {
+        return [];
+      }
+    },
+    enabled: actorReady,
+    staleTime: 3e5
+  });
+}
 function useGetMyHealthStatus() {
   const { actor, isLoading: actorLoading } = useBackend();
   const actorReady = !!actor && !actorLoading;
@@ -903,6 +925,25 @@ function useGetStatus() {
     },
     enabled: actorReady,
     staleTime: 3e4
+  });
+}
+function useCreateMyCollection() {
+  const { actor, isLoading: actorLoading } = useBackend();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor || actorLoading) throw new Error("Konfigurácia chýba");
+      const result = await actor.createMyCollection();
+      if (result.__kind__ === "err") throw new Error(result.err);
+      return result.ok.toText();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myCollectionCycles"] });
+      queryClient.invalidateQueries({ queryKey: ["myHealthStatus"] });
+      queryClient.invalidateQueries({ queryKey: ["myCollectionPrincipal"] });
+      queryClient.invalidateQueries({ queryKey: ["userRegistryEntry"] });
+      queryClient.invalidateQueries({ queryKey: ["myCollection"] });
+    }
   });
 }
 function useGetPlatformFees() {
@@ -1059,19 +1100,21 @@ export {
   useGetNFTImage as a,
   useGetMyNFTs as b,
   useMintNFT as c,
-  useGetICPPrice as d,
-  useQuery as e,
-  useGetMyHealthStatus as f,
-  useGetStatus as g,
-  useProcessTopUp as h,
-  useGetMyPendingTransactions as i,
-  useRetryTopUp as j,
-  useListAdmins as k,
-  useAddAdmin as l,
-  useRemoveAdmin as m,
-  useGetPlatformFees as n,
-  useWithdrawPlatformFees as o,
-  useGetAllPendingTransactions as p,
-  useAdminRetryTopUp as q,
+  useGetMyCollection as d,
+  useCreateMyCollection as e,
+  useGetICPPrice as f,
+  useQuery as g,
+  useGetMyHealthStatus as h,
+  useGetStatus as i,
+  useProcessTopUp as j,
+  useGetMyPendingTransactions as k,
+  useRetryTopUp as l,
+  useListAdmins as m,
+  useAddAdmin as n,
+  useRemoveAdmin as o,
+  useGetPlatformFees as p,
+  useWithdrawPlatformFees as q,
+  useGetAllPendingTransactions as r,
+  useAdminRetryTopUp as s,
   useGetAllPublicNFTs as u
 };

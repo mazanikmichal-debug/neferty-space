@@ -1,8 +1,9 @@
 import Types "../types/nft";
 import NFTLib "../lib/nft";
 import Time "mo:core/Time";
+import Principal "mo:core/Principal";
 
-mixin (state : NFTLib.State, factoryState : NFTLib.FactoryState) {
+mixin (state : NFTLib.State, factoryState : NFTLib.FactoryState, selfRef : { var selfPrincipal : Principal }) {
   public shared ({ caller }) func mintNFT(
     name : Text,
     description : Text,
@@ -36,7 +37,8 @@ mixin (state : NFTLib.State, factoryState : NFTLib.FactoryState) {
   };
 
   public shared ({ caller }) func getMyNFTs() : async [Types.NFTMetadataLite] {
-    NFTLib.getByOwnerLite(state, caller);
+    let cid = ?selfRef.selfPrincipal.toText();
+    NFTLib.getByOwnerLite(state, caller, cid);
   };
 
   public query func getNFT(tokenId : Types.TokenId) : async ?Types.NFTMetadata {
@@ -57,19 +59,23 @@ mixin (state : NFTLib.State, factoryState : NFTLib.FactoryState) {
     };
   };
   public query func getAllPublicNFTs() : async [Types.NFTMetadataLite] {
-    NFTLib.getAllPublicLite(state);
+    let cid = ?selfRef.selfPrincipal.toText();
+    NFTLib.getAllPublicLite(state, cid);
   };
 
   public query func getAllPublicNFTsPaginated(offset : Nat, limit : Nat) : async Types.NFTPageLite {
-    NFTLib.getAllPublicPaginatedLite(state, offset, limit);
+    let cid = ?selfRef.selfPrincipal.toText();
+    NFTLib.getAllPublicPaginatedLite(state, offset, limit, cid);
   };
 
   public shared ({ caller }) func getMyNFTsPaginated(offset : Nat, limit : Nat) : async Types.NFTPageLite {
-    NFTLib.getByOwnerPaginatedLite(state, caller, offset, limit);
+    let cid = ?selfRef.selfPrincipal.toText();
+    NFTLib.getByOwnerPaginatedLite(state, caller, offset, limit, cid);
   };
 
   public query func getAllPublicNFTsByOwner(owner : Principal) : async [Types.NFTMetadataLite] {
-    NFTLib.getAllPublicByOwnerLite(state, owner);
+    let cid = ?selfRef.selfPrincipal.toText();
+    NFTLib.getAllPublicByOwnerLite(state, owner, cid);
   };
 
   /// Returns only the image Blob for a single NFT.

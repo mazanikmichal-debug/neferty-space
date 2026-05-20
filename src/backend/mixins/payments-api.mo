@@ -444,16 +444,9 @@ mixin (
     //       the Factory itself IS the collection. Fall back to selfRef.selfPrincipal
     //       when the registry has no entry OR holds the corrupted aaaaa-aa placeholder.
     let zeroPrincipal = Principal.fromText("aaaaa-aa");
-    let collectionId = switch (FactoryLib.getCollection(factory, caller)) {
-      case (?cid) {
-        if (Principal.equal(cid, zeroPrincipal)) {
-          selfRef.selfPrincipal; // corrupted placeholder → use Factory itself
-        } else {
-          cid;
-        };
-      };
-      case null selfRef.selfPrincipal; // no registry entry → single-canister mode
-    };
+    let rawCols = FactoryLib.getCollections(factory, caller)
+      .filter(func(cid) { not Principal.equal(cid, zeroPrincipal) });
+    let collectionId : Principal = if (rawCols.size() > 0) rawCols[0] else selfRef.selfPrincipal;
 
     // ── 2. Fetch the block and verify the transfer ─────────────────────────
     let blocksResp = try {

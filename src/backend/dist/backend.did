@@ -88,6 +88,7 @@ type NFTPageLite =
  };
 type NFTMetadataLite = 
  record {
+   collectionCanisterId: opt text;
    collectionName: opt text;
    createdAt: Time;
    description: text;
@@ -149,7 +150,10 @@ service : {
                                       });
   adminRetryTopUp: (blockIndex: nat64) -> (ProcessTopUpResult);
   cleanupCorruptedRegistry: () -> (nat);
-  createMyCollection: () -> (principal);
+  createMyCollection: () -> (variant {
+                               err: text;
+                               ok: principal;
+                             });
   estimateCycles: (imageCount: nat) -> (nat) query;
   estimateICPForImages: (imageCount: nat, icpPriceUSD: float64) ->
    (float64) query;
@@ -169,16 +173,15 @@ service : {
     });
   getFactoryAccountId: () -> (text) query;
   getICPPrice: () -> (float64);
-  getMyCollection: (user: principal) -> (opt principal) query;
+  getMyCollection: (user: principal) -> (vec principal) query;
   getMyCollectionCycles: () -> (nat);
+  getMyCollections: (user: principal) -> (vec principal) query;
   getMyHealthStatus: () -> (HealthStatus);
   getMyMintCount: (user: principal) -> (nat);
   getMyNFTs: () -> (vec NFTMetadataLite);
   getMyNFTsPaginated: (offset: nat, limit: nat) -> (NFTPageLite);
   getMyPendingTransactions: () -> (vec PendingTx) query;
   getNFT: (tokenId: TokenId) -> (opt NFTMetadata) query;
-  /// Manual trigger — available for emergency use via Candid UI / frontend.
-  /// Also purges any corrupted aaaaa-aa registry entries left from failed createMyCollection calls.
   getNFTHistory: (tokenId: TokenId) -> (opt vec TransactionEvent) query;
   getNFTImage: (tokenId: TokenId) -> (opt blob) query;
   getPendingTransactions: () -> (vec PendingTx) query;
@@ -190,7 +193,7 @@ service : {
       heap_memory: nat;
       memory: nat;
     });
-  getUserRegistryEntry: () -> (opt principal) query;
+  getUserRegistryEntry: () -> (vec principal) query;
   icrc10_supported_standards: () -> (vec Standard) query;
   icrc7_description: () -> (opt text) query;
   icrc7_name: () -> (text) query;
@@ -218,6 +221,11 @@ service : {
                                                 err: text;
                                                 ok;
                                               });
+  removeMyCollection: (collectionId: principal) ->
+   (variant {
+      err: text;
+      ok: bool;
+    });
   retryTopUp: (blockIndex: nat64) -> (ProcessTopUpResult);
   setNFTVisibility: (tokenId: TokenId, isPublic: bool) -> (VisibilityResult);
   topUpCollection: (blockIndex: nat64) -> (TopUpResult);

@@ -15,6 +15,7 @@ import type {
   TokenId,
   TransactionEvent,
 } from "@/types/nft";
+import { useInternetIdentity } from "@caffeineai/core-infrastructure";
 import { Principal } from "@dfinity/principal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -210,29 +211,23 @@ export function useGetICPPrice() {
  */
 export function useGetMyCollection() {
   const { actor, isLoading: actorLoading } = useBackend();
+  const { identity } = useInternetIdentity();
   const actorReady = !!actor && !actorLoading;
 
-  return useQuery<Principal | null, Error, Principal | null, string[]>({
+  return useQuery<Principal[], Error, Principal[], string[]>({
     queryKey: ["myCollection"],
     queryFn: async () => {
       if (!actor) throw new Error("Konfigurácia chýba");
-      // getMyCollection takes a user Principal — we need identity here.
-      // We call getMyHealthStatus which internally resolves the collection,
-      // but a cleaner path is calling getMyCollection directly.
-      // The backend signature: getMyCollection(user: Principal): Principal | null
-      // We import useInternetIdentity in the hook indirectly via actor context.
-      // Since we don't have identity here, we call createMyCollection check instead.
-      // Approach: use actor.getMyCollection with a sentinel — the factory backend
-      // accepts getMyCollection(callerPrincipal) where callerPrincipal is passed explicitly.
-      // We call getMyHealthStatus to piggyback on the existing "find collection" logic,
-      // then return null for now. A direct approach: expose getMyCollectionId() on backend.
-      // Best option with current contract: call getMyCollectionCycles() which internally
-      // resolves the collection — but it only returns cycles, not the Principal.
-      // We must return the collection principal from getMyCollection(caller.getPrincipal()).
-      // Since actor doesn't expose caller identity directly here, we need the identity.
-      // This hook is called from CyclesCard which already has access to useInternetIdentity.
-      // Return a placeholder — CyclesCard will call the principal-aware version.
-      return null;
+      // getMyCollection now returns an array of collection Principals
+      const callerPrincipal = identity?.getPrincipal() ?? Principal.anonymous();
+      try {
+        const result = await actor.getMyCollection(callerPrincipal);
+        if (Array.isArray(result)) return result as Principal[];
+        if (result) return [result as Principal];
+        return [];
+      } catch {
+        return [];
+      }
     },
     enabled: actorReady,
     staleTime: 300_000,
@@ -401,14 +396,16 @@ export function useCreateMyCollection() {
   return useMutation({
     mutationFn: async (): Promise<string> => {
       if (!actor || actorLoading) throw new Error("Konfigurácia chýba");
-      const principal = await actor.createMyCollection();
-      return principal.toText();
+      const result = await actor.createMyCollection();
+      if (result.__kind__ === "err") throw new Error(result.err);
+      return result.ok.toText();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["myCollectionCycles"] });
       queryClient.invalidateQueries({ queryKey: ["myHealthStatus"] });
       queryClient.invalidateQueries({ queryKey: ["myCollectionPrincipal"] });
       queryClient.invalidateQueries({ queryKey: ["userRegistryEntry"] });
+      queryClient.invalidateQueries({ queryKey: ["myCollection"] });
     },
   });
 }
@@ -669,7 +666,7 @@ export function useGetUserRegistryEntry(
       if (!actor || !callerPrincipal) return null;
       try {
         const result = await actor.getUserRegistryEntry();
-        return result ? result.toText() : null;
+        return result && result.length > 0 ? result[0].toText() : null;
       } catch {
         return null;
       }
@@ -695,9 +692,13 @@ export function useIsUsingDefaultCollection(
       if (!actor || !callerPrincipal) return false;
       try {
         const result = await actor.getMyCollection(callerPrincipal);
-        if (!result) return true; // null = no separate collection = using default
-        // If result equals the factory canister itself, it's the default
-        return false;
+        const arr: Principal[] = Array.isArray(result)
+          ? (result as Principal[])
+          : result
+            ? [result as Principal]
+            : [];
+        // empty array = no separate collection = using default
+        return arr.length === 0;
       } catch {
         return true; // on error treat as default
       }

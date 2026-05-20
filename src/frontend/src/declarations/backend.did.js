@@ -32,6 +32,7 @@ export const NFTMetadataLite = IDL.Record({
   'createdAt' : Time,
   'description' : IDL.Text,
   'history' : IDL.Vec(TransactionEvent),
+  'collectionCanisterId' : IDL.Opt(IDL.Text),
   'isPublic' : IDL.Bool,
   'collectionName' : IDL.Opt(IDL.Text),
 });
@@ -134,7 +135,11 @@ export const idlService = IDL.Service({
     ),
   'adminRetryTopUp' : IDL.Func([IDL.Nat64], [ProcessTopUpResult], []),
   'cleanupCorruptedRegistry' : IDL.Func([], [IDL.Nat], []),
-  'createMyCollection' : IDL.Func([], [IDL.Principal], []),
+  'createMyCollection' : IDL.Func(
+      [],
+      [IDL.Variant({ 'ok' : IDL.Principal, 'err' : IDL.Text })],
+      [],
+    ),
   'estimateCycles' : IDL.Func([IDL.Nat], [IDL.Nat], ['query']),
   'estimateICPForImages' : IDL.Func(
       [IDL.Nat, IDL.Float64],
@@ -175,10 +180,15 @@ export const idlService = IDL.Service({
   'getICPPrice' : IDL.Func([], [IDL.Float64], []),
   'getMyCollection' : IDL.Func(
       [IDL.Principal],
-      [IDL.Opt(IDL.Principal)],
+      [IDL.Vec(IDL.Principal)],
       ['query'],
     ),
   'getMyCollectionCycles' : IDL.Func([], [IDL.Nat], []),
+  'getMyCollections' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Vec(IDL.Principal)],
+      ['query'],
+    ),
   'getMyHealthStatus' : IDL.Func([], [HealthStatus], []),
   'getMyMintCount' : IDL.Func([IDL.Principal], [IDL.Nat], []),
   'getMyNFTs' : IDL.Func([], [IDL.Vec(NFTMetadataLite)], []),
@@ -205,7 +215,7 @@ export const idlService = IDL.Service({
       ],
       [],
     ),
-  'getUserRegistryEntry' : IDL.Func([], [IDL.Opt(IDL.Principal)], ['query']),
+  'getUserRegistryEntry' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
   'icrc10_supported_standards' : IDL.Func([], [IDL.Vec(Standard)], ['query']),
   'icrc7_description' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
   'icrc7_name' : IDL.Func([], [IDL.Text], ['query']),
@@ -252,6 +262,11 @@ export const idlService = IDL.Service({
       [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
       [],
     ),
+  'removeMyCollection' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Variant({ 'ok' : IDL.Bool, 'err' : IDL.Text })],
+      [],
+    ),
   'retryTopUp' : IDL.Func([IDL.Nat64], [ProcessTopUpResult], []),
   'setNFTVisibility' : IDL.Func([TokenId, IDL.Bool], [VisibilityResult], []),
   'topUpCollection' : IDL.Func([IDL.Nat64], [TopUpResult], []),
@@ -286,6 +301,7 @@ export const idlFactory = ({ IDL }) => {
     'createdAt' : Time,
     'description' : IDL.Text,
     'history' : IDL.Vec(TransactionEvent),
+    'collectionCanisterId' : IDL.Opt(IDL.Text),
     'isPublic' : IDL.Bool,
     'collectionName' : IDL.Opt(IDL.Text),
   });
@@ -379,7 +395,11 @@ export const idlFactory = ({ IDL }) => {
       ),
     'adminRetryTopUp' : IDL.Func([IDL.Nat64], [ProcessTopUpResult], []),
     'cleanupCorruptedRegistry' : IDL.Func([], [IDL.Nat], []),
-    'createMyCollection' : IDL.Func([], [IDL.Principal], []),
+    'createMyCollection' : IDL.Func(
+        [],
+        [IDL.Variant({ 'ok' : IDL.Principal, 'err' : IDL.Text })],
+        [],
+      ),
     'estimateCycles' : IDL.Func([IDL.Nat], [IDL.Nat], ['query']),
     'estimateICPForImages' : IDL.Func(
         [IDL.Nat, IDL.Float64],
@@ -420,10 +440,15 @@ export const idlFactory = ({ IDL }) => {
     'getICPPrice' : IDL.Func([], [IDL.Float64], []),
     'getMyCollection' : IDL.Func(
         [IDL.Principal],
-        [IDL.Opt(IDL.Principal)],
+        [IDL.Vec(IDL.Principal)],
         ['query'],
       ),
     'getMyCollectionCycles' : IDL.Func([], [IDL.Nat], []),
+    'getMyCollections' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(IDL.Principal)],
+        ['query'],
+      ),
     'getMyHealthStatus' : IDL.Func([], [HealthStatus], []),
     'getMyMintCount' : IDL.Func([IDL.Principal], [IDL.Nat], []),
     'getMyNFTs' : IDL.Func([], [IDL.Vec(NFTMetadataLite)], []),
@@ -454,7 +479,7 @@ export const idlFactory = ({ IDL }) => {
         ],
         [],
       ),
-    'getUserRegistryEntry' : IDL.Func([], [IDL.Opt(IDL.Principal)], ['query']),
+    'getUserRegistryEntry' : IDL.Func([], [IDL.Vec(IDL.Principal)], ['query']),
     'icrc10_supported_standards' : IDL.Func([], [IDL.Vec(Standard)], ['query']),
     'icrc7_description' : IDL.Func([], [IDL.Opt(IDL.Text)], ['query']),
     'icrc7_name' : IDL.Func([], [IDL.Text], ['query']),
@@ -503,6 +528,11 @@ export const idlFactory = ({ IDL }) => {
     'removeAdmin' : IDL.Func(
         [IDL.Principal],
         [IDL.Variant({ 'ok' : IDL.Null, 'err' : IDL.Text })],
+        [],
+      ),
+    'removeMyCollection' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Variant({ 'ok' : IDL.Bool, 'err' : IDL.Text })],
         [],
       ),
     'retryTopUp' : IDL.Func([IDL.Nat64], [ProcessTopUpResult], []),

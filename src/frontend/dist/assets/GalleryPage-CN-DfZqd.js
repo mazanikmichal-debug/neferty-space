@@ -1,7 +1,7 @@
-import { c as createLucideIcon, r as reactExports, e as reactDomExports, j as jsxRuntimeExports, X, f as useInternetIdentity, u as useTranslation, _ as __vitePreload, V as Variant_Mint_Transfer } from "./index-brzfvpFf.js";
-import { b as useGetMyNFTs, a as useGetNFTImage } from "./useQueries-BF2kAjPo.js";
+import { c as createLucideIcon, r as reactExports, e as reactDomExports, j as jsxRuntimeExports, X, f as useInternetIdentity, u as useTranslation, _ as __vitePreload, g as useBackend, h as useQueryClient, P as Principal, V as Variant_Mint_Transfer } from "./index-CuZWHZ-E.js";
+import { b as useGetMyNFTs, a as useGetNFTImage } from "./useQueries-BGckKVfw.js";
 import { n as nftImageUrlById } from "./nftImage-qKgxaRHy.js";
-import { C as Clock } from "./clock-XSnzcK58.js";
+import { C as Clock } from "./clock-B6UiFjhh.js";
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -807,68 +807,123 @@ function CollectionCard({
   displayName,
   firstNft,
   count,
-  onClick
+  onClick,
+  canisterId,
+  onDelete,
+  factoryCanisterId
 }) {
+  const [isDeleting, setIsDeleting] = reactExports.useState(false);
   const { data: imageBytes } = useGetNFTImage(
     firstNft ? firstNft.tokenId : null
   );
   const imageUrl = imageBytes && firstNft ? nftImageUrlById(firstNft.tokenId, imageBytes) : "";
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
-    "button",
+    "div",
     {
-      type: "button",
       "data-ocid": `history.collection_card.${groupKey}`,
-      onClick,
       className: "aspect-square flex flex-col rounded-xl overflow-hidden transition-all duration-200 hover:scale-[1.03] text-left w-full",
       style: {
         background: "rgba(255,255,255,0.055)",
         border: "1px solid rgba(255,255,255,0.12)"
       },
       children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 w-full overflow-hidden relative", children: [
-          imageUrl ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "img",
-            {
-              src: imageUrl,
-              alt: displayName,
-              loading: "lazy",
-              className: "w-full h-full object-cover"
-            }
-          ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "div",
-            {
-              className: "w-full h-full flex items-center justify-center",
-              style: { background: "rgba(255,255,255,0.04)" },
-              children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-                Layers,
-                {
-                  className: "w-5 h-5",
-                  style: {
-                    color: "rgba(var(--theme-color-1-rgb,180,80,220),0.45)"
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "button",
+          {
+            type: "button",
+            onClick,
+            className: "flex-1 flex flex-col w-full min-h-0",
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 w-full overflow-hidden relative", children: [
+                imageUrl ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "img",
+                  {
+                    src: imageUrl,
+                    alt: displayName,
+                    loading: "lazy",
+                    className: "w-full h-full object-cover"
                   }
+                ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "div",
+                  {
+                    className: "w-full h-full flex items-center justify-center",
+                    style: { background: "rgba(255,255,255,0.04)" },
+                    children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      Layers,
+                      {
+                        className: "w-5 h-5",
+                        style: {
+                          color: "rgba(var(--theme-color-1-rgb,180,80,220),0.45)"
+                        }
+                      }
+                    )
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "span",
+                  {
+                    className: "absolute top-1.5 right-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full",
+                    style: {
+                      background: "rgba(0,0,0,0.60)",
+                      color: "rgba(255,255,255,0.80)"
+                    },
+                    children: count
+                  }
+                )
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "div",
+                {
+                  className: "px-1.5 py-1 flex flex-col gap-0.5 w-full",
+                  title: displayName,
+                  children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "span",
+                      {
+                        className: "text-xs font-medium truncate",
+                        style: { color: "rgba(255,255,255,0.75)" },
+                        children: displayName
+                      }
+                    ),
+                    canisterId ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "span",
+                      {
+                        className: "text-[9px] font-mono truncate",
+                        style: { color: "rgba(255,255,255,0.35)" },
+                        children: shortenCanisterId(canisterId)
+                      }
+                    ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "span",
+                      {
+                        className: "text-[9px] italic",
+                        style: { color: "rgba(255,255,255,0.28)" },
+                        children: "Predvolená zbierka"
+                      }
+                    )
+                  ]
                 }
               )
-            }
-          ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "span",
-            {
-              className: "absolute top-1.5 right-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full",
-              style: {
-                background: "rgba(0,0,0,0.60)",
-                color: "rgba(255,255,255,0.80)"
-              },
-              children: count
-            }
-          )
-        ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx(
-          "div",
+            ]
+          }
+        ),
+        canisterId && canisterId !== factoryCanisterId && onDelete && /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "button",
           {
-            className: "px-1.5 py-1 text-xs font-medium truncate w-full",
-            style: { color: "rgba(255,255,255,0.75)" },
-            title: displayName,
-            children: displayName
+            type: "button",
+            "data-ocid": `history.collection_card.${groupKey}.delete_button`,
+            disabled: isDeleting,
+            onClick: async (e) => {
+              e.stopPropagation();
+              if (!window.confirm("Naozaj chceš vymazať túto zbierku?")) return;
+              setIsDeleting(true);
+              try {
+                await onDelete(canisterId);
+              } finally {
+                setIsDeleting(false);
+              }
+            },
+            className: "mt-2 w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-medium py-1.5 px-3 rounded-lg transition-colors",
+            children: isDeleting ? "Mazanie..." : "Vymazať zbierku"
           }
         )
       ]
@@ -886,6 +941,21 @@ function MintHistoryPanel() {
     }).catch(() => {
     });
   }, []);
+  const { actor } = useBackend();
+  const queryClient = useQueryClient();
+  const handleDeleteCollection = async (cid) => {
+    if (!actor) return;
+    try {
+      const result = await actor.removeMyCollection(Principal.fromText(cid));
+      if ("err" in result) {
+        alert(`Chyba: ${result.err}`);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["myNFTs"] });
+      }
+    } catch (e) {
+      alert(`Chyba: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
   const { data: nfts, isLoading, isError, error } = useGetMyNFTs();
   const [viewMode, setViewMode] = reactExports.useState(() => {
     const saved = localStorage.getItem(VIEW_MODE_KEY);
@@ -908,21 +978,38 @@ function MintHistoryPanel() {
     const bMs = Number(b.createdAt / 1000000n);
     return bMs - aMs;
   }) : [];
+  const resolveCanisterId = (nft) => {
+    const cid = nft.collectionCanisterId;
+    if (!cid || cid === "aaaaa-aa") return void 0;
+    return cid;
+  };
+  const groupKeyFor = (nft) => {
+    const cid = resolveCanisterId(nft);
+    if (cid) return `cid:${cid}`;
+    const name = nft.collectionName ?? "";
+    if (name) return `name:${name}`;
+    return "__standalone__";
+  };
   const collectionGroups = [];
   if (viewMode === "collection") {
     const map = /* @__PURE__ */ new Map();
     for (const nft of sorted) {
-      const key = nft.collectionName ?? "";
-      const arr = map.get(key) ?? [];
-      arr.push(nft);
-      map.set(key, arr);
+      const key = groupKeyFor(nft);
+      const existing = map.get(key);
+      if (existing) {
+        existing.nfts.push(nft);
+      } else {
+        map.set(key, {
+          name: nft.collectionName ?? "",
+          canisterId: resolveCanisterId(nft),
+          nfts: [nft]
+        });
+      }
     }
-    for (const [name, items] of map)
-      collectionGroups.push({ name, nfts: items });
+    for (const [groupKey, { name, canisterId, nfts: nfts2 }] of map)
+      collectionGroups.push({ groupKey, name, canisterId, nfts: nfts2 });
   }
-  const activeCollectionNfts = selectedCollection !== null ? sorted.filter(
-    (nft) => (nft.collectionName ?? "") === (selectedCollection === "__standalone__" ? "" : selectedCollection)
-  ) : [];
+  const activeCollectionNfts = selectedCollection !== null ? sorted.filter((nft) => groupKeyFor(nft) === selectedCollection) : [];
   const showContent = !isLoading && !isError && sorted.length > 0;
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     "div",
@@ -1062,7 +1149,7 @@ function MintHistoryPanel() {
                   {
                     nft,
                     index: idx + 1,
-                    canisterId: factoryCanisterId
+                    canisterId: resolveCanisterId(nft) ?? factoryCanisterId
                   },
                   nft.tokenId.toString()
                 )) })
@@ -1090,7 +1177,7 @@ function MintHistoryPanel() {
                   {
                     nft,
                     index: idx + 1,
-                    canisterId: factoryCanisterId
+                    canisterId: resolveCanisterId(nft) ?? factoryCanisterId
                   },
                   nft.tokenId.toString()
                 )) })
@@ -1118,7 +1205,7 @@ function MintHistoryPanel() {
                   {
                     nft,
                     index: idx + 1,
-                    canisterId: factoryCanisterId
+                    canisterId: resolveCanisterId(nft) ?? factoryCanisterId
                   },
                   nft.tokenId.toString()
                 )) })
@@ -1126,20 +1213,21 @@ function MintHistoryPanel() {
               showContent && viewMode === "collection" && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col gap-3", children: selectedCollection === null ? (
                 /* Collection grid cards */
                 /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "grid grid-cols-3 gap-2", children: collectionGroups.map((group) => {
-                  const isStandalone = group.name === "";
-                  const displayName = isStandalone ? "Samostatné" : group.name;
-                  const key = isStandalone ? "__standalone__" : group.name;
+                  const displayName = group.name === "" ? "Samostatné" : group.name;
                   const firstNft = group.nfts[0];
                   return /* @__PURE__ */ jsxRuntimeExports.jsx(
                     CollectionCard,
                     {
-                      groupKey: key,
+                      groupKey: group.groupKey,
                       displayName,
                       firstNft: firstNft ?? null,
                       count: group.nfts.length,
-                      onClick: () => setSelectedCollection(key)
+                      canisterId: group.canisterId,
+                      factoryCanisterId,
+                      onClick: () => setSelectedCollection(group.groupKey),
+                      onDelete: handleDeleteCollection
                     },
-                    key
+                    group.groupKey
                   );
                 }) })
               ) : (
@@ -1165,7 +1253,7 @@ function MintHistoryPanel() {
                       nft,
                       index: i + 1,
                       callerPrincipal,
-                      canisterId: factoryCanisterId
+                      canisterId: resolveCanisterId(nft) ?? factoryCanisterId
                     },
                     nft.tokenId.toString()
                   )) })
@@ -1194,7 +1282,7 @@ function MintHistoryPanel() {
                   {
                     nft,
                     index: idx + 1,
-                    canisterId: factoryCanisterId
+                    canisterId: resolveCanisterId(nft) ?? factoryCanisterId
                   },
                   nft.tokenId.toString()
                 )) })
@@ -1223,7 +1311,7 @@ function MintHistoryPanel() {
                     {
                       nft,
                       index: idx + 1,
-                      canisterId: factoryCanisterId
+                      canisterId: resolveCanisterId(nft) ?? factoryCanisterId
                     },
                     nft.tokenId.toString()
                   )

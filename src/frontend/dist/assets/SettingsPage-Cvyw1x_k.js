@@ -1,6 +1,6 @@
-import { c as createLucideIcon, P as Principal, r as reactExports, j as jsxRuntimeExports, C as Check, u as useTranslation, h as useBackend, f as useInternetIdentity, i as useQueryClient, k as Copy, l as copyToClipboard } from "./index-brzfvpFf.js";
-import { d as useGetICPPrice, e as useQuery, f as useGetMyHealthStatus, g as useGetStatus, h as useProcessTopUp, i as useGetMyPendingTransactions, j as useRetryTopUp, k as useListAdmins, l as useAddAdmin, m as useRemoveAdmin, n as useGetPlatformFees, o as useWithdrawPlatformFees, p as useGetAllPendingTransactions, q as useAdminRetryTopUp } from "./useQueries-BF2kAjPo.js";
-import { C as Clock } from "./clock-XSnzcK58.js";
+import { c as createLucideIcon, P as Principal, r as reactExports, j as jsxRuntimeExports, C as Check, u as useTranslation, g as useBackend, f as useInternetIdentity, h as useQueryClient, k as Copy, l as copyToClipboard } from "./index-CuZWHZ-E.js";
+import { f as useGetICPPrice, g as useQuery, h as useGetMyHealthStatus, i as useGetStatus, j as useProcessTopUp, k as useGetMyPendingTransactions, l as useRetryTopUp, m as useListAdmins, n as useAddAdmin, o as useRemoveAdmin, p as useGetPlatformFees, q as useWithdrawPlatformFees, r as useGetAllPendingTransactions, s as useAdminRetryTopUp } from "./useQueries-BGckKVfw.js";
+import { C as Clock } from "./clock-B6UiFjhh.js";
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -1412,7 +1412,8 @@ function CyclesCard() {
       const callerPrincipal = identity.getPrincipal();
       try {
         const result = await actor.getMyCollection(callerPrincipal);
-        return result ?? null;
+        const arr = Array.isArray(result) ? result : result ? [result] : [];
+        return arr[0] ?? null;
       } catch {
         return null;
       }

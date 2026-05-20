@@ -1,9 +1,12 @@
 import { ImageLightbox } from "@/components/ImageLightbox";
+import { useBackend } from "@/context/BackendContext";
 import { useGetMyNFTs, useGetNFTImage } from "@/hooks/useQueries";
 import type { NFTMetadataLite, TransactionEvent } from "@/types/nft";
 import { Variant_Mint_Transfer } from "@/types/nft";
 import { nftImageUrlById } from "@/utils/nftImage";
 import { useInternetIdentity } from "@caffeineai/core-infrastructure";
+import { Principal } from "@dfinity/principal";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Clock, Layers, List } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type React from "react";
@@ -732,6 +735,9 @@ interface CollectionCardProps {
   firstNft: NFTMetadataLite | null;
   count: number;
   onClick: () => void;
+  canisterId?: string;
+  onDelete?: (canisterId: string) => Promise<void>;
+  factoryCanisterId?: string;
 }
 function CollectionCard({
   groupKey,
@@ -739,7 +745,11 @@ function CollectionCard({
   firstNft,
   count,
   onClick,
+  canisterId,
+  onDelete,
+  factoryCanisterId,
 }: CollectionCardProps) {
+  const [isDeleting, setIsDeleting] = useState(false);
   const { data: imageBytes } = useGetNFTImage(
     firstNft ? firstNft.tokenId : null,
   );
@@ -747,58 +757,103 @@ function CollectionCard({
     imageBytes && firstNft ? nftImageUrlById(firstNft.tokenId, imageBytes) : "";
 
   return (
-    <button
-      type="button"
+    <div
       data-ocid={`history.collection_card.${groupKey}`}
-      onClick={onClick}
       className="aspect-square flex flex-col rounded-xl overflow-hidden transition-all duration-200 hover:scale-[1.03] text-left w-full"
       style={{
         background: "rgba(255,255,255,0.055)",
         border: "1px solid rgba(255,255,255,0.12)",
       }}
     >
-      {/* Image area */}
-      <div className="flex-1 w-full overflow-hidden relative">
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={displayName}
-            loading="lazy"
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div
-            className="w-full h-full flex items-center justify-center"
-            style={{ background: "rgba(255,255,255,0.04)" }}
-          >
-            <Layers
-              className="w-5 h-5"
-              style={{
-                color: "rgba(var(--theme-color-1-rgb,180,80,220),0.45)",
-              }}
-            />
-          </div>
-        )}
-        {/* Count badge */}
-        <span
-          className="absolute top-1.5 right-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-          style={{
-            background: "rgba(0,0,0,0.60)",
-            color: "rgba(255,255,255,0.80)",
-          }}
-        >
-          {count}
-        </span>
-      </div>
-      {/* Label */}
-      <div
-        className="px-1.5 py-1 text-xs font-medium truncate w-full"
-        style={{ color: "rgba(255,255,255,0.75)" }}
-        title={displayName}
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex-1 flex flex-col w-full min-h-0"
       >
-        {displayName}
-      </div>
-    </button>
+        {/* Image area */}
+        <div className="flex-1 w-full overflow-hidden relative">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={displayName}
+              loading="lazy"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{ background: "rgba(255,255,255,0.04)" }}
+            >
+              <Layers
+                className="w-5 h-5"
+                style={{
+                  color: "rgba(var(--theme-color-1-rgb,180,80,220),0.45)",
+                }}
+              />
+            </div>
+          )}
+          {/* Count badge */}
+          <span
+            className="absolute top-1.5 right-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+            style={{
+              background: "rgba(0,0,0,0.60)",
+              color: "rgba(255,255,255,0.80)",
+            }}
+          >
+            {count}
+          </span>
+        </div>
+        {/* Label */}
+        <div
+          className="px-1.5 py-1 flex flex-col gap-0.5 w-full"
+          title={displayName}
+        >
+          <span
+            className="text-xs font-medium truncate"
+            style={{ color: "rgba(255,255,255,0.75)" }}
+          >
+            {displayName}
+          </span>
+          {canisterId ? (
+            <span
+              className="text-[9px] font-mono truncate"
+              style={{ color: "rgba(255,255,255,0.35)" }}
+            >
+              {shortenCanisterId(canisterId)}
+            </span>
+          ) : (
+            <span
+              className="text-[9px] italic"
+              style={{ color: "rgba(255,255,255,0.28)" }}
+            >
+              Predvolená zbierka
+            </span>
+          )}
+        </div>
+      </button>
+
+      {/* Delete button */}
+      {canisterId && canisterId !== factoryCanisterId && onDelete && (
+        <button
+          type="button"
+          data-ocid={`history.collection_card.${groupKey}.delete_button`}
+          disabled={isDeleting}
+          onClick={async (e) => {
+            e.stopPropagation();
+            if (!window.confirm("Naozaj chceš vymazať túto zbierku?")) return;
+            setIsDeleting(true);
+            try {
+              await onDelete(canisterId);
+            } finally {
+              setIsDeleting(false);
+            }
+          }}
+          className="mt-2 w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-medium py-1.5 px-3 rounded-lg transition-colors"
+        >
+          {isDeleting ? "Mazanie..." : "Vymazať zbierku"}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -815,6 +870,23 @@ export function MintHistoryPanel() {
       })
       .catch(() => {});
   }, []);
+
+  const { actor } = useBackend();
+  const queryClient = useQueryClient();
+
+  const handleDeleteCollection = async (cid: string) => {
+    if (!actor) return;
+    try {
+      const result = await actor.removeMyCollection(Principal.fromText(cid));
+      if ("err" in result) {
+        alert(`Chyba: ${result.err}`);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["myNFTs"] });
+      }
+    } catch (e) {
+      alert(`Chyba: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
 
   const { data: nfts, isLoading, isError, error } = useGetMyNFTs();
 
@@ -854,26 +926,51 @@ export function MintHistoryPanel() {
       })
     : [];
 
-  const collectionGroups: { name: string; nfts: NFTMetadataLite[] }[] = [];
+  const resolveCanisterId = (nft: NFTMetadataLite): string | undefined => {
+    const cid = nft.collectionCanisterId;
+    if (!cid || cid === "aaaaa-aa") return undefined;
+    return cid;
+  };
+
+  const groupKeyFor = (nft: NFTMetadataLite): string => {
+    const cid = resolveCanisterId(nft);
+    if (cid) return `cid:${cid}`;
+    const name = nft.collectionName ?? "";
+    if (name) return `name:${name}`;
+    return "__standalone__";
+  };
+
+  const collectionGroups: {
+    groupKey: string;
+    name: string;
+    canisterId: string | undefined;
+    nfts: NFTMetadataLite[];
+  }[] = [];
   if (viewMode === "collection") {
-    const map = new Map<string, NFTMetadataLite[]>();
+    const map = new Map<
+      string,
+      { name: string; canisterId: string | undefined; nfts: NFTMetadataLite[] }
+    >();
     for (const nft of sorted) {
-      const key = nft.collectionName ?? "";
-      const arr = map.get(key) ?? [];
-      arr.push(nft);
-      map.set(key, arr);
+      const key = groupKeyFor(nft);
+      const existing = map.get(key);
+      if (existing) {
+        existing.nfts.push(nft);
+      } else {
+        map.set(key, {
+          name: nft.collectionName ?? "",
+          canisterId: resolveCanisterId(nft),
+          nfts: [nft],
+        });
+      }
     }
-    for (const [name, items] of map)
-      collectionGroups.push({ name, nfts: items });
+    for (const [groupKey, { name, canisterId, nfts }] of map)
+      collectionGroups.push({ groupKey, name, canisterId, nfts });
   }
 
   const activeCollectionNfts =
     selectedCollection !== null
-      ? sorted.filter(
-          (nft) =>
-            (nft.collectionName ?? "") ===
-            (selectedCollection === "__standalone__" ? "" : selectedCollection),
-        )
+      ? sorted.filter((nft) => groupKeyFor(nft) === selectedCollection)
       : [];
 
   const showContent = !isLoading && !isError && sorted.length > 0;
@@ -1033,7 +1130,7 @@ export function MintHistoryPanel() {
                   key={nft.tokenId.toString()}
                   nft={nft}
                   index={idx + 1}
-                  canisterId={factoryCanisterId}
+                  canisterId={resolveCanisterId(nft) ?? factoryCanisterId}
                 />
               ))}
             </div>
@@ -1067,7 +1164,7 @@ export function MintHistoryPanel() {
                   key={nft.tokenId.toString()}
                   nft={nft}
                   index={idx + 1}
-                  canisterId={factoryCanisterId}
+                  canisterId={resolveCanisterId(nft) ?? factoryCanisterId}
                 />
               ))}
             </div>
@@ -1101,7 +1198,7 @@ export function MintHistoryPanel() {
                   key={nft.tokenId.toString()}
                   nft={nft}
                   index={idx + 1}
-                  canisterId={factoryCanisterId}
+                  canisterId={resolveCanisterId(nft) ?? factoryCanisterId}
                 />
               ))}
             </div>
@@ -1115,18 +1212,20 @@ export function MintHistoryPanel() {
               /* Collection grid cards */
               <div className="grid grid-cols-3 gap-2">
                 {collectionGroups.map((group) => {
-                  const isStandalone = group.name === "";
-                  const displayName = isStandalone ? "Samostatné" : group.name;
-                  const key = isStandalone ? "__standalone__" : group.name;
+                  const displayName =
+                    group.name === "" ? "Samostatné" : group.name;
                   const firstNft = group.nfts[0];
                   return (
                     <CollectionCard
-                      key={key}
-                      groupKey={key}
+                      key={group.groupKey}
+                      groupKey={group.groupKey}
                       displayName={displayName}
                       firstNft={firstNft ?? null}
                       count={group.nfts.length}
-                      onClick={() => setSelectedCollection(key)}
+                      canisterId={group.canisterId}
+                      factoryCanisterId={factoryCanisterId}
+                      onClick={() => setSelectedCollection(group.groupKey)}
+                      onDelete={handleDeleteCollection}
                     />
                   );
                 })}
@@ -1151,7 +1250,7 @@ export function MintHistoryPanel() {
                       nft={nft}
                       index={i + 1}
                       callerPrincipal={callerPrincipal}
-                      canisterId={factoryCanisterId}
+                      canisterId={resolveCanisterId(nft) ?? factoryCanisterId}
                     />
                   ))}
                 </div>
@@ -1187,7 +1286,7 @@ export function MintHistoryPanel() {
                   key={nft.tokenId.toString()}
                   nft={nft}
                   index={idx + 1}
-                  canisterId={factoryCanisterId}
+                  canisterId={resolveCanisterId(nft) ?? factoryCanisterId}
                 />
               ))}
             </div>
@@ -1218,7 +1317,7 @@ export function MintHistoryPanel() {
                   key={nft.tokenId.toString()}
                   nft={nft}
                   index={idx + 1}
-                  canisterId={factoryCanisterId}
+                  canisterId={resolveCanisterId(nft) ?? factoryCanisterId}
                 />
               ),
             )}

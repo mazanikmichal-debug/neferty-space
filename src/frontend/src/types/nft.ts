@@ -36,6 +36,8 @@ export interface NFTMetadataLite {
   history: TransactionEvent[];
   isPublic: boolean;
   collectionName?: string;
+  /** Candid ?Text — the canister that holds this NFT, or [] if unknown. */
+  collectionCanisterId?: string;
 }
 
 export { Variant_Mint_Transfer };

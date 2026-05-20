@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useBackend } from "@/context/BackendContext";
 import { useInternetIdentity } from "@caffeineai/core-infrastructure";
+import { Principal } from "@dfinity/principal";
 import { Layers, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { CyclesCalculator } from "../components/CyclesCalculator";
@@ -223,6 +224,7 @@ export default function MyCollectionPage() {
   const { identity } = useInternetIdentity();
 
   // collection state
+  const [collectionIds, setCollectionIds] = useState<string[]>([]);
   const [collectionId, setCollectionId] = useState<string | null>(null);
   const [phase, setPhase] = useState<CollectionPhase>(CollectionPhase.Free);
   const [mintCount, setMintCount] = useState(0);
@@ -264,15 +266,32 @@ export default function MyCollectionPage() {
 
     (async () => {
       try {
-        const cid = await actor.getMyCollection(principal);
+        // getMyCollection now returns Principal[] (array, never null)
+        const rawResult = await actor.getMyCollection(principal);
         if (cancelled) return;
-        // Always set a collectionId — Factory is the default when no explicit one exists
-        if (cid && cid.toText() !== "aaaaa-aa") {
-          setCollectionId(cid.toText());
-        } else {
-          // Use Factory as default collection — minting always works
-          setCollectionId(FACTORY_CANISTER_ID);
+
+        // Normalise: backend may return array or single Principal depending on binding version
+        const cids: string[] = (() => {
+          const arr: string[] = [];
+          const items = Array.isArray(rawResult)
+            ? rawResult
+            : rawResult
+              ? [rawResult]
+              : [];
+          for (const p of items) {
+            const t = (p as { toText?: () => string }).toText?.() ?? String(p);
+            if (t && t !== "aaaaa-aa") arr.push(t);
+          }
+          return arr;
+        })();
+
+        // If no valid dedicated collection — fall back to Factory (always-on default)
+        const primary = cids.length > 0 ? cids[0] : FACTORY_CANISTER_ID;
+        if (!cancelled) {
+          setCollectionIds(cids.length > 0 ? cids : [FACTORY_CANISTER_ID]);
+          setCollectionId(primary);
         }
+
         // Load phase + mint count regardless
         const [ph, mc] = await Promise.all([
           actor.getCollectionPhase(principal),
@@ -297,17 +316,90 @@ export default function MyCollectionPage() {
     };
   }, [actor, backendLoading, principal, FACTORY_CANISTER_ID]);
 
-  // No longer used for basic flow — kept for potential Premium upgrade path
-  const _handleCreateCollection = async () => {
+  // Delete a collection from registry
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDeleteCollection = async (cidToDelete: string) => {
+    if (!actor) return;
+    const confirmed = window.confirm("Naozaj chcete vymazať túto zbierku?");
+    if (!confirmed) return;
+    setDeletingId(cidToDelete);
+    setDeleteError(null);
+    try {
+      const result = await actor.removeMyCollection(
+        Principal.fromText(cidToDelete),
+      );
+      if ("err" in result) {
+        setDeleteError(
+          typeof result.err === "string"
+            ? result.err
+            : "Nepodarilo sa vymazať zbierku.",
+        );
+        return;
+      }
+      // Refresh collection list from backend
+      if (principal) {
+        const rawResult = await actor.getMyCollection(principal);
+        const cids: string[] = (() => {
+          const arr: string[] = [];
+          const items = Array.isArray(rawResult)
+            ? rawResult
+            : rawResult
+              ? [rawResult]
+              : [];
+          for (const p of items) {
+            const t = (p as { toText?: () => string }).toText?.() ?? String(p);
+            if (t && t !== "aaaaa-aa") arr.push(t);
+          }
+          return arr;
+        })();
+        const updated = cids.length > 0 ? cids : [FACTORY_CANISTER_ID];
+        setCollectionIds(updated);
+        if (collectionId === cidToDelete) {
+          setCollectionId(updated[0] ?? FACTORY_CANISTER_ID);
+        }
+      }
+    } catch (e) {
+      setDeleteError(
+        e instanceof Error ? e.message : "Nepodarilo sa vymazať zbierku.",
+      );
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // Create a NEW dedicated collection canister (always available — one user can have many)
+  const handleCreateCollection = async () => {
     if (!actor) return;
     setCreating(true);
     setCollectionError(null);
     try {
-      const result = await actor.createMyCollection();
+      const createResult = await actor.createMyCollection();
+      if (createResult.__kind__ === "err") throw new Error(createResult.err);
+      const newPrincipal = createResult.ok;
+      const newId = newPrincipal.toText();
       if (principal) {
-        const cid = await actor.getMyCollection(principal);
-        if (cid && cid.toText() !== "aaaaa-aa") {
-          setCollectionId(cid.toText());
+        const rawResult = await actor.getMyCollection(principal);
+        const cids: string[] = (() => {
+          const arr: string[] = [];
+          const items = Array.isArray(rawResult)
+            ? rawResult
+            : rawResult
+              ? [rawResult]
+              : [];
+          for (const p of items) {
+            const t = (p as { toText?: () => string }).toText?.() ?? String(p);
+            if (t && t !== "aaaaa-aa") arr.push(t);
+          }
+          return arr;
+        })();
+        if (cids.length > 0) {
+          setCollectionIds(cids);
+          // Select the newly created one if we can identify it
+          setCollectionId(
+            newId && newId !== "aaaaa-aa" ? newId : cids[cids.length - 1],
+          );
           const [ph, mc] = await Promise.all([
             actor.getCollectionPhase(principal),
             actor.getMyMintCount(principal),
@@ -316,7 +408,6 @@ export default function MyCollectionPage() {
           setMintCount(Number(mc));
         }
       }
-      void result;
     } catch (e) {
       setCollectionError(
         e instanceof Error ? e.message : "Nepodarilo sa vytvoriť zbierku.",
@@ -477,98 +568,169 @@ export default function MyCollectionPage() {
 
         {/* Hybrid architecture: no "create collection" gate — Factory is always available */}
 
-        {/* Section 1 — Collection info (always shown after load, Factory = default) */}
+        {/* Section 1 — Collection cards (one per collectionId, each with correct cids[i]) */}
         {!isPageLoading && !collectionError && (
-          <GlassCard>
-            <div className="space-y-5">
-              <div className="flex items-start justify-between gap-4">
-                <h2 className="font-display text-lg font-bold text-foreground">
-                  Tvoja zbierka
-                </h2>
-                <span
-                  className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full flex-shrink-0"
-                  style={{
-                    background: "rgba(34,211,238,0.12)",
-                    border: "1px solid rgba(34,211,238,0.30)",
-                    color: "#22d3ee",
-                  }}
-                >
-                  Aktívna
-                </span>
-              </div>
-
-              {/* Collection ID */}
-              <div className="space-y-1">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  {collectionId === FACTORY_CANISTER_ID
-                    ? "Predvolená zbierka · Canister ID"
-                    : "Canister ID"}
-                </p>
-                {collectionId === FACTORY_CANISTER_ID && (
-                  <p
-                    className="text-[10px]"
-                    style={{ color: "rgba(34,197,94,0.70)" }}
-                  >
-                    Tvoje NFT sú uložené v hlavnom canistri Neferty Space
-                  </p>
-                )}
-                <p
-                  className="font-mono text-xs break-all px-3 py-2 rounded-xl"
-                  style={{
-                    background:
-                      collectionId === FACTORY_CANISTER_ID
-                        ? "rgba(34,197,94,0.05)"
-                        : "rgba(255,255,255,0.05)",
-                    border:
-                      collectionId === FACTORY_CANISTER_ID
-                        ? "1px solid rgba(34,197,94,0.18)"
-                        : "1px solid rgba(255,255,255,0.10)",
-                    color:
-                      collectionId === FACTORY_CANISTER_ID
-                        ? "rgba(34,197,94,0.80)"
-                        : undefined,
-                  }}
-                >
-                  {collectionId}
-                </p>
-              </div>
-
-              {/* Phase indicator */}
+          <div className="space-y-4">
+            {/* Delete error banner */}
+            {deleteError && (
               <div
-                className="rounded-2xl p-4"
+                data-ocid="mycollection.delete.error_state"
+                className="rounded-2xl px-5 py-4 text-sm text-red-300"
                 style={{
-                  background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.10)",
+                  background: "rgba(239,68,68,0.10)",
+                  border: "1px solid rgba(239,68,68,0.30)",
                 }}
+                aria-live="polite"
               >
-                <PhaseIndicator phase={phase} mintCount={mintCount} />
+                {deleteError}
               </div>
+            )}
 
-              {/* Premium phase — top-up CTA */}
-              {phase === CollectionPhase.Premium && (
-                <button
-                  type="button"
-                  data-ocid="mycollection.topup_button"
-                  onClick={() => setShowPaymentModal(true)}
-                  className="relative overflow-hidden w-full rounded-2xl py-3.5 font-display font-bold text-sm uppercase tracking-widest text-white transition-all duration-200 hover:scale-[1.02]"
-                  style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.2)" }}
-                >
-                  <span
-                    className="absolute inset-0 rounded-2xl"
-                    aria-hidden="true"
+            {collectionIds.map((cid, i) => (
+              <GlassCard key={cid}>
+                <div className="space-y-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <h2 className="font-display text-lg font-bold text-foreground">
+                      {cid === FACTORY_CANISTER_ID
+                        ? "Predvolená zbierka"
+                        : `Zbierka ${i + 1}`}
+                    </h2>
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full flex-shrink-0"
+                      style={{
+                        background: "rgba(34,211,238,0.12)",
+                        border: "1px solid rgba(34,211,238,0.30)",
+                        color: "#22d3ee",
+                      }}
+                    >
+                      Aktívna
+                    </span>
+                  </div>
+
+                  {/* Canister ID — uses cids[i] (correct per-card index) */}
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                      {cid === FACTORY_CANISTER_ID
+                        ? "Predvolená zbierka · Canister ID"
+                        : "Canister ID"}
+                    </p>
+                    {cid === FACTORY_CANISTER_ID && (
+                      <p
+                        className="text-[10px]"
+                        style={{ color: "rgba(34,197,94,0.70)" }}
+                      >
+                        Tvoje NFT sú uložené v hlavnom canistri Neferty Space
+                      </p>
+                    )}
+                    <p
+                      className="font-mono text-xs break-all px-3 py-2 rounded-xl"
+                      style={{
+                        background:
+                          cid === FACTORY_CANISTER_ID
+                            ? "rgba(34,197,94,0.05)"
+                            : "rgba(255,255,255,0.05)",
+                        border:
+                          cid === FACTORY_CANISTER_ID
+                            ? "1px solid rgba(34,197,94,0.18)"
+                            : "1px solid rgba(255,255,255,0.10)",
+                        color:
+                          cid === FACTORY_CANISTER_ID
+                            ? "rgba(34,197,94,0.80)"
+                            : undefined,
+                      }}
+                    >
+                      {cid}
+                    </p>
+                  </div>
+
+                  {/* Phase indicator — shown on first/active card only */}
+                  {i === 0 && (
+                    <div
+                      className="rounded-2xl p-4"
+                      style={{
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.10)",
+                      }}
+                    >
+                      <PhaseIndicator phase={phase} mintCount={mintCount} />
+                    </div>
+                  )}
+
+                  {/* Premium phase — top-up CTA (first card only) */}
+                  {i === 0 && phase === CollectionPhase.Premium && (
+                    <button
+                      type="button"
+                      data-ocid="mycollection.topup_button"
+                      onClick={() => setShowPaymentModal(true)}
+                      className="relative overflow-hidden w-full rounded-2xl py-3.5 font-display font-bold text-sm uppercase tracking-widest text-white transition-all duration-200 hover:scale-[1.02]"
+                      style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.2)" }}
+                    >
+                      <span
+                        className="absolute inset-0 rounded-2xl"
+                        aria-hidden="true"
+                        style={{
+                          background:
+                            "linear-gradient(135deg, rgba(251,191,36,0.85), rgba(245,158,11,0.75))",
+                        }}
+                      />
+                      <span className="relative z-[1] flex items-center justify-center gap-2">
+                        <Sparkles className="w-4 h-4" />
+                        Dobiť zbierku
+                      </span>
+                    </button>
+                  )}
+
+                  {/* Delete Collection button — always visible so users can clean up any entry */}
+                  <button
+                    type="button"
+                    data-ocid={`mycollection.delete_button.${i + 1}`}
+                    disabled={deletingId === cid}
+                    onClick={() => handleDeleteCollection(cid)}
+                    className="w-full rounded-2xl py-3 font-semibold text-sm uppercase tracking-wider text-white transition-all duration-200 hover:scale-[1.01] disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-2"
                     style={{
                       background:
-                        "linear-gradient(135deg, rgba(251,191,36,0.85), rgba(245,158,11,0.75))",
+                        deletingId === cid
+                          ? "rgba(185,28,28,0.50)"
+                          : "rgba(220,38,38,0.20)",
+                      border: "1px solid rgba(239,68,68,0.50)",
+                      color:
+                        deletingId === cid
+                          ? "rgba(255,255,255,0.60)"
+                          : "#fca5a5",
                     }}
-                  />
-                  <span className="relative z-[1] flex items-center justify-center gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Dobiť zbierku
-                  </span>
-                </button>
-              )}
-            </div>
-          </GlassCard>
+                  >
+                    {deletingId === cid ? (
+                      <>
+                        <div className="animate-spin h-3.5 w-3.5 border-2 border-red-300 border-t-transparent rounded-full" />
+                        Mazanie...
+                      </>
+                    ) : (
+                      "Vymazať zbierku"
+                    )}
+                  </button>
+                </div>
+              </GlassCard>
+            ))}
+          </div>
+        )}
+
+        {/* Section 1b — Create new collection button (always available) */}
+        {!isPageLoading && !collectionError && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              data-ocid="mycollection.create_collection_button"
+              onClick={handleCreateCollection}
+              className="text-xs font-semibold px-4 py-2 rounded-xl transition-all hover:scale-[1.02]"
+              style={{
+                background: "rgba(139,92,246,0.15)",
+                border: "1px solid rgba(139,92,246,0.30)",
+                color: "rgba(167,139,250,0.90)",
+              }}
+            >
+              + Vytvoriť novú zbierku
+            </button>
+          </div>
         )}
 
         {/* Section 2 — Mint form (always available, Factory is the default collection) */}

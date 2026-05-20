@@ -88,6 +88,7 @@ module {
     history : [TransactionEvent];
     isPublic : Bool;
     collectionName : ?Text;
+    collectionCanisterId : ?Text;
   };
 
   public type NFTPageLite = { items : [NFTMetadataLite]; total : Nat };

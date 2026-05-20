@@ -10,10 +10,10 @@ module {
     counter : { var nextId : Nat };
   };
 
-  // Factory state: registry maps owner -> collection ID (owner principal, single-canister model)
+  // Factory state: registry maps owner -> [collection IDs] (one user can have multiple collections)
   // mintCounts maps owner -> number of NFTs minted
   public type FactoryState = {
-    collectionRegistry : Map.Map<Principal, Principal>;
+    collectionRegistry : Map.Map<Principal, [Principal]>;
     mintCounts : Map.Map<Principal, Nat>;
   };
 
@@ -42,18 +42,19 @@ module {
     factoryState.mintCounts.add(user, current + 1);
   };
 
-  public func createCollection(factoryState : FactoryState, caller : Principal) : { #ok; #alreadyExists } {
-    if (factoryState.collectionRegistry.containsKey(caller)) {
-      #alreadyExists;
-    } else {
-      // In single-canister model the collection ID is the owner's principal
-      factoryState.collectionRegistry.add(caller, caller);
-      #ok;
+  public func createCollection(factoryState : FactoryState, caller : Principal, collectionId : Principal) {
+    let existing = switch (factoryState.collectionRegistry.get(caller)) {
+      case (?arr) arr;
+      case null [];
     };
+    factoryState.collectionRegistry.add(caller, existing.concat([collectionId]));
   };
 
-  public func getCollection(factoryState : FactoryState, user : Principal) : ?Principal {
-    factoryState.collectionRegistry.get(user);
+  public func getCollections(factoryState : FactoryState, user : Principal) : [Principal] {
+    switch (factoryState.collectionRegistry.get(user)) {
+      case (?arr) arr;
+      case null [];
+    };
   };
 
   public func mint(
@@ -91,7 +92,8 @@ module {
   };
 
   /// Strip the image Blob from a single NFTMetadata record.
-  public func toLite(nft : Types.NFTMetadata) : Types.NFTMetadataLite {
+  /// Pass the canister that owns this NFT so the frontend can identify it.
+  public func toLite(nft : Types.NFTMetadata, canisterId : ?Text) : Types.NFTMetadataLite {
     {
       tokenId       = nft.tokenId;
       owner         = nft.owner;
@@ -101,35 +103,39 @@ module {
       history       = nft.history;
       isPublic      = nft.isPublic;
       collectionName = nft.collectionName;
+      collectionCanisterId = canisterId;
     };
   };
 
   public func getByOwnerLite(
     state : State,
     owner : Principal,
+    canisterId : ?Text,
   ) : [Types.NFTMetadataLite] {
     state.nfts.values()
       .filter(func(nft) { Principal.equal(nft.owner, owner) })
-      .map<Types.NFTMetadata, Types.NFTMetadataLite>(toLite)
+      .map<Types.NFTMetadata, Types.NFTMetadataLite>(func(nft) { toLite(nft, canisterId) })
       .toArray();
   };
 
   public func getAllPublicLite(
     state : State,
+    canisterId : ?Text,
   ) : [Types.NFTMetadataLite] {
     state.nfts.values()
       .filter(func(nft) { nft.isPublic })
-      .map<Types.NFTMetadata, Types.NFTMetadataLite>(toLite)
+      .map<Types.NFTMetadata, Types.NFTMetadataLite>(func(nft) { toLite(nft, canisterId) })
       .toArray();
   };
 
   public func getAllPublicByOwnerLite(
     state : State,
     owner : Principal,
+    canisterId : ?Text,
   ) : [Types.NFTMetadataLite] {
     state.nfts.values()
       .filter(func(nft) { nft.isPublic and Principal.equal(nft.owner, owner) })
-      .map<Types.NFTMetadata, Types.NFTMetadataLite>(toLite)
+      .map<Types.NFTMetadata, Types.NFTMetadataLite>(func(nft) { toLite(nft, canisterId) })
       .toArray();
   };
 
@@ -137,8 +143,9 @@ module {
     state : State,
     offset : Nat,
     limit : Nat,
+    canisterId : ?Text,
   ) : Types.NFTPageLite {
-    let all = getAllPublicLite(state);
+    let all = getAllPublicLite(state, canisterId);
     let total = all.size();
     let start = if (offset >= total) total else offset;
     let end_ = if (start + limit > total) total else start + limit;
@@ -150,8 +157,9 @@ module {
     owner : Principal,
     offset : Nat,
     limit : Nat,
+    canisterId : ?Text,
   ) : Types.NFTPageLite {
-    let all = getByOwnerLite(state, owner);
+    let all = getByOwnerLite(state, owner, canisterId);
     let total = all.size();
     let start = if (offset >= total) total else offset;
     let end_ = if (start + limit > total) total else start + limit;

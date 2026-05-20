@@ -50,6 +50,7 @@ export interface NFTMetadataLite {
   'createdAt' : Time,
   'description' : string,
   'history' : Array<TransactionEvent>,
+  'collectionCanisterId' : [] | [string],
   'isPublic' : boolean,
   'collectionName' : [] | [string],
 }
@@ -113,7 +114,11 @@ export interface _SERVICE {
   'addAdmin' : ActorMethod<[Principal], { 'ok' : null } | { 'err' : string }>,
   'adminRetryTopUp' : ActorMethod<[bigint], ProcessTopUpResult>,
   'cleanupCorruptedRegistry' : ActorMethod<[], bigint>,
-  'createMyCollection' : ActorMethod<[], Principal>,
+  'createMyCollection' : ActorMethod<
+    [],
+    { 'ok' : Principal } |
+      { 'err' : string }
+  >,
   'estimateCycles' : ActorMethod<[bigint], bigint>,
   'estimateICPForImages' : ActorMethod<[bigint, number], number>,
   'estimateImagesForICP' : ActorMethod<[number, number], bigint>,
@@ -129,18 +134,15 @@ export interface _SERVICE {
   >,
   'getFactoryAccountId' : ActorMethod<[], string>,
   'getICPPrice' : ActorMethod<[], number>,
-  'getMyCollection' : ActorMethod<[Principal], [] | [Principal]>,
+  'getMyCollection' : ActorMethod<[Principal], Array<Principal>>,
   'getMyCollectionCycles' : ActorMethod<[], bigint>,
+  'getMyCollections' : ActorMethod<[Principal], Array<Principal>>,
   'getMyHealthStatus' : ActorMethod<[], HealthStatus>,
   'getMyMintCount' : ActorMethod<[Principal], bigint>,
   'getMyNFTs' : ActorMethod<[], Array<NFTMetadataLite>>,
   'getMyNFTsPaginated' : ActorMethod<[bigint, bigint], NFTPageLite>,
   'getMyPendingTransactions' : ActorMethod<[], Array<PendingTx>>,
   'getNFT' : ActorMethod<[TokenId], [] | [NFTMetadata]>,
-  /**
-   * / Manual trigger — available for emergency use via Candid UI / frontend.
-   * / Also purges any corrupted aaaaa-aa registry entries left from failed createMyCollection calls.
-   */
   'getNFTHistory' : ActorMethod<[TokenId], [] | [Array<TransactionEvent>]>,
   'getNFTImage' : ActorMethod<[TokenId], [] | [Uint8Array]>,
   'getPendingTransactions' : ActorMethod<[], Array<PendingTx>>,
@@ -154,7 +156,7 @@ export interface _SERVICE {
       'estimate_days' : bigint,
     }
   >,
-  'getUserRegistryEntry' : ActorMethod<[], [] | [Principal]>,
+  'getUserRegistryEntry' : ActorMethod<[], Array<Principal>>,
   'icrc10_supported_standards' : ActorMethod<[], Array<Standard>>,
   'icrc7_description' : ActorMethod<[], [] | [string]>,
   'icrc7_name' : ActorMethod<[], string>,
@@ -185,6 +187,11 @@ export interface _SERVICE {
   'removeAdmin' : ActorMethod<
     [Principal],
     { 'ok' : null } |
+      { 'err' : string }
+  >,
+  'removeMyCollection' : ActorMethod<
+    [Principal],
+    { 'ok' : boolean } |
       { 'err' : string }
   >,
   'retryTopUp' : ActorMethod<[bigint], ProcessTopUpResult>,

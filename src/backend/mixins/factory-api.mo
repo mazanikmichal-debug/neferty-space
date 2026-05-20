@@ -9,9 +9,9 @@ import Nat8 "mo:core/Nat8";
 import Error "mo:core/Error";
 import Time "mo:core/Time";
 import NFTLib "../lib/nft";
-import Cycles "mo:core/Cycles";
 import Nat64 "mo:core/Nat64";
 import Prim "mo:⛔";
+import Cycles "mo:core/Cycles";
 
 // fees state is injected from main.mo so mixin mutations persist
 mixin (
@@ -25,16 +25,21 @@ mixin (
   // ── Collection lifecycle ──────────────────────────────────────────────────
 
   /// Idempotent: returns existing collection ID, or deploys a new one.
-  public shared ({ caller }) func createMyCollection() : async Principal {
-    switch (FactoryLib.getCollection(factory, caller)) {
-      case (?cid) cid;
-      case null {
-        let col = await (with cycles = 500_000_000_000) CollectionLib.Collection(caller, selfRef.selfPrincipal);
-        let cid = Principal.fromActor(col);
-        FactoryLib.addToRegistry(factory, caller, cid);
-        cid;
-      };
+  /// Always deploys a new Collection canister and appends it to the owner's array.
+  public shared ({ caller }) func createMyCollection() : async { #ok : Principal; #err : Text } {
+    let col = try {
+      await (system CollectionLib.Collection)(#new { settings = null })(caller, selfRef.selfPrincipal);
+    } catch (e) {
+      return #err("Canister deployment failed: " # e.message());
     };
+    let cid = Principal.fromActor(col);
+    // Defensive guard: reject a zero/placeholder principal
+    if (Principal.equal(cid, Principal.fromText("aaaaa-aa"))) {
+      return #err("Deployment returned invalid canister ID (aaaaa-aa); not added to registry");
+    };
+    FactoryLib.addToRegistry(factory, caller, cid);
+    NFTLib.createCollection(nftFactoryState, caller, cid);
+    #ok(cid);
   };
 
   /// In the single-canister model the main canister IS the collection.
@@ -44,27 +49,31 @@ mixin (
   /// Returns the canister's own principal if the user has minted at least 1 NFT
   /// (checked via mintCounts) OR has an entry in the factory registry.
   /// If registry has a corrupted aaaaa-aa entry, falls back to selfRef like null.
-  public query func getMyCollection(user : Principal) : async ?Principal {
+  /// Returns the caller's collection principals.
+  /// Falls back to [selfRef.selfPrincipal] if the user has mints but no registry entry.
+  public query func getMyCollection(user : Principal) : async [Principal] {
     let zeroPrincipal = Principal.fromText("aaaaa-aa");
-    // First check the explicit registry (created via createMyCollection)
-    switch (FactoryLib.getCollection(factory, user)) {
-      case (?cid) {
-        // Treat zero principal as corrupted — fall through to mintCount check
-        if (not Principal.equal(cid, zeroPrincipal)) {
-          return ?cid;
-        };
-        // corrupted entry: fall through
-      };
-      case null {};
-    };
+    let cols = FactoryLib.getCollections(factory, user)
+      .filter(func(cid) { not Principal.equal(cid, zeroPrincipal) });
+    if (cols.size() > 0) return cols;
     // Fall back: any minted NFT means the user has a collection in single-canister mode
     let mintCount = NFTLib.getMintCount(nftFactoryState, user);
     if (mintCount > 0) {
-      ?selfRef.selfPrincipal;
+      [selfRef.selfPrincipal];
     } else {
-      null;
+      [];
     };
   };
+  /// Alias for getMyCollection — returns all collection principals for the user.
+  public query func getMyCollections(user : Principal) : async [Principal] {
+    let zeroPrincipal = Principal.fromText("aaaaa-aa");
+    let cols = FactoryLib.getCollections(factory, user)
+      .filter(func(cid) { not Principal.equal(cid, zeroPrincipal) });
+    if (cols.size() > 0) return cols;
+    let mintCount = NFTLib.getMintCount(nftFactoryState, user);
+    if (mintCount > 0) { [selfRef.selfPrincipal] } else { [] };
+  };
+
 
   // ── Delegated queries to the Collection canister ──────────────────────────
 
@@ -138,6 +147,14 @@ mixin (
     { cycles; imageCount; ownerPrincipal = caller };
   };
 
+  // ── Collection removal ───────────────────────────────────────────────────
+
+  /// Removes a specific collection canister from the caller's registry entry.
+  /// Returns #ok(true) if found and removed, #err("Collection not found") otherwise.
+  public shared ({ caller }) func removeMyCollection(collectionId : Principal) : async { #ok : Bool; #err : Text } {
+    FactoryLib.removeFromRegistry(factory, caller, collectionId);
+  };
+
   // ── Dynamic admin management ─────────────────────────────────────────────
 
   /// Public query: returns the current list of admin principals.
@@ -179,14 +196,12 @@ mixin (
 
   /// Returns the caller's current collection canister ID from the registry,
   /// or null if no entry exists. Treats the zero principal as null (corrupted).
-  public query ({ caller }) func getUserRegistryEntry() : async ?Principal {
+  /// Returns the caller's collection canister IDs from the registry (empty array = none).
+  /// Filters out the zero/placeholder principal.
+  public query ({ caller }) func getUserRegistryEntry() : async [Principal] {
     let zeroPrincipal = Principal.fromText("aaaaa-aa");
-    switch (FactoryLib.getCollection(factory, caller)) {
-      case (?cid) {
-        if (Principal.equal(cid, zeroPrincipal)) null else ?cid;
-      };
-      case null null;
-    };
+    FactoryLib.getCollections(factory, caller)
+      .filter(func(cid) { not Principal.equal(cid, zeroPrincipal) });
   };
 
   // ── Hybrid mode: default-collection detection ────────────────────────────
@@ -197,23 +212,15 @@ mixin (
   ///   - registry entry is null or aaaaa-aa (corrupted) AND mintCount > 0
   ///   - registry entry IS selfRef.selfPrincipal (explicitly set to Factory)
   /// False only when the user has a real, separate Collection canister ID.
+  /// Returns true when the given principal is using the Factory canister itself
+  /// as their default collection (no separate dedicated Collection canister).
   public query func isUsingDefaultCollection(user : Principal) : async Bool {
     let zeroPrincipal = Principal.fromText("aaaaa-aa");
-    switch (FactoryLib.getCollection(factory, user)) {
-      case (?cid) {
-        // corrupted placeholder → treat as default
-        if (Principal.equal(cid, zeroPrincipal)) return true;
-        // explicitly set to Factory's own principal → default
-        if (Principal.equal(cid, selfRef.selfPrincipal)) return true;
-        // real separate canister → NOT default
-        return false;
-      };
-      case null {
-        // no registry entry → using default if has minted
-        let mintCount = NFTLib.getMintCount(nftFactoryState, user);
-        mintCount > 0;
-      };
-    };
+    let cols = FactoryLib.getCollections(factory, user)
+      .filter(func(cid) { not Principal.equal(cid, zeroPrincipal) and not Principal.equal(cid, selfRef.selfPrincipal) });
+    if (cols.size() > 0) return false; // has real separate canister(s)
+    let mintCount = NFTLib.getMintCount(nftFactoryState, user);
+    mintCount > 0;
   };
 
   // ── Main-canister status (admin-only) ─────────────────────────────────────

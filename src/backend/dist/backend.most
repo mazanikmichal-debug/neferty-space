@@ -89,7 +89,6 @@ type PendingTx__255155918 =
   };
 type QueryBlocksResponse__920313293 =
   {blocks : [Block__131935534]; first_block_index : Nat64};
-type RegistryEntry__388643836 = (Principal, Principal);
 type Time__796480547 = Int__270357528;
 type Time__900049286 = Time__796480547;
 type TokenId__283674492 = Nat;
@@ -117,7 +116,7 @@ actor {
     };
   stable collectionRegistry :
     {
-      var root : Node__46230540<Principal, Principal>;
+      var root : Node__46230540<Principal, [Principal]>;
       var size : Nat__490723111
     };
   stable counter : {var nextId : Nat};
@@ -126,11 +125,11 @@ actor {
     {
       admin : {var principal : Principal};
       admins : List__415060402<Principal>;
-      registry : List__415060402<RegistryEntry__388643836>
+      registry : Map__605269027<Principal, [Principal]>
     };
   stable factoryState :
     {
-      collectionRegistry : Map__605269027<Principal, Principal>;
+      collectionRegistry : Map__605269027<Principal, [Principal]>;
       mintCounts : Map__605269027<Principal, Nat>
     };
   stable ledger :

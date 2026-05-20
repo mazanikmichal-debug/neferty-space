@@ -653,7 +653,8 @@ function CyclesCard() {
       const callerPrincipal = identity.getPrincipal();
       try {
         const result = await actor.getMyCollection(callerPrincipal);
-        return result ?? null;
+        const arr = Array.isArray(result) ? result : result ? [result] : [];
+        return arr[0] ?? null;
       } catch {
         return null;
       }

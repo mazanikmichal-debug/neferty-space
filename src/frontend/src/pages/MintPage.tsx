@@ -2,7 +2,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAddressHistory } from "@/hooks/useAddressHistory";
-import { useMintNFT } from "@/hooks/useQueries";
+import {
+  useCreateMyCollection,
+  useGetMyCollection,
+  useMintNFT,
+} from "@/hooks/useQueries";
 import { Principal } from "@dfinity/principal";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -21,6 +25,8 @@ export default function MintPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [collectionName, setCollectionName] = useState("");
+  const [selectedCollection, setSelectedCollection] = useState<string>("new");
+  const [isCreatingCollection, setIsCreatingCollection] = useState(false);
   const [recipientId, setRecipientId] = useState("");
   const [phase, setPhase] = useState<"idle" | "minting" | "error">("idle");
   const [errors, setErrors] = useState<{
@@ -28,6 +34,7 @@ export default function MintPage() {
     image?: string;
     recipient?: string;
     collectionName?: string;
+    selectedCollection?: string;
     submit?: string;
   }>({});
   const [dragOver, setDragOver] = useState(false);
@@ -86,7 +93,11 @@ export default function MintPage() {
     if (!mintMode) errs.submit = t("errors.selectMode");
     if (!name.trim()) errs.name = t("errors.enterNftName");
     if (!imageFile) errs.image = t("errors.selectImage");
-    if (mintMode === "collection" && !collectionName.trim())
+    if (
+      mintMode === "collection" &&
+      selectedCollection === "new" &&
+      !collectionName.trim()
+    )
       errs.collectionName = t("errors.enterCollectionName");
     const recipientErr = validateRecipient(recipientId);
     if (recipientErr) errs.recipient = recipientErr;
@@ -98,7 +109,13 @@ export default function MintPage() {
     mintMutation.isPending ||
     !name.trim() ||
     !imageFile ||
-    (mintMode === "collection" && !collectionName.trim());
+    (mintMode === "collection" &&
+      selectedCollection === "new" &&
+      !collectionName.trim());
+
+  const collectionsQuery = useGetMyCollection();
+  const createCollectionMutation = useCreateMyCollection();
+  const existingCollections = collectionsQuery.data ?? [];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,7 +127,18 @@ export default function MintPage() {
     if (!validate() || !imageFile) return;
     setErrors((prev) => ({ ...prev, submit: undefined }));
     setPhase("minting");
+
+    let finalCollectionName = collectionName.trim();
+
     try {
+      if (mintMode === "collection" && selectedCollection === "new") {
+        setIsCreatingCollection(true);
+        const newCid = await createCollectionMutation.mutateAsync();
+        finalCollectionName =
+          collectionName.trim() || `Zbierka ${newCid.slice(0, 8)}`;
+        setIsCreatingCollection(false);
+      }
+
       await mintMutation.mutateAsync({
         name: name.trim(),
         description: description.trim(),
@@ -118,7 +146,7 @@ export default function MintPage() {
         recipientId: recipientId.trim() || undefined,
         isPublic,
         collectionName:
-          mintMode === "collection" ? collectionName.trim() : undefined,
+          mintMode === "collection" ? finalCollectionName : undefined,
       });
       if (recipientId.trim()) saveAddress(recipientId.trim());
       setShowSuccess(true);
@@ -126,6 +154,7 @@ export default function MintPage() {
       setName("");
       setDescription("");
       setCollectionName("");
+      setSelectedCollection("new");
       setRecipientId("");
       setImageFile(null);
       setImagePreview(null);
@@ -138,6 +167,7 @@ export default function MintPage() {
       const msg = err instanceof Error ? err.message : t("errors.mintFailed");
       setErrors((prev) => ({ ...prev, submit: msg }));
       setPhase("error");
+      setIsCreatingCollection(false);
       setTimeout(() => {
         setPhase("idle");
       }, 1500);
@@ -430,56 +460,126 @@ export default function MintPage() {
                     </button>
                   </div>
 
-                  {/* Collection name input */}
+                  {/* Collection selector */}
                   {mintMode === "collection" && (
-                    <div className="mt-3">
-                      <Label
-                        htmlFor="nft-collection"
-                        className="text-xs font-semibold uppercase tracking-[0.12em] text-white/50"
-                      >
-                        {t("labels.collectionName")}
-                      </Label>
-                      <Input
-                        id="nft-collection"
-                        data-ocid="mint.collection_name_input"
-                        value={collectionName}
-                        onChange={(e) => {
-                          setCollectionName(e.target.value);
-                          if (e.target.value.trim())
-                            setErrors((p) => ({
-                              ...p,
-                              collectionName: undefined,
-                            }));
-                        }}
-                        onBlur={() => {
-                          if (!collectionName.trim())
-                            setErrors((p) => ({
-                              ...p,
-                              collectionName: t("errors.enterCollectionName"),
-                            }));
-                        }}
-                        placeholder="napr. Moja prvá zbierka"
-                        className={`mt-1.5 rounded-2xl text-sm text-white/90 placeholder:text-white/30 border-0 outline-none focus-visible:ring-1 ${
-                          errors.collectionName
-                            ? "ring-1 ring-destructive"
-                            : "focus-visible:ring-white/30"
-                        }`}
-                        style={{
-                          background: "rgba(255,255,255,0.08)",
-                          border: errors.collectionName
-                            ? "1px solid rgba(239,68,68,0.6)"
-                            : "1px solid rgba(255,255,255,0.14)",
-                          backdropFilter: "blur(8px)",
-                          WebkitBackdropFilter: "blur(8px)",
-                        }}
-                      />
-                      {errors.collectionName && (
-                        <p
-                          data-ocid="mint.collection_name.field_error"
-                          className="text-xs text-destructive mt-1"
+                    <div className="mt-3 space-y-3">
+                      {existingCollections.length > 0 && (
+                        <div>
+                          <Label
+                            htmlFor="collection-select"
+                            className="text-xs font-semibold uppercase tracking-[0.12em] text-white/50"
+                          >
+                            Zbierka
+                          </Label>
+                          <select
+                            id="collection-select"
+                            data-ocid="mint.collection_select"
+                            value={selectedCollection}
+                            onChange={(e) => {
+                              setSelectedCollection(e.target.value);
+                              setErrors((p) => ({
+                                ...p,
+                                collectionName: undefined,
+                              }));
+                            }}
+                            className="mt-1.5 w-full rounded-2xl text-sm text-white/90 bg-white/[0.08] border border-white/14 px-4 py-3 outline-none focus-visible:ring-1 focus-visible:ring-white/30 appearance-none cursor-pointer"
+                            style={{
+                              backdropFilter: "blur(8px)",
+                              WebkitBackdropFilter: "blur(8px)",
+                            }}
+                          >
+                            <option
+                              value="new"
+                              className="bg-[#120c28] text-white/90"
+                            >
+                              ➕ Vytvoriť novú zbierku...
+                            </option>
+                            {existingCollections.map((cid, idx) => {
+                              const text = cid.toText();
+                              const short = `${text.slice(0, 6)}…${text.slice(-4)}`;
+                              return (
+                                <option
+                                  key={text}
+                                  value={text}
+                                  className="bg-[#120c28] text-white/90"
+                                >
+                                  Zbierka #{idx + 1} — {short}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
+                      )}
+
+                      {(selectedCollection === "new" ||
+                        existingCollections.length === 0) && (
+                        <div>
+                          <Label
+                            htmlFor="nft-collection"
+                            className="text-xs font-semibold uppercase tracking-[0.12em] text-white/50"
+                          >
+                            {existingCollections.length > 0
+                              ? "Názov novej zbierky"
+                              : "Názov zbierky"}
+                          </Label>
+                          <Input
+                            id="nft-collection"
+                            data-ocid="mint.collection_name_input"
+                            value={collectionName}
+                            onChange={(e) => {
+                              setCollectionName(e.target.value);
+                              if (e.target.value.trim())
+                                setErrors((p) => ({
+                                  ...p,
+                                  collectionName: undefined,
+                                }));
+                            }}
+                            onBlur={() => {
+                              if (
+                                !collectionName.trim() &&
+                                selectedCollection === "new"
+                              )
+                                setErrors((p) => ({
+                                  ...p,
+                                  collectionName: t(
+                                    "errors.enterCollectionName",
+                                  ),
+                                }));
+                            }}
+                            placeholder="napr. Moja prvá zbierka"
+                            className={`mt-1.5 rounded-2xl text-sm text-white/90 placeholder:text-white/30 border-0 outline-none focus-visible:ring-1 ${
+                              errors.collectionName
+                                ? "ring-1 ring-destructive"
+                                : "focus-visible:ring-white/30"
+                            }`}
+                            style={{
+                              background: "rgba(255,255,255,0.08)",
+                              border: errors.collectionName
+                                ? "1px solid rgba(239,68,68,0.6)"
+                                : "1px solid rgba(255,255,255,0.14)",
+                              backdropFilter: "blur(8px)",
+                              WebkitBackdropFilter: "blur(8px)",
+                            }}
+                          />
+                          {errors.collectionName && (
+                            <p
+                              data-ocid="mint.collection_name.field_error"
+                              className="text-xs text-destructive mt-1"
+                            >
+                              {errors.collectionName}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {isCreatingCollection && (
+                        <div
+                          data-ocid="mint.collection_creating_state"
+                          className="flex items-center gap-2 text-xs text-white/60"
                         >
-                          {errors.collectionName}
-                        </p>
+                          <div className="animate-spin h-3.5 w-3.5 border-2 border-white/60 border-t-transparent rounded-full" />
+                          Vytvára sa nová zbierka...
+                        </div>
                       )}
                     </div>
                   )}
