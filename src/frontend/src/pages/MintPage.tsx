@@ -1,4 +1,3 @@
-import { MintHistoryPanel } from "@/components/MintHistoryPanel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -257,9 +256,8 @@ export default function MintPage() {
           </h1>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6 items-start">
-          {/* Left column — mint form */}
-          <div className="w-full lg:max-w-[448px] shrink-0">
+        <div className="max-w-2xl mx-auto">
+          <div>
             <div className="glass-card rounded-3xl p-8">
               <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                 {/* ── Minting mode selector ── */}
@@ -913,14 +911,7 @@ export default function MintPage() {
               </form>
             </div>
           </div>
-          {/* end left column */}
-
-          {/* Right column — history panel */}
-          <div className="w-full lg:flex-1 lg:min-w-[300px] lg:sticky lg:top-4">
-            <MintHistoryPanel />
-          </div>
         </div>
-        {/* end two-column flex */}
       </div>
     </>
   );

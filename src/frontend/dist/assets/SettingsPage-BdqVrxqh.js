@@ -1,12 +1,13 @@
-import { e as createLucideIcon, P as Principal, r as reactExports, j as jsxRuntimeExports, C as Check, u as useTranslation, l as useBackend, i as useInternetIdentity, m as useQueryClient, f as Copy, g as copyToClipboard } from "./index-d4CSy73B.js";
-import { g as useGetICPPrice, h as useQuery, i as useGetMyHealthStatus, j as useGetStatus, k as useProcessTopUp, l as useGetMyPendingTransactions, m as useRetryTopUp, n as useListAdmins, o as useAddAdmin, p as useRemoveAdmin, q as useGetPlatformFees, r as useWithdrawPlatformFees, s as useGetAllPendingTransactions, t as useAdminRetryTopUp } from "./useQueries-eFwKLunX.js";
+import { c as createLucideIcon, P as Principal, r as reactExports, j as jsxRuntimeExports, C as Check, u as useTranslation, h as useBackend, f as useInternetIdentity, i as useQueryClient, k as Copy, l as copyToClipboard } from "./index-brzfvpFf.js";
+import { d as useGetICPPrice, e as useQuery, f as useGetMyHealthStatus, g as useGetStatus, h as useProcessTopUp, i as useGetMyPendingTransactions, j as useRetryTopUp, k as useListAdmins, l as useAddAdmin, m as useRemoveAdmin, n as useGetPlatformFees, o as useWithdrawPlatformFees, p as useGetAllPendingTransactions, q as useAdminRetryTopUp } from "./useQueries-BF2kAjPo.js";
+import { C as Clock } from "./clock-XSnzcK58.js";
 /**
  * @license lucide-react v0.511.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */
-const __iconNode$5 = [
+const __iconNode$7 = [
   [
     "path",
     {
@@ -15,7 +16,23 @@ const __iconNode$5 = [
     }
   ]
 ];
-const Activity = createLucideIcon("activity", __iconNode$5);
+const Activity = createLucideIcon("activity", __iconNode$7);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$6 = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
+const ChevronDown = createLucideIcon("chevron-down", __iconNode$6);
+/**
+ * @license lucide-react v0.511.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */
+const __iconNode$5 = [["path", { d: "m18 15-6-6-6 6", key: "153udz" }]];
+const ChevronUp = createLucideIcon("chevron-up", __iconNode$5);
 /**
  * @license lucide-react v0.511.0 - ISC
  *
@@ -1884,7 +1901,164 @@ function CyclesCard() {
               ]
             }
           )
-        ] })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(PaymentHistoryPanel, {})
+      ]
+    }
+  );
+}
+function PaymentHistoryPanel() {
+  const [open, setOpen] = reactExports.useState(false);
+  const { data: pending } = useGetMyPendingTransactions();
+  const txList = pending ?? [];
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "div",
+    {
+      "data-ocid": "settings.payment_history_panel",
+      className: "mt-2 rounded-2xl overflow-hidden",
+      style: {
+        background: "rgba(255,255,255,0.03)",
+        border: "1px solid rgba(255,255,255,0.08)"
+      },
+      children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "button",
+          {
+            type: "button",
+            "data-ocid": "settings.payment_history_toggle",
+            onClick: () => setOpen((v) => !v),
+            className: "w-full flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-white/5",
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(Clock, { size: 13, style: { color: "rgba(255,255,255,0.38)" } }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "span",
+                  {
+                    className: "text-[11px] font-semibold uppercase tracking-widest",
+                    style: { color: "rgba(255,255,255,0.50)" },
+                    children: "História platieb"
+                  }
+                ),
+                txList.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "span",
+                  {
+                    className: "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
+                    style: {
+                      background: "rgba(251,191,36,0.15)",
+                      color: "rgba(251,191,36,0.85)",
+                      border: "1px solid rgba(251,191,36,0.25)"
+                    },
+                    children: txList.length
+                  }
+                )
+              ] }),
+              open ? /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronUp, { size: 14, style: { color: "rgba(255,255,255,0.35)" } }) : /* @__PURE__ */ jsxRuntimeExports.jsx(ChevronDown, { size: 14, style: { color: "rgba(255,255,255,0.35)" } })
+            ]
+          }
+        ),
+        open && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "div",
+          {
+            className: "px-4 pb-4 space-y-2",
+            style: { borderTop: "1px solid rgba(255,255,255,0.06)" },
+            children: [
+              txList.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "p",
+                {
+                  "data-ocid": "settings.payment_history_empty_state",
+                  className: "text-xs pt-3 text-center",
+                  style: { color: "rgba(255,255,255,0.32)" },
+                  children: "Žiadne platby v histórii"
+                }
+              ) : /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "space-y-1.5 pt-3", children: txList.map((tx, i) => {
+                const amountIcp = (Number(tx.amount) / 1e8).toFixed(4);
+                const shortBlock = tx.blockIndex.toString();
+                const date = new Date(
+                  Number(tx.createdAt / 1000000n)
+                ).toLocaleString("sk-SK");
+                const retryCount = Number(tx.retryCount);
+                const isFailed = retryCount >= 3;
+                return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                  "div",
+                  {
+                    "data-ocid": `settings.payment_history_item.${i + 1}`,
+                    className: "flex items-center justify-between gap-3 rounded-xl px-3 py-2.5",
+                    style: {
+                      background: isFailed ? "rgba(239,68,68,0.06)" : "rgba(251,191,36,0.05)",
+                      border: isFailed ? "1px solid rgba(239,68,68,0.16)" : "1px solid rgba(251,191,36,0.14)"
+                    },
+                    children: [
+                      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-0.5 min-w-0 flex-1", children: [
+                        /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                          "p",
+                          {
+                            className: "text-xs font-mono font-semibold leading-none",
+                            style: { color: "rgba(255,255,255,0.80)" },
+                            children: [
+                              amountIcp,
+                              " ICP",
+                              /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                                "span",
+                                {
+                                  className: "ml-2 font-normal text-[10px]",
+                                  style: { color: "rgba(255,255,255,0.30)" },
+                                  children: [
+                                    "#",
+                                    shortBlock
+                                  ]
+                                }
+                              )
+                            ]
+                          }
+                        ),
+                        /* @__PURE__ */ jsxRuntimeExports.jsx(
+                          "p",
+                          {
+                            className: "text-[10px]",
+                            style: { color: "rgba(255,255,255,0.35)" },
+                            children: date
+                          }
+                        )
+                      ] }),
+                      isFailed ? /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "span",
+                        {
+                          className: "flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full",
+                          style: {
+                            background: "rgba(239,68,68,0.15)",
+                            color: "rgba(239,68,68,0.90)",
+                            border: "1px solid rgba(239,68,68,0.28)"
+                          },
+                          children: "Neúspešná"
+                        }
+                      ) : /* @__PURE__ */ jsxRuntimeExports.jsx(
+                        "span",
+                        {
+                          className: "flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full",
+                          style: {
+                            background: "rgba(251,191,36,0.15)",
+                            color: "rgba(251,191,36,0.90)",
+                            border: "1px solid rgba(251,191,36,0.28)"
+                          },
+                          children: "Čaká na spracovanie"
+                        }
+                      )
+                    ]
+                  },
+                  tx.blockIndex.toString()
+                );
+              }) }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                "p",
+                {
+                  className: "text-[10px] pt-1",
+                  style: { color: "rgba(255,255,255,0.28)" },
+                  children: "Úspešné platby sa zobrazujú v histórii zbierky"
+                }
+              )
+            ]
+          }
+        )
       ]
     }
   );

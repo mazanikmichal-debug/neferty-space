@@ -1,7 +1,17 @@
-import { o, r as reactExports, v as vt, u as useTranslation, c as useRatingDisplay, j as jsxRuntimeExports, d as reactDomExports, R as RATING_DISPLAY_PRESETS } from "./index-d4CSy73B.js";
-import { S as Skeleton } from "./skeleton-B2rKExMY.js";
-import { u as useGetAllPublicNFTs, a as useGetNFTImage } from "./useQueries-eFwKLunX.js";
-import { n as nftImageUrlById } from "./utils-CFaqURYB.js";
+import { j as jsxRuntimeExports, o, r as reactExports, v as vt, u as useTranslation, d as useRatingDisplay, e as reactDomExports, R as RATING_DISPLAY_PRESETS } from "./index-brzfvpFf.js";
+import { c as cn } from "./utils-DWi2mX0G.js";
+import { u as useGetAllPublicNFTs, a as useGetNFTImage } from "./useQueries-BF2kAjPo.js";
+import { n as nftImageUrlById } from "./nftImage-qKgxaRHy.js";
+function Skeleton({ className, ...props }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "div",
+    {
+      "data-slot": "skeleton",
+      className: cn("bg-accent animate-pulse rounded-md", className),
+      ...props
+    }
+  );
+}
 var jt = (n) => {
   switch (n) {
     case "success":

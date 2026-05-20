@@ -38,6 +38,8 @@ import {
   AlertTriangle,
   Check,
   ChevronDown,
+  ChevronUp,
+  Clock,
   Copy,
   HardDrive,
   Loader2,
@@ -1090,7 +1092,157 @@ function CyclesCard() {
           )}
         </div>
       )}
+
+      {/* ── História platieb ── */}
+      <PaymentHistoryPanel />
     </SectionCard>
+  );
+}
+
+// ─── PaymentHistoryPanel ──────────────────────────────────────────────────────────
+
+function PaymentHistoryPanel() {
+  const [open, setOpen] = useState(false);
+  const { data: pending } = useGetMyPendingTransactions();
+  const txList = pending ?? [];
+
+  return (
+    <div
+      data-ocid="settings.payment_history_panel"
+      className="mt-2 rounded-2xl overflow-hidden"
+      style={{
+        background: "rgba(255,255,255,0.03)",
+        border: "1px solid rgba(255,255,255,0.08)",
+      }}
+    >
+      <button
+        type="button"
+        data-ocid="settings.payment_history_toggle"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-white/5"
+      >
+        <div className="flex items-center gap-2">
+          <Clock size={13} style={{ color: "rgba(255,255,255,0.38)" }} />
+          <span
+            className="text-[11px] font-semibold uppercase tracking-widest"
+            style={{ color: "rgba(255,255,255,0.50)" }}
+          >
+            História platieb
+          </span>
+          {txList.length > 0 && (
+            <span
+              className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+              style={{
+                background: "rgba(251,191,36,0.15)",
+                color: "rgba(251,191,36,0.85)",
+                border: "1px solid rgba(251,191,36,0.25)",
+              }}
+            >
+              {txList.length}
+            </span>
+          )}
+        </div>
+        {open ? (
+          <ChevronUp size={14} style={{ color: "rgba(255,255,255,0.35)" }} />
+        ) : (
+          <ChevronDown size={14} style={{ color: "rgba(255,255,255,0.35)" }} />
+        )}
+      </button>
+
+      {open && (
+        <div
+          className="px-4 pb-4 space-y-2"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+        >
+          {txList.length === 0 ? (
+            <p
+              data-ocid="settings.payment_history_empty_state"
+              className="text-xs pt-3 text-center"
+              style={{ color: "rgba(255,255,255,0.32)" }}
+            >
+              Žiadne platby v histórii
+            </p>
+          ) : (
+            <div className="space-y-1.5 pt-3">
+              {txList.map((tx, i) => {
+                const amountIcp = (Number(tx.amount) / 100_000_000).toFixed(4);
+                const shortBlock = tx.blockIndex.toString();
+                const date = new Date(
+                  Number(tx.createdAt / 1_000_000n),
+                ).toLocaleString("sk-SK");
+                const retryCount = Number(tx.retryCount);
+                const isFailed = retryCount >= 3;
+                return (
+                  <div
+                    key={tx.blockIndex.toString()}
+                    data-ocid={`settings.payment_history_item.${i + 1}`}
+                    className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5"
+                    style={{
+                      background: isFailed
+                        ? "rgba(239,68,68,0.06)"
+                        : "rgba(251,191,36,0.05)",
+                      border: isFailed
+                        ? "1px solid rgba(239,68,68,0.16)"
+                        : "1px solid rgba(251,191,36,0.14)",
+                    }}
+                  >
+                    <div className="space-y-0.5 min-w-0 flex-1">
+                      <p
+                        className="text-xs font-mono font-semibold leading-none"
+                        style={{ color: "rgba(255,255,255,0.80)" }}
+                      >
+                        {amountIcp} ICP
+                        <span
+                          className="ml-2 font-normal text-[10px]"
+                          style={{ color: "rgba(255,255,255,0.30)" }}
+                        >
+                          #{shortBlock}
+                        </span>
+                      </p>
+                      <p
+                        className="text-[10px]"
+                        style={{ color: "rgba(255,255,255,0.35)" }}
+                      >
+                        {date}
+                      </p>
+                    </div>
+                    {isFailed ? (
+                      <span
+                        className="flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                        style={{
+                          background: "rgba(239,68,68,0.15)",
+                          color: "rgba(239,68,68,0.90)",
+                          border: "1px solid rgba(239,68,68,0.28)",
+                        }}
+                      >
+                        Neúspešná
+                      </span>
+                    ) : (
+                      <span
+                        className="flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                        style={{
+                          background: "rgba(251,191,36,0.15)",
+                          color: "rgba(251,191,36,0.90)",
+                          border: "1px solid rgba(251,191,36,0.28)",
+                        }}
+                      >
+                        Čaká na spracovanie
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <p
+            className="text-[10px] pt-1"
+            style={{ color: "rgba(255,255,255,0.28)" }}
+          >
+            Úspešné platby sa zobrazujú v histórii zbierky
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -7,7 +7,7 @@ var __privateAdd = (obj, member, value) => member.has(obj) ? __typeError("Cannot
 var __privateSet = (obj, member, value, setter) => (__accessCheck(obj, member, "write to private field"), setter ? setter.call(obj, value) : member.set(obj, value), value);
 var __privateMethod = (obj, member, method) => (__accessCheck(obj, member, "access private method"), method);
 var _client, _currentQuery, _currentQueryInitialState, _currentResult, _currentResultState, _currentResultOptions, _currentThenable, _selectError, _selectFn, _selectResult, _lastQueryWithDefinedData, _staleTimeoutId, _refetchIntervalId, _currentRefetchInterval, _trackedProps, _QueryObserver_instances, executeFetch_fn, updateStaleTimeout_fn, computeRefetchInterval_fn, updateRefetchInterval_fn, updateTimers_fn, clearStaleTimeout_fn, clearRefetchInterval_fn, updateQuery_fn, notify_fn, _a, _client2, _currentResult2, _currentMutation, _mutateOptions, _MutationObserver_instances, updateResult_fn, notify_fn2, _b;
-import { P as Principal, n as Subscribable, p as pendingThenable, q as resolveEnabled, s as shallowEqualObjects, t as resolveStaleTime, w as noop, x as environmentManager, y as isValidTimeout, z as timeUntilStale, A as timeoutManager, B as focusManager, D as fetchState, E as replaceData, F as notifyManager, G as hashKey, H as getDefaultState, r as reactExports, J as shouldThrowError, m as useQueryClient, l as useBackend, _ as __vitePreload, K as JSON_KEY_PRINCIPAL, M as base32Decode, N as base32Encode, O as getCrc32 } from "./index-d4CSy73B.js";
+import { P as Principal, m as Subscribable, p as pendingThenable, n as resolveEnabled, s as shallowEqualObjects, q as resolveStaleTime, t as noop, w as environmentManager, x as isValidTimeout, y as timeUntilStale, z as timeoutManager, A as focusManager, B as fetchState, D as replaceData, E as notifyManager, F as hashKey, G as getDefaultState, r as reactExports, H as shouldThrowError, i as useQueryClient, h as useBackend, _ as __vitePreload, J as JSON_KEY_PRINCIPAL, K as base32Decode, M as base32Encode, N as getCrc32 } from "./index-brzfvpFf.js";
 const index = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   JSON_KEY_PRINCIPAL,
@@ -843,55 +843,6 @@ function useGetAllPublicNFTs() {
     placeholderData: (prev) => prev
   });
 }
-function useTransferNFT() {
-  const { actor } = useBackend();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      tokenId,
-      to
-    }) => {
-      if (!actor) throw new Error("Konfigurácia chýba");
-      const result = await actor.transferNFT(tokenId, to);
-      if (result.__kind__ === "err") throw new Error(result.err);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["myNFTs"] });
-    }
-  });
-}
-function useSetNFTVisibility() {
-  const { actor } = useBackend();
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      tokenId,
-      isPublic
-    }) => {
-      if (!actor) throw new Error("Konfigurácia chýba");
-      const result = await actor.setNFTVisibility(tokenId, isPublic);
-      if (result.__kind__ === "err") throw new Error(result.err);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["myNFTs"] });
-      queryClient.invalidateQueries({ queryKey: ["allPublicNFTs"] });
-    }
-  });
-}
-function useGetNFTHistory(tokenId) {
-  const { actor, isLoading: actorLoading } = useBackend();
-  const actorReady = !!actor && !actorLoading;
-  return useQuery({
-    queryKey: ["nftHistory", (tokenId == null ? void 0 : tokenId.toString()) ?? ""],
-    queryFn: async () => {
-      if (!actor || tokenId === null) throw new Error("Konfigurácia chýba");
-      const result = await actor.getNFTHistory(tokenId);
-      return result ?? [];
-    },
-    enabled: actorReady && tokenId !== null,
-    staleTime: 3e4
-  });
-}
 function useGetICPPrice() {
   const { actor, isLoading: actorLoading } = useBackend();
   const actorReady = !!actor && !actorLoading;
@@ -1106,24 +1057,21 @@ function useRemoveAdmin() {
 }
 export {
   useGetNFTImage as a,
-  useTransferNFT as b,
-  useSetNFTVisibility as c,
-  useGetNFTHistory as d,
-  useGetMyNFTs as e,
-  useMintNFT as f,
-  useGetICPPrice as g,
-  useQuery as h,
-  useGetMyHealthStatus as i,
-  useGetStatus as j,
-  useProcessTopUp as k,
-  useGetMyPendingTransactions as l,
-  useRetryTopUp as m,
-  useListAdmins as n,
-  useAddAdmin as o,
-  useRemoveAdmin as p,
-  useGetPlatformFees as q,
-  useWithdrawPlatformFees as r,
-  useGetAllPendingTransactions as s,
-  useAdminRetryTopUp as t,
+  useGetMyNFTs as b,
+  useMintNFT as c,
+  useGetICPPrice as d,
+  useQuery as e,
+  useGetMyHealthStatus as f,
+  useGetStatus as g,
+  useProcessTopUp as h,
+  useGetMyPendingTransactions as i,
+  useRetryTopUp as j,
+  useListAdmins as k,
+  useAddAdmin as l,
+  useRemoveAdmin as m,
+  useGetPlatformFees as n,
+  useWithdrawPlatformFees as o,
+  useGetAllPendingTransactions as p,
+  useAdminRetryTopUp as q,
   useGetAllPublicNFTs as u
 };
